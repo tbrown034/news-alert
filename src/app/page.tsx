@@ -1,25 +1,82 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { WatchpointSelector, NewsFeed } from '@/components';
-import { watchpoints, mockNewsItems } from '@/lib/mockData';
-import { WatchpointId } from '@/types';
+import { watchpoints as defaultWatchpoints } from '@/lib/mockData';
+import { NewsItem, WatchpointId, Watchpoint } from '@/types';
 import { BellIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { BoltIcon } from '@heroicons/react/24/solid';
+
+interface ApiResponse {
+  items: NewsItem[];
+  activity: Record<string, { level: string; count: number; breaking: number }>;
+  fetchedAt: string;
+  totalItems: number;
+}
 
 export default function Home() {
   const [selectedWatchpoint, setSelectedWatchpoint] = useState<WatchpointId>('all');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [watchpoints, setWatchpoints] = useState<Watchpoint[]>(defaultWatchpoints);
+  const [lastFetched, setLastFetched] = useState<string | null>(null);
 
-  const handleRefresh = async () => {
+  const fetchNews = useCallback(async () => {
     setIsRefreshing(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsRefreshing(false);
+    try {
+      const response = await fetch(`/api/news?region=${selectedWatchpoint}&limit=50`);
+      const data: ApiResponse = await response.json();
+
+      // Parse dates from JSON
+      const items = data.items.map((item) => ({
+        ...item,
+        timestamp: new Date(item.timestamp),
+      }));
+
+      setNewsItems(items);
+      setLastFetched(data.fetchedAt);
+
+      // Update watchpoint activity levels from API data
+      if (data.activity) {
+        setWatchpoints((prev) =>
+          prev.map((wp) => {
+            const activity = data.activity[wp.id];
+            if (activity) {
+              return {
+                ...wp,
+                activityLevel: activity.level as Watchpoint['activityLevel'],
+              };
+            }
+            return wp;
+          })
+        );
+      }
+    } catch (error) {
+      console.error('Failed to fetch news:', error);
+    } finally {
+      setIsRefreshing(false);
+      setIsInitialLoad(false);
+    }
+  }, [selectedWatchpoint]);
+
+  // Fetch on mount and when watchpoint changes
+  useEffect(() => {
+    fetchNews();
+  }, [fetchNews]);
+
+  // Auto-refresh every 2 minutes
+  useEffect(() => {
+    const interval = setInterval(fetchNews, 2 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchNews]);
+
+  const handleRefresh = () => {
+    fetchNews();
   };
 
   // Count breaking news
-  const breakingCount = mockNewsItems.filter((item) => item.isBreaking).length;
+  const breakingCount = newsItems.filter((item) => item.isBreaking).length;
 
   return (
     <div className="min-h-screen bg-[#0f1219]">
@@ -105,11 +162,16 @@ export default function Home() {
         {/* News feed */}
         <section>
           <NewsFeed
-            items={mockNewsItems}
+            items={newsItems}
             selectedWatchpoint={selectedWatchpoint}
-            isLoading={isRefreshing}
+            isLoading={isRefreshing || isInitialLoad}
             onRefresh={handleRefresh}
           />
+          {lastFetched && !isRefreshing && (
+            <p className="text-center text-xs text-gray-600 mt-4">
+              Last updated: {new Date(lastFetched).toLocaleTimeString()}
+            </p>
+          )}
         </section>
       </main>
 

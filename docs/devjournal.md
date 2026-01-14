@@ -250,11 +250,90 @@ Also shared:
 
 ---
 
-## Status
-**Current Phase**: Phase 1 MVP Complete
-**Next Action**: Add real data sources (RSS, Bluesky API)
+### Entry 14: MCP Server Integration
+**User Asked**: Investigate Anthropic tools/plugins, including Ralph Loop for autonomous iteration. Install MCP servers for RSS, Bluesky, and web fetching.
 
-**Running**: `npm run dev` on port 3002
+**Provided**:
+- Researched available MCP servers via web search
+- Installed 3 MCP servers:
+  - `@missionsquad/mcp-rss` - RSS feed aggregation ✓
+  - `fetcher-mcp` - Web page fetching ✓
+  - `@iflow-mcp/semioz_bluesky-mcp` - Bluesky API integration ✓
+- Created Bluesky App Password for API access
+- Updated `.env.local` with Bluesky credentials
+- All servers connected and ready
+
+**MCP Configuration** (in `~/.claude.json`):
+```json
+{
+  "rss": { "command": "npx", "args": ["-y", "@missionsquad/mcp-rss"] },
+  "fetcher": { "command": "npx", "args": ["-y", "fetcher-mcp"] },
+  "bluesky": {
+    "command": "npx",
+    "args": ["-y", "@iflow-mcp/semioz_bluesky-mcp"],
+    "env": { "BLUESKY_IDENTIFIER": "...", "BLUESKY_APP_PASSWORD": "..." }
+  }
+}
+```
+
+**Troubleshooting**:
+- Initial `@semioz/bluesky-mcp` package failed to connect
+- Switched to `@iflow-mcp/semioz_bluesky-mcp` which worked
+
+---
+
+### Entry 15: Phase 2 - Real Data Integration
+**User Asked**: Continue from context restoration - complete MCP setup and integrate real data.
+
+**Provided**:
+- Created `src/lib/sources.ts` with curated RSS and Bluesky sources
+  - BBC World, Middle East, Europe, Asia feeds
+  - Al Jazeera RSS
+  - Bluesky accounts: Bellingcat, ISW, OSINTtechnical, NOELREPORTS, AP News
+  - Confidence scores from sources.md
+  - Region keywords for auto-classification
+  - Breaking news detection keywords
+- Created `src/lib/rss.ts` - RSS parser
+  - XML parsing with CDATA support
+  - HTML entity decoding
+  - Parallel feed fetching
+  - Error handling per feed
+- Created `src/app/api/news/route.ts` - News API endpoint
+  - Aggregates multiple RSS feeds
+  - Calculates activity levels per region
+  - Returns structured NewsItem data
+- Updated `src/app/page.tsx` for real data
+  - Client-side data fetching with useEffect
+  - Auto-refresh every 2 minutes
+  - Dynamic activity level updates
+  - Loading states
+
+**Results**:
+- App now displays REAL news from BBC and Al Jazeera
+- Breaking news detection working (Iran protests flagged)
+- Region classification working (Middle East items detected)
+- Activity levels calculated from actual news volume
+- Iran showing "ELEVATED" based on current events
+
+**Technical Notes**:
+- Reuters RSS feed deprecated (removed)
+- Bluesky RSS endpoints: `bsky.app/profile/USERNAME/rss`
+- BBC feeds reliable and fast
+
+---
+
+## Status
+**Current Phase**: Phase 2 Complete
+**Next Action**: Add more Bluesky OSINT sources, improve deduplication
+
+**Features Working**:
+- Real RSS feed aggregation
+- Breaking news detection
+- Region auto-classification
+- Dynamic activity levels
+- 2-minute auto-refresh
+
+**Running**: `npm run dev` on port 3000
 
 ---
 
