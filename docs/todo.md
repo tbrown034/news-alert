@@ -1,88 +1,49 @@
-# newsAlert - Todo List
+# newsAlert - Status
 
-> **Status**: Tech stack confirmed. Ready to begin implementation.
+## Completed
 
----
+### Core MVP
+- [x] Next.js + TypeScript + Tailwind setup
+- [x] Mobile-first dark theme
+- [x] RSS/Atom feed aggregation (60+ sources)
+- [x] Bluesky integration via RSS
+- [x] Government sources (State Dept, DHS, USGS, WHO, EU)
+- [x] Real-time feed with chronological sorting
+- [x] Region filtering (tabs + map)
+- [x] Interactive world map (react-simple-maps)
+- [x] Source tier badges (OFFICIAL, OSINT, REPORTER, GROUND)
+- [x] Platform icons (Bluesky butterfly, RSS, etc.)
+- [x] Keyword-based severity detection (CRITICAL, HIGH, MODERATE)
+- [x] Activity anomaly detection (X.Xx normal rate)
+- [x] Auto-refresh (2 min interval)
 
-## Completed ✓
-
-### Research Phase
-- [x] Define MVP scope (Iran situational awareness)
-- [x] Document information cascade model
-- [x] Research comparable tools (Liveuamap, ACLED, etc.)
-- [x] Curate sources list (100+ sources in sources.md)
-- [x] Organize Iran sources by tier (Official → Reporter → OSINT → Ground)
-- [x] Research Bluesky OSINT community (30+ accounts, 10 starter packs)
-- [x] Analyze user's X following list for key accounts
-- [x] Document moat/differentiation ideas (brainstorming.md)
-- [x] Answer key planning questions (personal use, Iran first, no X API)
-- [x] Document user stories (8 stories captured)
-- [x] Review Trevor's design aesthetic (portfolio + projects)
-- [x] Document design requirements (mobile-first, Heroicons, dark mode)
-
-### Tech Stack (Confirmed ✓)
-- [x] Frontend: Next.js + React + TypeScript
-- [x] Styling: Tailwind CSS
-- [x] Icons: Heroicons ONLY
-- [x] Database: PostgreSQL (Neon or Prisma)
-- [x] AI: Anthropic Claude API
-- [x] Deployment: Vercel
-
----
+### UI/UX
+- [x] Clean card design (no duplicate text)
+- [x] Removed redundant "BREAKING" banner
+- [x] Custom favicon
+- [x] Event type labels (Military, Casualty, Diplomatic, etc.)
+- [x] Developing/Confirmed status indicators
 
 ## Backlog
 
-### Phase 1 - MVP Core (User Stories 1, 2, 5, 8)
-**Goal**: One-look discovery with source confidence
+### High Priority
+- [ ] Settings panel (notification preferences)
+- [ ] Push notifications for CRITICAL events
+- [ ] Source profile pages (click to see source history)
 
-- [ ] Initialize Next.js project with TypeScript + Tailwind
-- [ ] Set up Heroicons
-- [ ] Create mobile-first layout with tab navigation
-- [ ] Implement dark mode theme (blue-gray palette)
-- [ ] Build homepage "at a glance" dashboard
-- [ ] Implement map view (Iran/Middle East centered)
-- [ ] Build RSS feed aggregator (Reuters, BBC, Al Jazeera)
-- [ ] Implement Bluesky API integration
-- [ ] Create tiered feed display with source badges
-- [ ] Add confidence indicators (visual scoring)
-- [ ] Add verification status badges
-- [ ] Build basic severity color coding
+### Medium Priority
+- [ ] "What Did I Miss?" feature (summary of last N hours)
+- [ ] Story clustering (group related posts)
+- [ ] Trend indicators (rising/falling activity)
 
-### Phase 2 - Enhanced Features (User Stories 3, 4, 6)
-**Goal**: Drill-down, unusual detection, source profiles
+### Low Priority
+- [ ] Share to clipboard/SMS
+- [ ] Additional regions (Africa, South Asia)
+- [ ] Historical data/charts
 
-- [ ] Build source profile pages
-- [ ] Add "Who reported first?" cascade timeline
-- [ ] Implement "unusual" detection (baseline comparison)
-- [ ] Create story detail view with incremental updates
-- [ ] Integrate USGS earthquake overlay
-- [ ] Add Reddit r/CredibleDefense integration
-- [ ] Implement auto-refresh
-- [ ] Build threat score display
-- [ ] Add tier filtering
-
-### Phase 3 - Sharing & Polish (User Story 7)
-**Goal**: Text sharing, additional regions
-
-- [ ] Implement "Share via text" feature
-- [ ] Add additional watchpoints (Ukraine, Taiwan, Venezuela)
-- [ ] Build notification system
-- [ ] Add trend arrows
-- [ ] Build "What Did I Miss?" feature
+## Known Issues
+- Settings/notification buttons are non-functional placeholders
+- Some RSS feeds may timeout on slow connections
 
 ---
-
-## Design Checklist
-- [ ] Mobile-first (375px → up)
-- [ ] Dark mode default
-- [ ] Heroicons only
-- [ ] Tab-based navigation
-- [ ] Card-based layouts
-- [ ] Rounded corners (rounded-lg/xl)
-- [ ] Blue accent color
-- [ ] Yellow/amber for alerts
-- [ ] NOT AI-generated looking
-
----
-
 *Last updated: January 2025*

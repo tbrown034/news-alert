@@ -9,11 +9,11 @@ interface RssItem {
   guid?: string;
 }
 
-// Parse RSS XML to items
+// Parse RSS XML to items (supports both RSS and Atom formats)
 function parseRssXml(xml: string): RssItem[] {
   const items: RssItem[] = [];
 
-  // Simple regex-based parser for RSS
+  // Try RSS format first (uses <item> tags)
   const itemRegex = /<item>([\s\S]*?)<\/item>/g;
   let match;
 
@@ -26,9 +26,12 @@ function parseRssXml(xml: string): RssItem[] {
     const pubDate = extractTag(itemXml, 'pubDate');
     const guid = extractTag(itemXml, 'guid');
 
-    if (title && link) {
+    // Link is required, but title can fall back to description (for social media feeds like Bluesky)
+    if (link && (title || description)) {
+      // Use full content - don't truncate social media posts
+      const itemTitle = title || stripHtml(description || '');
       items.push({
-        title: decodeHtmlEntities(title),
+        title: decodeHtmlEntities(itemTitle),
         description: decodeHtmlEntities(stripHtml(description || '')),
         link,
         pubDate: pubDate || new Date().toISOString(),
@@ -37,7 +40,52 @@ function parseRssXml(xml: string): RssItem[] {
     }
   }
 
+  // If no RSS items found, try Atom format (uses <entry> tags) - used by Bluesky
+  if (items.length === 0) {
+    const entryRegex = /<entry>([\s\S]*?)<\/entry>/g;
+
+    while ((match = entryRegex.exec(xml)) !== null) {
+      const entryXml = match[1];
+
+      const title = extractTag(entryXml, 'title');
+      // Atom uses <content> or <summary> instead of <description>
+      const content = extractTag(entryXml, 'content') || extractTag(entryXml, 'summary') || extractTag(entryXml, 'description');
+      // Atom uses <link href="..."> attribute instead of <link>text</link>
+      const link = extractAtomLink(entryXml);
+      // Atom uses <published> or <updated> instead of <pubDate>
+      const pubDate = extractTag(entryXml, 'published') || extractTag(entryXml, 'updated');
+      const guid = extractTag(entryXml, 'id');
+
+      // Link is required, but title can fall back to content (for social media feeds)
+      if (link && (title || content)) {
+        // Use full content - don't truncate social media posts
+        const itemTitle = title || stripHtml(content || '');
+        items.push({
+          title: decodeHtmlEntities(itemTitle),
+          description: decodeHtmlEntities(stripHtml(content || '')),
+          link,
+          pubDate: pubDate || new Date().toISOString(),
+          guid: guid || link,
+        });
+      }
+    }
+  }
+
   return items;
+}
+
+// Extract link from Atom format (handles <link href="..."/> attribute)
+function extractAtomLink(xml: string): string {
+  // First try to get alternate link (preferred for Atom)
+  const altLinkMatch = xml.match(/<link[^>]*rel=["']alternate["'][^>]*href=["']([^"']+)["']/i);
+  if (altLinkMatch) return altLinkMatch[1];
+
+  // Then try any link with href attribute
+  const linkMatch = xml.match(/<link[^>]*href=["']([^"']+)["']/i);
+  if (linkMatch) return linkMatch[1];
+
+  // Fallback to regular link tag
+  return extractTag(xml, 'link');
 }
 
 // Extract content from XML tag
@@ -61,6 +109,33 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').trim();
 }
 
+// Truncate text to a clean sentence boundary for use as title
+function truncateToSentence(text: string, maxLength: number): string {
+  if (!text) return '';
+  const cleaned = stripHtml(text).trim();
+  if (cleaned.length <= maxLength) return cleaned;
+
+  // Try to find a sentence boundary (. ! ?)
+  const truncated = cleaned.substring(0, maxLength);
+  const lastSentence = Math.max(
+    truncated.lastIndexOf('. '),
+    truncated.lastIndexOf('! '),
+    truncated.lastIndexOf('? ')
+  );
+
+  if (lastSentence > maxLength * 0.5) {
+    return truncated.substring(0, lastSentence + 1);
+  }
+
+  // Fall back to word boundary
+  const lastSpace = truncated.lastIndexOf(' ');
+  if (lastSpace > maxLength * 0.7) {
+    return truncated.substring(0, lastSpace) + '...';
+  }
+
+  return truncated + '...';
+}
+
 // Decode HTML entities
 function decodeHtmlEntities(text: string): string {
   const entities: Record<string, string> = {
@@ -69,11 +144,25 @@ function decodeHtmlEntities(text: string): string {
     '&gt;': '>',
     '&quot;': '"',
     '&#39;': "'",
+    '&#039;': "'",
     '&apos;': "'",
     '&nbsp;': ' ',
+    '&ndash;': '-',
+    '&mdash;': '-',
+    '&lsquo;': "'",
+    '&rsquo;': "'",
+    '&ldquo;': '"',
+    '&rdquo;': '"',
+    '&hellip;': '...',
   };
 
-  return text.replace(/&[^;]+;/g, (entity) => entities[entity] || entity);
+  return text
+    // Handle hex entities like &#xA; (newline) or &#x27; (apostrophe)
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    // Handle decimal entities like &#039;
+    .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(parseInt(num, 10)))
+    // Handle named entities
+    .replace(/&[a-z]+;/gi, (entity) => entities[entity] || entity);
 }
 
 // Fetch and parse RSS feed
@@ -110,7 +199,8 @@ export async function fetchRssFeed(
         region,
         verificationStatus: getVerificationStatus(source.tier, source.confidence),
         url: item.link,
-        isBreaking: isBreakingNews(item.title, item.description),
+        alertStatus: null, // Will be set by processAlertStatuses in API
+        isBreaking: isBreakingNews(item.title, item.description), // Deprecated, kept for compatibility
       };
     });
   } catch (error) {

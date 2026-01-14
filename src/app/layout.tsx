@@ -16,7 +16,9 @@ export const metadata: Metadata = {
   title: "newsAlert",
   description: "Real-time geopolitical situational awareness dashboard",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
   },
 };
 

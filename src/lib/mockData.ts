@@ -1,4 +1,5 @@
 import { Watchpoint, NewsItem, Source } from '@/types';
+import { provenanceTemplates, createProvenance } from './provenance';
 
 export const watchpoints: Watchpoint[] = [
   {
@@ -43,7 +44,7 @@ export const watchpoints: Watchpoint[] = [
   },
 ];
 
-// Mock sources based on our sources.md
+// Mock sources based on our sources.md - Updated with provenance
 const sources: Record<string, Source> = {
   idf: {
     id: 'idf',
@@ -54,6 +55,7 @@ const sources: Record<string, Source> = {
     confidence: 95,
     region: 'middle-east',
     url: 'https://twitter.com/IDF',
+    provenance: provenanceTemplates.official,
   },
   reuters: {
     id: 'reuters',
@@ -63,6 +65,7 @@ const sources: Record<string, Source> = {
     confidence: 92,
     region: 'middle-east',
     url: 'https://reuters.com',
+    provenance: provenanceTemplates.newsOrg,
   },
   osintdefender: {
     id: 'osintdefender',
@@ -73,6 +76,7 @@ const sources: Record<string, Source> = {
     confidence: 78,
     region: 'middle-east',
     url: 'https://twitter.com/sentdefender',
+    provenance: createProvenance('aggregated', 'mixed', 'OSINT aggregation and breaking news'),
   },
   aurora: {
     id: 'aurora',
@@ -83,6 +87,7 @@ const sources: Record<string, Source> = {
     confidence: 82,
     region: 'ukraine-russia',
     url: 'https://twitter.com/AuroraIntel',
+    provenance: provenanceTemplates.osintAnalysis,
   },
   bbc: {
     id: 'bbc',
@@ -91,6 +96,7 @@ const sources: Record<string, Source> = {
     tier: 'reporter',
     confidence: 90,
     region: 'ukraine-russia',
+    provenance: provenanceTemplates.newsOrg,
   },
   warmonitor: {
     id: 'warmonitor',
@@ -99,6 +105,7 @@ const sources: Record<string, Source> = {
     tier: 'osint',
     confidence: 70,
     region: 'ukraine-russia',
+    provenance: createProvenance('aggregated', 'ground', 'Telegram conflict aggregation'),
   },
   localreporter: {
     id: 'localreporter',
@@ -107,6 +114,7 @@ const sources: Record<string, Source> = {
     tier: 'ground',
     confidence: 55,
     region: 'middle-east',
+    provenance: provenanceTemplates.ground,
   },
 };
 

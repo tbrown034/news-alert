@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { WatchpointSelector, NewsFeed } from '@/components';
+import { WatchpointSelector, NewsFeed, Legend, WorldMap } from '@/components';
 import { watchpoints as defaultWatchpoints } from '@/lib/mockData';
 import { NewsItem, WatchpointId, Watchpoint } from '@/types';
 import { BellIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
@@ -75,108 +75,66 @@ export default function Home() {
     fetchNews();
   };
 
-  // Count breaking news
-  const breakingCount = newsItems.filter((item) => item.isBreaking).length;
+  // Count items per region for map display
+  const regionCounts = newsItems.reduce((acc, item) => {
+    const region = item.region;
+    acc[region] = (acc[region] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <div className="min-h-screen bg-[#0f1219]">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#0f1219]/95 backdrop-blur-sm border-b border-gray-800">
-        <div className="max-w-3xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <BoltIcon className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-xl font-bold text-white">newsAlert</h1>
-              {breakingCount > 0 && (
-                <span className="px-2 py-0.5 bg-red-500/20 text-red-400 rounded-full text-xs font-semibold animate-pulse">
-                  {breakingCount} Breaking
-                </span>
-              )}
+      {/* Header - Twitter style */}
+      <header className="sticky top-0 z-50 bg-[#0f1219]/80 backdrop-blur-md border-b border-gray-800/60">
+        <div className="max-w-xl mx-auto px-4 h-[57px] flex items-center justify-between">
+          {/* Logo + Tagline */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <BoltIcon className="w-4 h-4 text-white" />
             </div>
+            <div className="hidden sm:block">
+              <h1 className="text-[15px] font-bold text-white leading-none">newsAlert</h1>
+              <p className="text-[11px] text-gray-500 leading-none mt-0.5">Breaking news before it&apos;s news</p>
+            </div>
+          </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              <button className="p-2 hover:bg-[#232734] rounded-lg transition-colors relative">
-                <BellIcon className="w-5 h-5 text-gray-400" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              </button>
-              <button className="p-2 hover:bg-[#232734] rounded-lg transition-colors">
-                <Cog6ToothIcon className="w-5 h-5 text-gray-400" />
-              </button>
-            </div>
+          {/* Right actions */}
+          <div className="flex items-center gap-1">
+            <button className="p-2.5 hover:bg-white/[0.03] rounded-full transition-colors relative">
+              <BellIcon className="w-5 h-5 text-gray-400" />
+            </button>
+            <button className="p-2.5 hover:bg-white/[0.03] rounded-full transition-colors">
+              <Cog6ToothIcon className="w-5 h-5 text-gray-400" />
+            </button>
           </div>
         </div>
       </header>
 
+      {/* World Map - Hero area for regional activity */}
+      <WorldMap
+        watchpoints={watchpoints}
+        selected={selectedWatchpoint}
+        onSelect={setSelectedWatchpoint}
+        regionCounts={regionCounts}
+      />
+
       {/* Main content */}
-      <main className="max-w-3xl mx-auto px-4 py-4">
-        {/* Watchpoint selector */}
-        <section className="mb-6">
-          <WatchpointSelector
-            watchpoints={watchpoints}
-            selected={selectedWatchpoint}
-            onSelect={setSelectedWatchpoint}
-          />
-        </section>
-
-        {/* Activity summary (when viewing all) */}
-        {selectedWatchpoint === 'all' && (
-          <section className="mb-6">
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-              {watchpoints.map((wp) => (
-                <button
-                  key={wp.id}
-                  onClick={() => setSelectedWatchpoint(wp.id)}
-                  className="bg-[#232734] rounded-xl p-3 hover:bg-[#2a2f3f] transition-colors text-left"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        wp.activityLevel === 'critical'
-                          ? 'bg-red-500 animate-pulse'
-                          : wp.activityLevel === 'high'
-                          ? 'bg-orange-500 animate-pulse'
-                          : wp.activityLevel === 'elevated'
-                          ? 'bg-yellow-500'
-                          : wp.activityLevel === 'normal'
-                          ? 'bg-blue-500'
-                          : 'bg-green-500'
-                      }`}
-                    />
-                    <span className="text-xs text-gray-500 uppercase">
-                      {wp.activityLevel}
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-200">
-                    {wp.shortName}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
+      <main className="max-w-xl mx-auto">
         {/* News feed */}
-        <section>
-          <NewsFeed
-            items={newsItems}
-            selectedWatchpoint={selectedWatchpoint}
-            isLoading={isRefreshing || isInitialLoad}
-            onRefresh={handleRefresh}
-          />
-          {lastFetched && !isRefreshing && (
-            <p className="text-center text-xs text-gray-600 mt-4">
-              Last updated: {new Date(lastFetched).toLocaleTimeString()}
-            </p>
-          )}
-        </section>
+        <NewsFeed
+          items={newsItems}
+          selectedWatchpoint={selectedWatchpoint}
+          onSelectWatchpoint={setSelectedWatchpoint}
+          isLoading={isRefreshing || isInitialLoad}
+          onRefresh={handleRefresh}
+        />
       </main>
 
       {/* Bottom safe area for mobile */}
       <div className="h-20" />
+
+      {/* Legend */}
+      <Legend />
     </div>
   );
 }

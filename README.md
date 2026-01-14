@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# newsAlert
 
-## Getting Started
+Real-time OSINT dashboard for geopolitical situational awareness. Aggregates 60+ sources across Bluesky, RSS feeds, and government accounts to provide at-a-glance monitoring of global hotspots.
 
-First, run the development server:
+![newsAlert Dashboard](docs/screenshot.png)
+
+## Features
+
+- **Real-time feed** from OSINT analysts, journalists, and official sources
+- **Smart severity detection** - Keywords analyzed to flag CRITICAL, HIGH, MODERATE events
+- **Activity anomalies** - Highlights when sources are posting above their baseline
+- **Interactive world map** - Visual overview of regional activity
+- **Region filtering** - Middle East, Ukraine, Taiwan, Venezuela, US
+- **Source credibility** - Tiered badges (OFFICIAL, OSINT, REPORTER, GROUND)
+- **Platform icons** - Bluesky, RSS, Telegram, Twitter/X, Reddit
+
+## Quick Start
 
 ```bash
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Framework**: Next.js 16 + TypeScript
+- **Styling**: Tailwind CSS
+- **Map**: react-simple-maps
+- **Icons**: Heroicons + custom platform SVGs
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+src/
+├── app/              # Next.js app router
+├── components/       # React components
+├── lib/              # Core logic (sources, RSS, detection)
+└── types/            # TypeScript definitions
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Data Sources
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+60+ curated sources including:
+- **Government**: US State Dept, DHS, USGS, WHO, EU EEAS
+- **OSINT**: Bellingcat, ISW, CSIS, OSINTdefender
+- **News**: Reuters, BBC, Al Jazeera, Haaretz
+- **Analysts**: Shipwreck, NOELREPORTS, Euromaidan Press
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See [docs/sources.md](docs/sources.md) for full list.
 
-## Deploy on Vercel
+## Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# Deploy to Vercel
+vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Or build for production
+npm run build
+npm start
+```
+
+## Environment Variables
+
+Create `.env.local`:
+```
+# Optional: Bluesky auth for higher rate limits
+BLUESKY_IDENTIFIER=your-handle.bsky.social
+BLUESKY_PASSWORD=your-app-password
+```
+
+## License
+
+MIT
