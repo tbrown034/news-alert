@@ -217,9 +217,44 @@ Also shared:
 
 ---
 
+### Entry 12: Environment Setup
+**User Asked**: Create .env.example and .env.local for Claude API key.
+
+**Provided**:
+- `.env.example` - Template with all expected env vars (committed)
+- `.env.local` - Actual secrets file (gitignored)
+- Placeholders for Anthropic API, Bluesky credentials, future APIs
+- User added their Anthropic API key
+
+---
+
+### Entry 13: Phase 1 MVP Build
+**User Asked**: "word" (signal to start building)
+
+**Provided**:
+- Initialized Next.js 16 with TypeScript + Tailwind CSS
+- Installed Heroicons and Anthropic SDK
+- Created dark theme with blue-gray palette
+- Built core components:
+  - `WatchpointSelector` - Region filter tabs with activity indicators
+  - `NewsFeed` - Filtered, sorted news list with refresh
+  - `NewsCard` - Individual news items with tier badges, verification status, confidence bars
+- Created type definitions for Watchpoints, Sources, NewsItems
+- Added mock data simulating Iran/Ukraine scenarios
+- Tested mobile (375px) and desktop views
+- All working at http://localhost:3002
+
+**Git Commits**:
+- `ba43cb2` - Add environment variable template
+- `69bbb75` - Phase 1 MVP: Feed-first UI with mock data
+
+---
+
 ## Status
-**Current Phase**: Build Phase 1
-**Next Action**: Initialize Next.js project
+**Current Phase**: Phase 1 MVP Complete
+**Next Action**: Add real data sources (RSS, Bluesky API)
+
+**Running**: `npm run dev` on port 3002
 
 ---
 
