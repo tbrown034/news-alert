@@ -49,11 +49,12 @@ function determineSeverity(title: string, description: string): FireEvent['sever
 }
 
 // Determine severity based on FIRMS brightness/FRP
+// Higher thresholds to only show newsworthy fires
 function firmssSeverity(brightness: number, confidence: string): FireEvent['severity'] {
-  // VIIRS brightness temp thresholds
-  if (brightness >= 400 || confidence === 'high') return 'critical';
-  if (brightness >= 350) return 'severe';
-  if (brightness >= 320) return 'moderate';
+  // VIIRS brightness temp thresholds (increased for significance)
+  if (brightness >= 450 || (brightness >= 400 && confidence === 'high')) return 'critical';
+  if (brightness >= 380 || confidence === 'high') return 'severe';
+  if (brightness >= 350) return 'moderate';
   return 'minor';
 }
 
@@ -303,22 +304,26 @@ export async function GET() {
     }
   }
 
-  // Stats
+  // Filter to only significant fires (critical and severe) for cleaner map
+  const significantFires = uniqueFires.filter(f =>
+    f.severity === 'critical' || f.severity === 'severe'
+  );
+
+  // Stats (showing filtered significant fires)
   const stats = {
-    total: uniqueFires.length,
-    critical: uniqueFires.filter(f => f.severity === 'critical').length,
-    severe: uniqueFires.filter(f => f.severity === 'severe').length,
-    moderate: uniqueFires.filter(f => f.severity === 'moderate').length,
-    minor: uniqueFires.filter(f => f.severity === 'minor').length,
+    total: significantFires.length,
+    totalUnfiltered: uniqueFires.length,
+    critical: significantFires.filter(f => f.severity === 'critical').length,
+    severe: significantFires.filter(f => f.severity === 'severe').length,
     sources: {
-      firms: uniqueFires.filter(f => f.source === 'FIRMS').length,
-      eonet: uniqueFires.filter(f => f.source === 'EONET').length,
-      gdacs: uniqueFires.filter(f => f.source === 'GDACS').length,
+      firms: significantFires.filter(f => f.source === 'FIRMS').length,
+      eonet: significantFires.filter(f => f.source === 'EONET').length,
+      gdacs: significantFires.filter(f => f.source === 'GDACS').length,
     },
   };
 
   return NextResponse.json({
-    fires: uniqueFires,
+    fires: significantFires,
     stats,
     fetchedAt: new Date().toISOString(),
   });

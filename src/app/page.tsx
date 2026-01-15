@@ -26,6 +26,7 @@ export default function Home() {
   const [showBriefing, setShowBriefing] = useState(false);
   const [activityData, setActivityData] = useState<ApiResponse['activity'] | null>(null);
   const [newsError, setNewsError] = useState<string | null>(null);
+  const [newsLoadTimeMs, setNewsLoadTimeMs] = useState<number | null>(null);
 
   // Hero view mode
   const [heroView, setHeroView] = useState<HeroView>('hotspots');
@@ -48,6 +49,7 @@ export default function Home() {
 
     setIsRefreshing(true);
     setNewsError(null);
+    setNewsLoadTimeMs(null);
     console.log(`[NewsFeed] Fetching news for region: ${selectedWatchpoint}`);
     const startTime = Date.now();
 
@@ -66,6 +68,7 @@ export default function Home() {
 
       const data: ApiResponse = await response.json();
       const elapsed = Date.now() - startTime;
+      setNewsLoadTimeMs(elapsed);
       console.log(`[NewsFeed] Loaded ${data.items.length} items in ${elapsed}ms`);
 
       const items = data.items.map((item) => ({
@@ -141,7 +144,7 @@ export default function Home() {
     console.log('[Seismic] Fetching earthquake data...');
 
     try {
-      const response = await fetch('/api/seismic?period=day&minMag=2.5', {
+      const response = await fetch('/api/seismic?period=day&minMag=4.5', {
         signal: controller.signal,
       });
 
@@ -228,18 +231,18 @@ export default function Home() {
               </a>
               <button
                 onClick={() => setShowBriefing(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 shadow-sm btn-press hover:shadow-md"
+                className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
               >
                 <SparklesIcon className="w-4 h-4" />
-                AI Briefing
+                Summary
               </button>
             </nav>
 
-            {/* Mobile AI button */}
+            {/* Mobile Summary button */}
             <button
               onClick={() => setShowBriefing(true)}
-              className="md:hidden p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              title="AI Situation Briefing"
+              className="md:hidden p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              title="View Summary"
             >
               <SparklesIcon className="w-5 h-5" />
             </button>
@@ -360,6 +363,7 @@ export default function Home() {
             lastUpdated={lastFetched}
             error={newsError}
             onRetry={handleRefresh}
+            loadTimeMs={newsLoadTimeMs}
           />
         </div>
       </main>

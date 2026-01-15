@@ -12,6 +12,7 @@ import { WatchpointId } from '@/types';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Revalidate every minute
+export const maxDuration = 60; // Allow up to 60 seconds for fetching 285+ sources
 
 // Valid regions and limits for input validation
 const VALID_REGIONS: WatchpointId[] = ['all', 'middle-east', 'ukraine-russia', 'china-taiwan', 'venezuela', 'us-domestic', 'seismic'];

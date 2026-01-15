@@ -26,6 +26,7 @@ interface NewsFeedProps {
   error?: string | null;
   onRetry?: () => void;
   lastUpdated?: string | null;
+  loadTimeMs?: number | null;
 }
 
 // Skeleton loader for news cards
@@ -145,6 +146,7 @@ export function NewsFeed({
   error,
   onRetry,
   lastUpdated,
+  loadTimeMs,
 }: NewsFeedProps) {
   const filteredItems =
     selectedWatchpoint === 'all'
@@ -230,17 +232,24 @@ export function NewsFeed({
 
           <InlineBriefing region={selectedWatchpoint} />
 
-          {/* Status bar - shows data freshness */}
+          {/* Status bar - shows data freshness and latency */}
           {!isLoading && sortedItems.length > 0 && (
             <div className="px-4 py-2 flex items-center justify-between text-xs border-b border-slate-100 dark:border-[#2f3336] bg-slate-50/50 dark:bg-[#16181c]/50">
               <span className="text-slate-500 dark:text-[#71767b]">
                 {sortedItems.length} updates {selectedWatchpoint !== 'all' && `in ${regionTabs.find(t => t.id === selectedWatchpoint)?.label}`}
               </span>
-              {lastUpdated && (
-                <span className="text-slate-400 dark:text-[#536471]">
-                  Updated {formatLastUpdated(lastUpdated)}
-                </span>
-              )}
+              <div className="flex items-center gap-3">
+                {loadTimeMs != null && (
+                  <span className={loadTimeMs > 10000 ? 'text-amber-500' : 'text-slate-400 dark:text-[#536471]'}>
+                    {loadTimeMs > 1000 ? `${(loadTimeMs / 1000).toFixed(1)}s` : `${loadTimeMs}ms`}
+                  </span>
+                )}
+                {lastUpdated && (
+                  <span className="text-slate-400 dark:text-[#536471]">
+                    {formatLastUpdated(lastUpdated)}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 

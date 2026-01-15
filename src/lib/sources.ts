@@ -1,5 +1,4 @@
 import { Source, WatchpointId } from '@/types';
-import { provenanceTemplates, createProvenance } from './provenance';
 
 // =============================================================================
 // SOURCE HIERARCHY WITH PROVENANCE
@@ -22,7 +21,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bellingcat.com/rss',
     url: 'https://bsky.app/profile/bellingcat.com',
-    provenance: provenanceTemplates.osintAnalysis,
     baselinePostsPerDay: 3,
   },
   {
@@ -35,7 +33,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/eliothiggins.bsky.social/rss',
     url: 'https://bsky.app/profile/eliothiggins.bsky.social',
-    provenance: provenanceTemplates.osintAnalysis,
     baselinePostsPerDay: 5,
   },
   {
@@ -48,7 +45,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thestudyofwar.bsky.social/rss',
     url: 'https://bsky.app/profile/thestudyofwar.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 2,
   },
   {
@@ -61,7 +57,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/osinttechnical.bsky.social/rss',
     url: 'https://bsky.app/profile/osinttechnical.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Equipment identification and military analysis'),
     baselinePostsPerDay: 15,
   },
   {
@@ -74,7 +69,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/auroraintel.bsky.social/rss',
     url: 'https://bsky.app/profile/auroraintel.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Middle East OSINT analysis and threads'),
     baselinePostsPerDay: 8,
   },
   {
@@ -87,7 +81,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/dfrlab.bsky.social/rss',
     url: 'https://bsky.app/profile/dfrlab.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Disinformation tracking and geopolitical analysis'),
     baselinePostsPerDay: 3,
   },
   {
@@ -100,7 +93,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/urikikaski.bsky.social/rss',
     url: 'https://bsky.app/profile/urikikaski.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Ukraine conflict OSINT analysis'),
     baselinePostsPerDay: 5,
   },
   {
@@ -113,7 +105,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/wartranslated.bsky.social/rss',
     url: 'https://bsky.app/profile/wartranslated.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Translates and analyzes Russian sources'),
     baselinePostsPerDay: 10,
   },
   {
@@ -126,7 +117,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/oalexanderdk.bsky.social/rss',
     url: 'https://bsky.app/profile/oalexanderdk.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'High quality OSINT curation and analysis'),
     baselinePostsPerDay: 5,
   },
   {
@@ -139,7 +129,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ralee85.bsky.social/rss',
     url: 'https://bsky.app/profile/ralee85.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 8,
   },
   {
@@ -152,7 +141,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/michaelkofman.bsky.social/rss',
     url: 'https://bsky.app/profile/michaelkofman.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -165,7 +153,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/intelcrab.bsky.social/rss',
     url: 'https://bsky.app/profile/intelcrab.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Conflict and geopolitical analysis'),
     baselinePostsPerDay: 10,
   },
   {
@@ -178,7 +165,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/elintnews.bsky.social/rss',
     url: 'https://bsky.app/profile/elintnews.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Geopolitical and military intelligence analysis'),
     baselinePostsPerDay: 12,
   },
   {
@@ -191,7 +177,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/chriso-wiki.bsky.social/rss',
     url: 'https://bsky.app/profile/chriso-wiki.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Ukraine conflict analysis and historical context'),
     baselinePostsPerDay: 15,
   },
   // --- IRAN / MIDDLE EAST ANALYSTS ---
@@ -205,7 +190,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thomasjuneau.bsky.social/rss',
     url: 'https://bsky.app/profile/thomasjuneau.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 5,
   },
   {
@@ -218,7 +202,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/shipwreck75.bsky.social/rss',
     url: 'https://bsky.app/profile/shipwreck75.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Intel analyst with 30+ years experience'),
     baselinePostsPerDay: 8,
   },
   {
@@ -231,7 +214,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/criticalthreats.bsky.social/rss',
     url: 'https://bsky.app/profile/criticalthreats.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -244,7 +226,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/intelnightowl.bsky.social/rss',
     url: 'https://bsky.app/profile/intelnightowl.bsky.social',
-    provenance: createProvenance('aggregated', 'mixed', 'Middle East news aggregation and analysis'),
     baselinePostsPerDay: 15,
   },
   {
@@ -257,7 +238,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nivcalderon.bsky.social/rss',
     url: 'https://bsky.app/profile/nivcalderon.bsky.social',
-    provenance: createProvenance('aggregated', 'mixed', 'Middle East OSINT, Israel/Lebanon/Syria/Iran/Yemen focus'),
     baselinePostsPerDay: 30,
   },
   {
@@ -270,7 +250,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/iraninternational.bsky.social/rss',
     url: 'https://bsky.app/profile/iraninternational.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 50,
   },
   // --- THINK TANKS ---
@@ -284,7 +263,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/timep.bsky.social/rss',
     url: 'https://bsky.app/profile/timep.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -297,7 +275,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/merip.bsky.social/rss',
     url: 'https://bsky.app/profile/merip.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -310,7 +287,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/csis.org/rss',
     url: 'https://bsky.app/profile/csis.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 5,
   },
   {
@@ -323,7 +299,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/osweng.bsky.social/rss',
     url: 'https://bsky.app/profile/osweng.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   // --- ADDITIONAL UKRAINE/RUSSIA ANALYSTS ---
@@ -337,7 +312,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/anderspucknielsen.dk/rss',
     url: 'https://bsky.app/profile/anderspucknielsen.dk',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -350,7 +324,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ryanmcbeth.bsky.social/rss',
     url: 'https://bsky.app/profile/ryanmcbeth.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Military analysis and OSINT'),
     baselinePostsPerDay: 5,
   },
   {
@@ -363,7 +336,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/blackbirdgroup.bsky.social/rss',
     url: 'https://bsky.app/profile/blackbirdgroup.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Finnish OSINT group, conflict analysis'),
     baselinePostsPerDay: 5,
   },
   {
@@ -376,7 +348,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ukrainemap.bsky.social/rss',
     url: 'https://bsky.app/profile/ukrainemap.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Conflict mapping and territorial changes'),
     baselinePostsPerDay: 8,
   },
   // --- CHINA / TAIWAN / ASIA-PACIFIC ANALYSTS ---
@@ -390,7 +361,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kuorum.bsky.social/rss',
     url: 'https://bsky.app/profile/kuorum.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 5,
   },
   {
@@ -403,7 +373,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/taiwanmonitor.bsky.social/rss',
     url: 'https://bsky.app/profile/taiwanmonitor.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -416,7 +385,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jenniewelch.bsky.social/rss',
     url: 'https://bsky.app/profile/jenniewelch.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Bloomberg Geoeconomics, ex-NSC China/Taiwan Director'),
     baselinePostsPerDay: 5,
   },
   {
@@ -429,7 +397,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/chinamediaproject.bsky.social/rss',
     url: 'https://bsky.app/profile/chinamediaproject.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'CCP media and political discourse research'),
     baselinePostsPerDay: 5,
   },
   {
@@ -442,7 +409,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/fergus.bsky.social/rss',
     url: 'https://bsky.app/profile/fergus.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'China analyst, Red Packet newsletter'),
     baselinePostsPerDay: 5,
   },
   {
@@ -455,7 +421,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nbr.org/rss',
     url: 'https://bsky.app/profile/nbr.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -468,7 +433,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/asiapolicy.asiasociety.org/rss',
     url: 'https://bsky.app/profile/asiapolicy.asiasociety.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -481,7 +445,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/indopacificinsight.bsky.social/rss',
     url: 'https://bsky.app/profile/indopacificinsight.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Australian tech, geopolitics, Indo-Pacific analysis'),
     baselinePostsPerDay: 5,
   },
   {
@@ -494,7 +457,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/chinafile.bsky.social/rss',
     url: 'https://bsky.app/profile/chinafile.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Asia Society China reporting and analysis'),
     baselinePostsPerDay: 5,
   },
   {
@@ -507,7 +469,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ncuscr.bsky.social/rss',
     url: 'https://bsky.app/profile/ncuscr.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   // --- VENEZUELA / LATIN AMERICA ANALYSTS ---
@@ -521,7 +482,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'venezuela' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/graceliv.bsky.social/rss',
     url: 'https://bsky.app/profile/graceliv.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -534,7 +494,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'venezuela' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/andreinetto.bsky.social/rss',
     url: 'https://bsky.app/profile/andreinetto.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Guardian LATAM/Caribbean editor'),
     baselinePostsPerDay: 5,
   },
   {
@@ -547,23 +506,10 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'venezuela' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/miweintraub83.bsky.social/rss',
     url: 'https://bsky.app/profile/miweintraub83.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   // --- FOREIGN POLICY ANALYSTS ---
-  {
-    id: 'ben-rhodes',
-    name: 'Ben Rhodes',
-    handle: '@brhrodes.bsky.social',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 92,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/brhrodes.bsky.social/rss',
-    url: 'https://bsky.app/profile/brhrodes.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Former Deputy NSA, Pod Save the World host'),
-    baselinePostsPerDay: 5,
-  },
+  // REMOVED: brhrodes.bsky.social - not on Bluesky
   {
     id: 'ian-bremmer',
     name: 'Ian Bremmer',
@@ -574,7 +520,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ianbremmer.com/rss',
     url: 'https://bsky.app/profile/ianbremmer.com',
-    provenance: createProvenance('analysis', undefined, 'Eurasia Group founder, geopolitical risk analyst'),
     baselinePostsPerDay: 8,
   },
   {
@@ -587,7 +532,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/vanjackson.bsky.social/rss',
     url: 'https://bsky.app/profile/vanjackson.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Defense policy, Korea, Asia-Pacific strategy'),
     baselinePostsPerDay: 5,
   },
   {
@@ -600,7 +544,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/warinthefuture.bsky.social/rss',
     url: 'https://bsky.app/profile/warinthefuture.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Retired Australian Major General, military strategist'),
     baselinePostsPerDay: 8,
   },
   // --- ARMS CONTROL / NUCLEAR ANALYSTS ---
@@ -614,7 +557,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/armscontrolwonk.bsky.social/rss',
     url: 'https://bsky.app/profile/armscontrolwonk.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Nuclear policy expert, Middlebury Institute professor'),
     baselinePostsPerDay: 8,
   },
   {
@@ -627,7 +569,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/akmentt.bsky.social/rss',
     url: 'https://bsky.app/profile/akmentt.bsky.social',
-    provenance: createProvenance('direct', undefined, 'Austrian MFA Director for Disarmament & Arms Control'),
     baselinePostsPerDay: 3,
   },
   // --- MILITARY / DEFENSE ANALYSTS ---
@@ -641,7 +582,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/michaelkofman.bsky.social/rss',
     url: 'https://bsky.app/profile/michaelkofman.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Carnegie Russia military expert, leading Russia analyst'),
     baselinePostsPerDay: 5,
   },
   {
@@ -654,7 +594,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/markhertling.bsky.social/rss',
     url: 'https://bsky.app/profile/markhertling.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Retired LTG, former USAREUR commander, CNN analyst'),
     baselinePostsPerDay: 8,
   },
   {
@@ -667,7 +606,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/general-ben.bsky.social/rss',
     url: 'https://bsky.app/profile/general-ben.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Former USAREUR commander, CEPA senior advisor'),
     baselinePostsPerDay: 10,
   },
   {
@@ -680,7 +618,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/radiofreetom.bsky.social/rss',
     url: 'https://bsky.app/profile/radiofreetom.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Russia expert, The Atlantic staff writer'),
     baselinePostsPerDay: 15,
   },
   {
@@ -693,7 +630,6 @@ export const osintAnalysts: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/genmhayden.bsky.social/rss',
     url: 'https://bsky.app/profile/genmhayden.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Former CIA & NSA Director'),
     baselinePostsPerDay: 3,
   },
 ];
@@ -712,7 +648,6 @@ export const osintAggregators: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/noelreports.com/rss',
     url: 'https://bsky.app/profile/noelreports.com',
-    provenance: createProvenance('aggregated', 'mixed', 'Fast aggregation of conflict updates'),
     baselinePostsPerDay: 30,
   },
   {
@@ -725,7 +660,6 @@ export const osintAggregators: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/warmonitor.net/rss',
     url: 'https://bsky.app/profile/warmonitor.net',
-    provenance: createProvenance('aggregated', 'ground', 'Aggregates ground-level conflict reports'),
     baselinePostsPerDay: 20,
   },
   {
@@ -738,7 +672,6 @@ export const osintAggregators: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/euromaidanpress.bsky.social/rss',
     url: 'https://bsky.app/profile/euromaidanpress.bsky.social',
-    provenance: createProvenance('aggregated', 'mixed', 'Ukraine news aggregation in English'),
     baselinePostsPerDay: 15,
   },
   {
@@ -751,7 +684,6 @@ export const osintAggregators: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/meanwhileua.bsky.social/rss',
     url: 'https://bsky.app/profile/meanwhileua.bsky.social',
-    provenance: createProvenance('aggregated', 'mixed', 'Ukraine news and updates aggregation'),
     baselinePostsPerDay: 12,
   },
   {
@@ -764,7 +696,6 @@ export const osintAggregators: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/projectowlosint.bsky.social/rss',
     url: 'https://bsky.app/profile/projectowlosint.bsky.social',
-    provenance: createProvenance('aggregated', 'analysis', 'OSINT community hub, foreign policy focus'),
     baselinePostsPerDay: 8,
   },
   {
@@ -777,7 +708,6 @@ export const osintAggregators: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/geoinsider.bsky.social/rss',
     url: 'https://bsky.app/profile/geoinsider.bsky.social',
-    provenance: createProvenance('aggregated', 'mixed', 'Geopolitical and military news aggregation'),
     baselinePostsPerDay: 15,
   },
   {
@@ -790,7 +720,6 @@ export const osintAggregators: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/lookner.bsky.social/rss',
     url: 'https://bsky.app/profile/lookner.bsky.social',
-    provenance: createProvenance('aggregated', 'ground', 'Live breaking news aggregation'),
     baselinePostsPerDay: 40,
   },
   {
@@ -803,7 +732,6 @@ export const osintAggregators: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/sentdefender.bsky.social/rss',
     url: 'https://bsky.app/profile/sentdefender.bsky.social',
-    provenance: createProvenance('aggregated', 'mixed', 'Fast breaking news aggregation, conflict focus'),
     baselinePostsPerDay: 50,
   },
 ];
@@ -822,7 +750,6 @@ export const dataTrackers: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/vcdgf555.bsky.social/rss',
     url: 'https://bsky.app/profile/vcdgf555.bsky.social',
-    provenance: provenanceTemplates.dataTracker,
     baselinePostsPerDay: 10,
   },
   {
@@ -835,7 +762,6 @@ export const dataTrackers: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/netblocks.org/rss',
     url: 'https://bsky.app/profile/netblocks.org',
-    provenance: provenanceTemplates.dataTracker,
     baselinePostsPerDay: 5,
   },
   {
@@ -848,7 +774,6 @@ export const dataTrackers: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/geoconfirmed.org/rss',
     url: 'https://bsky.app/profile/geoconfirmed.org',
-    provenance: createProvenance('analysis', undefined, 'Geolocation verification of conflict footage'),
     baselinePostsPerDay: 10,
   },
   {
@@ -861,7 +786,6 @@ export const dataTrackers: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/archer83able.bsky.social/rss',
     url: 'https://bsky.app/profile/archer83able.bsky.social',
-    provenance: provenanceTemplates.dataTracker,
     baselinePostsPerDay: 8,
   },
   // --- LIVE ALERT TRACKERS ---
@@ -875,7 +799,6 @@ export const dataTrackers: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/alerts.in.ua/rss',
     url: 'https://bsky.app/profile/alerts.in.ua',
-    provenance: createProvenance('direct', undefined, 'Real-time Ukraine air raid alert visualization'),
     baselinePostsPerDay: 50,
   },
   {
@@ -888,7 +811,6 @@ export const dataTrackers: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/live.alerts.in.ua/rss',
     url: 'https://bsky.app/profile/live.alerts.in.ua',
-    provenance: createProvenance('direct', undefined, 'Live air raid alert bot for Ukraine'),
     baselinePostsPerDay: 100,
   },
   {
@@ -901,7 +823,6 @@ export const dataTrackers: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/liveuamap.com/rss',
     url: 'https://bsky.app/profile/liveuamap.com',
-    provenance: createProvenance('aggregated', 'mixed', 'Live conflict map and news aggregation'),
     baselinePostsPerDay: 30,
   },
   {
@@ -914,7 +835,6 @@ export const dataTrackers: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/alert5.com/rss',
     url: 'https://bsky.app/profile/alert5.com',
-    provenance: createProvenance('aggregated', 'mixed', 'Military aviation and defense news'),
     baselinePostsPerDay: 20,
   },
   {
@@ -927,7 +847,6 @@ export const dataTrackers: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/airlive.net/rss',
     url: 'https://bsky.app/profile/airlive.net',
-    provenance: createProvenance('aggregated', 'mixed', 'Aviation news and incidents'),
     baselinePostsPerDay: 25,
   },
 ];
@@ -946,7 +865,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/christopherjm.ft.com/rss',
     url: 'https://bsky.app/profile/christopherjm.ft.com',
-    provenance: createProvenance('reported', undefined, 'FT Ukraine correspondent with government sources'),
     baselinePostsPerDay: 5,
   },
   {
@@ -959,7 +877,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bbcstever.bsky.social/rss',
     url: 'https://bsky.app/profile/bbcstever.bsky.social',
-    provenance: createProvenance('reported', undefined, 'BBC Russia correspondent'),
     baselinePostsPerDay: 3,
   },
   {
@@ -972,7 +889,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/igorbobic.bsky.social/rss',
     url: 'https://bsky.app/profile/igorbobic.bsky.social',
-    provenance: createProvenance('reported', undefined, 'HuffPost congressional reporter'),
     baselinePostsPerDay: 8,
   },
   // --- ISRAELI JOURNALISTS ---
@@ -986,7 +902,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/barakravid.bsky.social/rss',
     url: 'https://bsky.app/profile/barakravid.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Axios diplomatic correspondent, Israeli government sources'),
     baselinePostsPerDay: 8,
   },
   {
@@ -999,7 +914,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/manniefabian.bsky.social/rss',
     url: 'https://bsky.app/profile/manniefabian.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Times of Israel military correspondent, IDF sources'),
     baselinePostsPerDay: 15,
   },
   {
@@ -1012,7 +926,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/avischarf.bsky.social/rss',
     url: 'https://bsky.app/profile/avischarf.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Haaretz cartographic editor, satellite imagery'),
     baselinePostsPerDay: 5,
   },
   // --- UKRAINE JOURNALISTS ---
@@ -1026,7 +939,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/euanmacdonald.bsky.social/rss',
     url: 'https://bsky.app/profile/euanmacdonald.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Kyiv-based journalist, ground reporting'),
     baselinePostsPerDay: 20,
   },
   {
@@ -1039,7 +951,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ozkaterji.bsky.social/rss',
     url: 'https://bsky.app/profile/ozkaterji.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Ukraine correspondent, conflict journalist'),
     baselinePostsPerDay: 10,
   },
   {
@@ -1052,7 +963,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/asamiterajima.bsky.social/rss',
     url: 'https://bsky.app/profile/asamiterajima.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Reporter at Kyiv Independent'),
     baselinePostsPerDay: 8,
   },
   // --- US NATIONAL SECURITY REPORTERS ---
@@ -1066,7 +976,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/sangernyt.bsky.social/rss',
     url: 'https://bsky.app/profile/sangernyt.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT White House & National Security correspondent'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1079,7 +988,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/charliesavage.bsky.social/rss',
     url: 'https://bsky.app/profile/charliesavage.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT national security and legal reporter'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1092,7 +1000,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/peterbakernyt.bsky.social/rss',
     url: 'https://bsky.app/profile/peterbakernyt.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT Chief White House correspondent'),
     baselinePostsPerDay: 8,
   },
   {
@@ -1105,7 +1012,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/carolrosenbergnyt.bsky.social/rss',
     url: 'https://bsky.app/profile/carolrosenbergnyt.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT Guantanamo reporter, ex-Middle East correspondent'),
     baselinePostsPerDay: 3,
   },
   {
@@ -1118,7 +1024,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/wgdunlop.bsky.social/rss',
     url: 'https://bsky.app/profile/wgdunlop.bsky.social',
-    provenance: createProvenance('reported', undefined, 'AFP Pentagon correspondent, ex-Middle East'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1131,7 +1036,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cmaza.bsky.social/rss',
     url: 'https://bsky.app/profile/cmaza.bsky.social',
-    provenance: createProvenance('reported', undefined, 'National Journal foreign policy & defense'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1144,7 +1048,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/columlynch.bsky.social/rss',
     url: 'https://bsky.app/profile/columlynch.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Devex reporter, ex-Foreign Policy & WaPo'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1157,7 +1060,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/marktoth.bsky.social/rss',
     url: 'https://bsky.app/profile/marktoth.bsky.social',
-    provenance: createProvenance('reported', undefined, 'National security journalist, The Hill/Kyiv Post'),
     baselinePostsPerDay: 8,
   },
   {
@@ -1170,7 +1072,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/annabower.bsky.social/rss',
     url: 'https://bsky.app/profile/annabower.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Lawfare Senior Editor'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1183,7 +1084,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bcfinucane.bsky.social/rss',
     url: 'https://bsky.app/profile/bcfinucane.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'ICG/Just Security, war powers & use of force expert'),
     baselinePostsPerDay: 3,
   },
   // --- UKRAINE GOVERNMENT / OFFICIALS ---
@@ -1197,7 +1097,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/antongerashchenko.bsky.social/rss',
     url: 'https://bsky.app/profile/antongerashchenko.bsky.social',
-    provenance: createProvenance('direct', undefined, 'Former Ukraine Ministry of Internal Affairs advisor'),
     baselinePostsPerDay: 20,
   },
   {
@@ -1210,7 +1109,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/igorsushko.bsky.social/rss',
     url: 'https://bsky.app/profile/igorsushko.bsky.social',
-    provenance: createProvenance('aggregated', 'mixed', 'Ukraine OSINT and news aggregation'),
     baselinePostsPerDay: 15,
   },
   // --- ASIA / CHINA CORRESPONDENTS ---
@@ -1224,7 +1122,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jnbpage.bsky.social/rss',
     url: 'https://bsky.app/profile/jnbpage.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Economist Chief China Correspondent, ex-WSJ Beijing'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1237,7 +1134,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/arjunneilalim.ft.com/rss',
     url: 'https://bsky.app/profile/arjunneilalim.ft.com',
-    provenance: createProvenance('reported', undefined, 'FT Asia Markets Correspondent'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1250,7 +1146,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/richardmilne.ft.com/rss',
     url: 'https://bsky.app/profile/richardmilne.ft.com',
-    provenance: createProvenance('reported', undefined, 'FT Nordic and Baltic Correspondent'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1263,7 +1158,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mshannahmurphy.bsky.social/rss',
     url: 'https://bsky.app/profile/mshannahmurphy.bsky.social',
-    provenance: createProvenance('reported', undefined, 'FT tech correspondent - social media, AI, cyber, misinfo'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1276,7 +1170,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/militarynewsua.bsky.social/rss',
     url: 'https://bsky.app/profile/militarynewsua.bsky.social',
-    provenance: createProvenance('aggregated', 'mixed', 'Military analytics and global conflict zones'),
     baselinePostsPerDay: 20,
   },
   // --- NEW YORK TIMES REPORTERS ---
@@ -1290,7 +1183,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jamellebouie.net/rss',
     url: 'https://bsky.app/profile/jamellebouie.net',
-    provenance: createProvenance('reported', undefined, 'NYT Opinion columnist'),
     baselinePostsPerDay: 10,
   },
   {
@@ -1303,7 +1195,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kateconger.com/rss',
     url: 'https://bsky.app/profile/kateconger.com',
-    provenance: createProvenance('reported', undefined, 'NYT tech reporter'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1316,7 +1207,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/trbrtc.bsky.social/rss',
     url: 'https://bsky.app/profile/trbrtc.bsky.social',
-    provenance: provenanceTemplates.osintAnalysis,
     baselinePostsPerDay: 5,
   },
   {
@@ -1329,7 +1219,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/julianbarnes.bsky.social/rss',
     url: 'https://bsky.app/profile/julianbarnes.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT national security reporter'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1342,7 +1231,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jodikantor.bsky.social/rss',
     url: 'https://bsky.app/profile/jodikantor.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT investigative reporter, Pulitzer winner'),
     baselinePostsPerDay: 3,
   },
   {
@@ -1355,7 +1243,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ericlipton.nytimes.com/rss',
     url: 'https://bsky.app/profile/ericlipton.nytimes.com',
-    provenance: createProvenance('reported', undefined, 'NYT investigative reporter, Pulitzer winner'),
     baselinePostsPerDay: 5,
   },
   // --- WASHINGTON POST REPORTERS ---
@@ -1369,7 +1256,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ktumulty.bsky.social/rss',
     url: 'https://bsky.app/profile/ktumulty.bsky.social',
-    provenance: createProvenance('reported', undefined, 'WaPo columnist, political analysis'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1382,7 +1268,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/leloveluck.bsky.social/rss',
     url: 'https://bsky.app/profile/leloveluck.bsky.social',
-    provenance: createProvenance('reported', undefined, 'WaPo Middle East correspondent'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1395,7 +1280,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/davidnakamura.bsky.social/rss',
     url: 'https://bsky.app/profile/davidnakamura.bsky.social',
-    provenance: createProvenance('reported', undefined, 'WaPo White House reporter'),
     baselinePostsPerDay: 8,
   },
   // --- BBC REPORTERS ---
@@ -1409,7 +1293,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/zsk.bsky.social/rss',
     url: 'https://bsky.app/profile/zsk.bsky.social',
-    provenance: createProvenance('reported', undefined, 'BBC technology editor'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1422,7 +1305,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bbcdaniels.bsky.social/rss',
     url: 'https://bsky.app/profile/bbcdaniels.bsky.social',
-    provenance: createProvenance('reported', undefined, 'BBC security correspondent'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1435,7 +1317,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bbcdomc.bsky.social/rss',
     url: 'https://bsky.app/profile/bbcdomc.bsky.social',
-    provenance: createProvenance('reported', undefined, 'BBC home affairs correspondent'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1448,7 +1329,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/joetidy.bsky.social/rss',
     url: 'https://bsky.app/profile/joetidy.bsky.social',
-    provenance: createProvenance('reported', undefined, 'BBC cyber correspondent'),
     baselinePostsPerDay: 5,
   },
   // --- GUARDIAN REPORTERS ---
@@ -1462,7 +1342,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/carolecadwalla.bsky.social/rss',
     url: 'https://bsky.app/profile/carolecadwalla.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Observer/Guardian investigative journalist'),
     baselinePostsPerDay: 8,
   },
   {
@@ -1475,7 +1354,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jenniferrankin.bsky.social/rss',
     url: 'https://bsky.app/profile/jenniferrankin.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Guardian EU correspondent'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1488,7 +1366,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'venezuela' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/tomphillips.bsky.social/rss',
     url: 'https://bsky.app/profile/tomphillips.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Guardian Latin America correspondent'),
     baselinePostsPerDay: 5,
   },
   // --- PROPUBLICA REPORTERS ---
@@ -1502,7 +1379,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/keribla.bsky.social/rss',
     url: 'https://bsky.app/profile/keribla.bsky.social',
-    provenance: createProvenance('reported', undefined, 'ProPublica/Marshall Project criminal justice'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1515,7 +1391,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/andykroll.bsky.social/rss',
     url: 'https://bsky.app/profile/andykroll.bsky.social',
-    provenance: createProvenance('reported', undefined, 'ProPublica investigative reporter'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1528,7 +1403,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/heathervogell.bsky.social/rss',
     url: 'https://bsky.app/profile/heathervogell.bsky.social',
-    provenance: createProvenance('reported', undefined, 'ProPublica investigative reporter'),
     baselinePostsPerDay: 3,
   },
   // --- UKRAINE / RUSSIA SPECIALISTS ---
@@ -1542,7 +1416,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/timothysnyder.bsky.social/rss',
     url: 'https://bsky.app/profile/timothysnyder.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Yale historian, Eastern Europe expert'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1555,7 +1428,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/juliadavisnews.bsky.social/rss',
     url: 'https://bsky.app/profile/juliadavisnews.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Russian media monitor, Daily Beast columnist'),
     baselinePostsPerDay: 15,
   },
   {
@@ -1568,7 +1440,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ioponomarenko.bsky.social/rss',
     url: 'https://bsky.app/profile/ioponomarenko.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Kyiv Independent defense reporter'),
     baselinePostsPerDay: 10,
   },
   {
@@ -1581,7 +1452,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/realjakebroe.bsky.social/rss',
     url: 'https://bsky.app/profile/realjakebroe.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Ukraine war analysis and commentary'),
     baselinePostsPerDay: 8,
   },
   // --- AFRICA CORRESPONDENTS ---
@@ -1595,7 +1465,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/larrymadowo.bsky.social/rss',
     url: 'https://bsky.app/profile/larrymadowo.bsky.social',
-    provenance: createProvenance('reported', undefined, 'CNN Africa correspondent'),
     baselinePostsPerDay: 8,
   },
   {
@@ -1608,7 +1477,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ruthmaclean.bsky.social/rss',
     url: 'https://bsky.app/profile/ruthmaclean.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT West Africa bureau chief'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1621,7 +1489,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/declanwalsh.bsky.social/rss',
     url: 'https://bsky.app/profile/declanwalsh.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT Cairo bureau chief'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1634,7 +1501,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/michelawrong.bsky.social/rss',
     url: 'https://bsky.app/profile/michelawrong.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Africa author and journalist'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1647,7 +1513,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/simonallison.bsky.social/rss',
     url: 'https://bsky.app/profile/simonallison.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Mail & Guardian Africa editor'),
     baselinePostsPerDay: 5,
   },
   // --- CYBERSECURITY REPORTERS ---
@@ -1661,7 +1526,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/zackwhittaker.com/rss',
     url: 'https://bsky.app/profile/zackwhittaker.com',
-    provenance: createProvenance('reported', undefined, 'TechCrunch security editor'),
     baselinePostsPerDay: 8,
   },
   {
@@ -1674,7 +1538,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/grahamcluley.com/rss',
     url: 'https://bsky.app/profile/grahamcluley.com',
-    provenance: createProvenance('analysis', undefined, 'Cybersecurity analyst and podcaster'),
     baselinePostsPerDay: 10,
   },
   {
@@ -1687,7 +1550,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kashhill.bsky.social/rss',
     url: 'https://bsky.app/profile/kashhill.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT tech/privacy reporter'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1700,7 +1562,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/joemenn.bsky.social/rss',
     url: 'https://bsky.app/profile/joemenn.bsky.social',
-    provenance: createProvenance('reported', undefined, 'WaPo cybersecurity reporter'),
     baselinePostsPerDay: 5,
   },
   // --- CLIMATE / ENVIRONMENT REPORTERS ---
@@ -1714,7 +1575,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jeffgoodell.bsky.social/rss',
     url: 'https://bsky.app/profile/jeffgoodell.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Climate journalist and author'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1727,7 +1587,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/revkin.bsky.social/rss',
     url: 'https://bsky.app/profile/revkin.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Climate journalist, Columbia University'),
     baselinePostsPerDay: 8,
   },
   {
@@ -1740,7 +1599,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bradplumer.bsky.social/rss',
     url: 'https://bsky.app/profile/bradplumer.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT climate reporter'),
     baselinePostsPerDay: 5,
   },
   {
@@ -1753,7 +1611,6 @@ export const reporters: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/matthewcappucci.bsky.social/rss',
     url: 'https://bsky.app/profile/matthewcappucci.bsky.social',
-    provenance: createProvenance('reported', undefined, 'WaPo meteorologist, extreme weather'),
     baselinePostsPerDay: 10,
   },
 ];
@@ -1772,7 +1629,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/apnews.com/rss',
     url: 'https://bsky.app/profile/apnews.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 50,
   },
   {
@@ -1785,7 +1641,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/aljazeera.com/rss',
     url: 'https://bsky.app/profile/aljazeera.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 60,
   },
   // --- MIDDLE EAST NEWS ORGS ---
@@ -1799,7 +1654,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thenewarab.bsky.social/rss',
     url: 'https://bsky.app/profile/thenewarab.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 40,
   },
   // --- ISRAELI NEWS ORGS ---
@@ -1813,7 +1667,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/haaretzcom.bsky.social/rss',
     url: 'https://bsky.app/profile/haaretzcom.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   {
@@ -1826,7 +1679,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/timesofisrael.com/rss',
     url: 'https://bsky.app/profile/timesofisrael.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 40,
   },
   {
@@ -1839,7 +1691,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/972mag.com/rss',
     url: 'https://bsky.app/profile/972mag.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 5,
   },
   // --- UKRAINE NEWS ORGS ---
@@ -1853,7 +1704,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/pravda.ua/rss',
     url: 'https://bsky.app/profile/pravda.ua',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 50,
   },
   {
@@ -1866,7 +1716,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kyivindependent.com/rss',
     url: 'https://bsky.app/profile/kyivindependent.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   {
@@ -1879,7 +1728,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kyivpost.com/rss',
     url: 'https://bsky.app/profile/kyivpost.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 25,
   },
   {
@@ -1892,7 +1740,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/english.nv.ua/rss',
     url: 'https://bsky.app/profile/english.nv.ua',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   // --- US / POLICY NEWS ORGS ---
@@ -1906,7 +1753,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/foreignpolicy.com/rss',
     url: 'https://bsky.app/profile/foreignpolicy.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 20,
   },
   {
@@ -1919,7 +1765,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/politico.com/rss',
     url: 'https://bsky.app/profile/politico.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 50,
   },
   {
@@ -1932,7 +1777,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/lawfaremedia.org/rss',
     url: 'https://bsky.app/profile/lawfaremedia.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 5,
   },
   {
@@ -1945,7 +1789,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/justsecurity.org/rss',
     url: 'https://bsky.app/profile/justsecurity.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -1958,7 +1801,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/warontherocks.bsky.social/rss',
     url: 'https://bsky.app/profile/warontherocks.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -1971,7 +1813,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/breakingdefense.com/rss',
     url: 'https://bsky.app/profile/breakingdefense.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 15,
   },
   {
@@ -1984,7 +1825,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/defensenews.bsky.social/rss',
     url: 'https://bsky.app/profile/defensenews.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 20,
   },
   {
@@ -1997,7 +1837,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/militarytimes.bsky.social/rss',
     url: 'https://bsky.app/profile/militarytimes.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 20,
   },
   {
@@ -2010,7 +1849,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/starsandstripes.bsky.social/rss',
     url: 'https://bsky.app/profile/starsandstripes.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 25,
   },
   {
@@ -2023,7 +1861,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cfr.org/rss',
     url: 'https://bsky.app/profile/cfr.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 5,
   },
   // --- ASIA-PACIFIC NEWS ORGS ---
@@ -2037,7 +1874,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/scmp.com/rss',
     url: 'https://bsky.app/profile/scmp.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 50,
   },
   // --- OTHER OSINT ORGS ---
@@ -2051,7 +1887,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cen4infores.bsky.social/rss',
     url: 'https://bsky.app/profile/cen4infores.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'War crimes documentation and disinformation tracking'),
     baselinePostsPerDay: 5,
   },
   {
@@ -2064,7 +1899,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cit.ngo/rss',
     url: 'https://bsky.app/profile/cit.ngo',
-    provenance: provenanceTemplates.osintAnalysis,
     baselinePostsPerDay: 5,
   },
   {
@@ -2077,35 +1911,10 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/middleeastmonitor.bsky.social/rss',
     url: 'https://bsky.app/profile/middleeastmonitor.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
-  {
-    id: 'syria-notes',
-    name: 'Syria Notes',
-    handle: '@syrianotes.bsky.social',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 85,
-    region: 'middle-east' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/syrianotes.bsky.social/rss',
-    url: 'https://bsky.app/profile/syrianotes.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'UK Syria policy research, human rights and accountability'),
-    baselinePostsPerDay: 5,
-  },
-  {
-    id: 'middle-east-eye',
-    name: 'Middle East Eye',
-    handle: '@middleeasteye.net',
-    platform: 'bluesky',
-    tier: 'reporter',
-    confidence: 82,
-    region: 'middle-east' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/middleeasteye.net/rss',
-    url: 'https://bsky.app/profile/middleeasteye.net',
-    provenance: provenanceTemplates.newsOrg,
-    baselinePostsPerDay: 40,
-  },
+  // REMOVED: syrianotes.bsky.social - not on Bluesky
+  // REMOVED: middleeasteye.net - not on Bluesky
   {
     id: 'wilson-center',
     name: 'Wilson Center',
@@ -2116,7 +1925,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/wilsoncenter.org/rss',
     url: 'https://bsky.app/profile/wilsoncenter.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 5,
   },
   {
@@ -2129,7 +1937,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/csis.org/rss',
     url: 'https://bsky.app/profile/csis.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 8,
   },
   {
@@ -2142,20 +1949,18 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/georgetown-sfs.bsky.social/rss',
     url: 'https://bsky.app/profile/georgetown-sfs.bsky.social',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 5,
   },
   {
     id: 'atlantic-council',
     name: 'Atlantic Council',
-    handle: '@atlanticcouncil.org',
+    handle: '@atlanticcouncil.bsky.social',
     platform: 'bluesky',
     tier: 'osint',
     confidence: 90,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/atlanticcouncil.org/rss',
-    url: 'https://bsky.app/profile/atlanticcouncil.org',
-    provenance: provenanceTemplates.research,
+    feedUrl: 'https://bsky.app/profile/atlanticcouncil.bsky.social/rss',
+    url: 'https://bsky.app/profile/atlanticcouncil.bsky.social',
     baselinePostsPerDay: 10,
   },
   {
@@ -2168,7 +1973,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/tnsr.org/rss',
     url: 'https://bsky.app/profile/tnsr.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   {
@@ -2181,7 +1985,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/en.afp.com/rss',
     url: 'https://bsky.app/profile/en.afp.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 50,
   },
   {
@@ -2194,7 +1997,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nbcnews.com/rss',
     url: 'https://bsky.app/profile/nbcnews.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 60,
   },
   {
@@ -2207,7 +2009,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cnn.com/rss',
     url: 'https://bsky.app/profile/cnn.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 80,
   },
   // --- WIRE SERVICES ---
@@ -2221,7 +2022,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/reuters.com/rss',
     url: 'https://bsky.app/profile/reuters.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 80,
   },
   {
@@ -2234,7 +2034,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/economist.com/rss',
     url: 'https://bsky.app/profile/economist.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   // --- ADDITIONAL NEWS ORGS ---
@@ -2248,7 +2047,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/dropsitenews.com/rss',
     url: 'https://bsky.app/profile/dropsitenews.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 10,
   },
   {
@@ -2261,7 +2059,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/theukrainianweek.bsky.social/rss',
     url: 'https://bsky.app/profile/theukrainianweek.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 10,
   },
   {
@@ -2274,7 +2071,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kyivinsider.bsky.social/rss',
     url: 'https://bsky.app/profile/kyivinsider.bsky.social',
-    provenance: createProvenance('aggregated', 'mixed', 'Daily updates from Ukraine, politics, economics, war'),
     baselinePostsPerDay: 15,
   },
   // --- ASIA-PACIFIC NEWS ORGS (ADDITIONAL) ---
@@ -2288,7 +2084,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/japantimes.bsky.social/rss',
     url: 'https://bsky.app/profile/japantimes.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 20,
   },
   {
@@ -2301,7 +2096,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/asia.nikkei.com/rss',
     url: 'https://bsky.app/profile/asia.nikkei.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   {
@@ -2314,7 +2108,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/channelnewsasia.bsky.social/rss',
     url: 'https://bsky.app/profile/channelnewsasia.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 40,
   },
   {
@@ -2327,7 +2120,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/taiwannews.bsky.social/rss',
     url: 'https://bsky.app/profile/taiwannews.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 25,
   },
   {
@@ -2340,7 +2132,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thediplomat.com/rss',
     url: 'https://bsky.app/profile/thediplomat.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 10,
   },
   // --- TECH / CYBER NEWS ORGS ---
@@ -2354,22 +2145,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/theregister.com/rss',
     url: 'https://bsky.app/profile/theregister.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
-  {
-    id: 'bleeping-computer',
-    name: 'Bleeping Computer',
-    handle: '@bleepingcomputer.bsky.social',
-    platform: 'bluesky',
-    tier: 'reporter',
-    confidence: 85,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/bleepingcomputer.bsky.social/rss',
-    url: 'https://bsky.app/profile/bleepingcomputer.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
-    baselinePostsPerDay: 20,
-  },
+  // REMOVED: bleepingcomputer.bsky.social - not on Bluesky
   {
     id: 'ars-technica',
     name: 'Ars Technica',
@@ -2380,7 +2158,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/arstechnica.com/rss',
     url: 'https://bsky.app/profile/arstechnica.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 25,
   },
   {
@@ -2393,35 +2170,21 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/wired.com/rss',
     url: 'https://bsky.app/profile/wired.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   {
     id: 'cyberscoop',
     name: 'CyberScoop',
-    handle: '@cyberscoop.com',
+    handle: '@cyberscoop.bsky.social',
     platform: 'bluesky',
     tier: 'reporter',
     confidence: 88,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/cyberscoop.com/rss',
-    url: 'https://bsky.app/profile/cyberscoop.com',
-    provenance: provenanceTemplates.newsOrg,
+    feedUrl: 'https://bsky.app/profile/cyberscoop.bsky.social/rss',
+    url: 'https://bsky.app/profile/cyberscoop.bsky.social',
     baselinePostsPerDay: 15,
   },
-  {
-    id: 'recorded-future',
-    name: 'Recorded Future',
-    handle: '@recordedfuture.bsky.social',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 90,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/recordedfuture.bsky.social/rss',
-    url: 'https://bsky.app/profile/recordedfuture.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Threat intelligence firm'),
-    baselinePostsPerDay: 5,
-  },
+  // REMOVED: recordedfuture.bsky.social - not on Bluesky
   // --- CLIMATE / ENVIRONMENT ORGS ---
   {
     id: 'inside-climate',
@@ -2433,7 +2196,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/insideclimatenews.org/rss',
     url: 'https://bsky.app/profile/insideclimatenews.org',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 10,
   },
   {
@@ -2446,22 +2208,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/climatedesk.org/rss',
     url: 'https://bsky.app/profile/climatedesk.org',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 5,
   },
-  {
-    id: 'carbon-brief',
-    name: 'Carbon Brief',
-    handle: '@carbonbrief.bsky.social',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 90,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/carbonbrief.bsky.social/rss',
-    url: 'https://bsky.app/profile/carbonbrief.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'UK-based climate science and policy'),
-    baselinePostsPerDay: 5,
-  },
+  // REMOVED: carbonbrief.bsky.social - not on Bluesky
   // --- EUROPEAN NEWS ORGS ---
   {
     id: 'euronews',
@@ -2473,7 +2222,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/euronews.bsky.social/rss',
     url: 'https://bsky.app/profile/euronews.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 50,
   },
   {
@@ -2486,7 +2234,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/dwnews.bsky.social/rss',
     url: 'https://bsky.app/profile/dwnews.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 40,
   },
   {
@@ -2499,7 +2246,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/france24.bsky.social/rss',
     url: 'https://bsky.app/profile/france24.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 40,
   },
   {
@@ -2512,36 +2258,11 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/politico.eu/rss',
     url: 'https://bsky.app/profile/politico.eu',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   // --- LATIN AMERICA NEWS ORGS ---
-  {
-    id: 'americas-quarterly',
-    name: 'Americas Quarterly',
-    handle: '@americasquarterly.bsky.social',
-    platform: 'bluesky',
-    tier: 'reporter',
-    confidence: 85,
-    region: 'venezuela' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/americasquarterly.bsky.social/rss',
-    url: 'https://bsky.app/profile/americasquarterly.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
-    baselinePostsPerDay: 5,
-  },
-  {
-    id: 'el-pais-english',
-    name: 'El País English',
-    handle: '@elpais.english.bsky.social',
-    platform: 'bluesky',
-    tier: 'reporter',
-    confidence: 85,
-    region: 'venezuela' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/elpais.english.bsky.social/rss',
-    url: 'https://bsky.app/profile/elpais.english.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
-    baselinePostsPerDay: 20,
-  },
+  // REMOVED: americasquarterly.bsky.social - not on Bluesky
+  // REMOVED: elpais.english.bsky.social - not on Bluesky
   // --- AFRICA NEWS ORGS ---
   {
     id: 'africa-news',
@@ -2553,7 +2274,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/africanews.bsky.social/rss',
     url: 'https://bsky.app/profile/africanews.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   {
@@ -2566,7 +2286,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/theafricareport.bsky.social/rss',
     url: 'https://bsky.app/profile/theafricareport.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 15,
   },
   // --- ADDITIONAL THINK TANKS ---
@@ -2580,20 +2299,18 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/brookings.edu/rss',
     url: 'https://bsky.app/profile/brookings.edu',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 8,
   },
   {
     id: 'carnegie',
     name: 'Carnegie Endowment',
-    handle: '@carnegieendowment.bsky.social',
+    handle: '@carnegieendowment.org',
     platform: 'bluesky',
     tier: 'osint',
     confidence: 92,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/carnegieendowment.bsky.social/rss',
-    url: 'https://bsky.app/profile/carnegieendowment.bsky.social',
-    provenance: provenanceTemplates.research,
+    feedUrl: 'https://bsky.app/profile/carnegieendowment.org/rss',
+    url: 'https://bsky.app/profile/carnegieendowment.org',
     baselinePostsPerDay: 5,
   },
   {
@@ -2606,22 +2323,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/rand.org/rss',
     url: 'https://bsky.app/profile/rand.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 5,
   },
-  {
-    id: 'iiss',
-    name: 'IISS',
-    handle: '@iiss.org',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 92,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/iiss.org/rss',
-    url: 'https://bsky.app/profile/iiss.org',
-    provenance: provenanceTemplates.research,
-    baselinePostsPerDay: 5,
-  },
+  // REMOVED: iiss.org - not on Bluesky
   {
     id: 'chatham-house',
     name: 'Chatham House',
@@ -2632,20 +2336,18 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/chathamhouse.org/rss',
     url: 'https://bsky.app/profile/chathamhouse.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 5,
   },
   {
     id: 'rusi',
     name: 'RUSI',
-    handle: '@rusi.org',
+    handle: '@rusi.bsky.social',
     platform: 'bluesky',
     tier: 'osint',
     confidence: 90,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/rusi.org/rss',
-    url: 'https://bsky.app/profile/rusi.org',
-    provenance: provenanceTemplates.research,
+    feedUrl: 'https://bsky.app/profile/rusi.bsky.social/rss',
+    url: 'https://bsky.app/profile/rusi.bsky.social',
     baselinePostsPerDay: 5,
   },
   {
@@ -2658,22 +2360,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/crisisgroup.org/rss',
     url: 'https://bsky.app/profile/crisisgroup.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
-  {
-    id: 'cer',
-    name: 'Centre for European Reform',
-    handle: '@cer.eu',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 88,
-    region: 'ukraine-russia' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/cer.eu/rss',
-    url: 'https://bsky.app/profile/cer.eu',
-    provenance: provenanceTemplates.research,
-    baselinePostsPerDay: 3,
-  },
+  // REMOVED: cer.eu - not on Bluesky
   // --- HUMANITARIAN / AID ORGS ---
   {
     id: 'unhcr',
@@ -2685,7 +2374,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/unhcr.org/rss',
     url: 'https://bsky.app/profile/unhcr.org',
-    provenance: createProvenance('direct', undefined, 'UN Refugee Agency'),
     baselinePostsPerDay: 10,
   },
   {
@@ -2698,22 +2386,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/icrc.org/rss',
     url: 'https://bsky.app/profile/icrc.org',
-    provenance: createProvenance('direct', undefined, 'International Committee of the Red Cross'),
     baselinePostsPerDay: 5,
   },
-  {
-    id: 'msf',
-    name: 'Doctors Without Borders',
-    handle: '@msf.org',
-    platform: 'bluesky',
-    tier: 'official',
-    confidence: 95,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/msf.org/rss',
-    url: 'https://bsky.app/profile/msf.org',
-    provenance: createProvenance('direct', undefined, 'Médecins Sans Frontières'),
-    baselinePostsPerDay: 5,
-  },
+  // REMOVED: msf.org - not on Bluesky
   {
     id: 'hrw',
     name: 'Human Rights Watch',
@@ -2724,7 +2399,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/hrw.org/rss',
     url: 'https://bsky.app/profile/hrw.org',
-    provenance: createProvenance('analysis', undefined, 'Human rights documentation'),
     baselinePostsPerDay: 8,
   },
   {
@@ -2737,7 +2411,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/amnesty.bsky.social/rss',
     url: 'https://bsky.app/profile/amnesty.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Human rights monitoring'),
     baselinePostsPerDay: 5,
   },
   // --- ADDITIONAL REPORTERS ---
@@ -2751,7 +2424,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/davidsanger.bsky.social/rss',
     url: 'https://bsky.app/profile/davidsanger.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT national security correspondent'),
     baselinePostsPerDay: 3,
   },
   {
@@ -2764,7 +2436,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/maxboot.bsky.social/rss',
     url: 'https://bsky.app/profile/maxboot.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'CFR senior fellow, WaPo columnist'),
     baselinePostsPerDay: 5,
   },
   {
@@ -2777,7 +2448,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/anneapplebaum.bsky.social/rss',
     url: 'https://bsky.app/profile/anneapplebaum.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'The Atlantic staff writer, Eastern Europe expert'),
     baselinePostsPerDay: 5,
   },
   {
@@ -2790,7 +2460,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mashagessen.bsky.social/rss',
     url: 'https://bsky.app/profile/mashagessen.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'New Yorker staff writer, Russia expert'),
     baselinePostsPerDay: 3,
   },
   {
@@ -2803,7 +2472,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/juliaioffe.bsky.social/rss',
     url: 'https://bsky.app/profile/juliaioffe.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Puck News, Russia and foreign policy'),
     baselinePostsPerDay: 5,
   },
   {
@@ -2816,7 +2484,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/michaeldweiss.bsky.social/rss',
     url: 'https://bsky.app/profile/michaeldweiss.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Russia/Syria analyst, Free Press editor'),
     baselinePostsPerDay: 10,
   },
   {
@@ -2829,7 +2496,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/tomnichols.bsky.social/rss',
     url: 'https://bsky.app/profile/tomnichols.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'The Atlantic staff writer, naval war college professor'),
     baselinePostsPerDay: 10,
   },
   {
@@ -2842,7 +2508,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ruthbenghiat.bsky.social/rss',
     url: 'https://bsky.app/profile/ruthbenghiat.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'NYU professor, authoritarianism expert'),
     baselinePostsPerDay: 8,
   },
   {
@@ -2855,36 +2520,11 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/juliettekayyem.bsky.social/rss',
     url: 'https://bsky.app/profile/juliettekayyem.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'CNN analyst, former DHS assistant secretary'),
     baselinePostsPerDay: 8,
   },
-  {
-    id: 'sam-vinograd',
-    name: 'Samantha Vinograd',
-    handle: '@samvinograd.bsky.social',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 88,
-    region: 'us-domestic' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/samvinograd.bsky.social/rss',
-    url: 'https://bsky.app/profile/samvinograd.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Former DHS official, national security analyst'),
-    baselinePostsPerDay: 5,
-  },
+  // REMOVED: samvinograd.bsky.social - not on Bluesky
   // --- MORE OSINT ANALYSTS ---
-  {
-    id: 'osintdefender',
-    name: 'OSINT Defender',
-    handle: '@osintdefender.bsky.social',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 80,
-    region: 'ukraine-russia' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/osintdefender.bsky.social/rss',
-    url: 'https://bsky.app/profile/osintdefender.bsky.social',
-    provenance: provenanceTemplates.osintAnalysis,
-    baselinePostsPerDay: 20,
-  },
+  // REMOVED: osintdefender.bsky.social - not on Bluesky
   {
     id: 'wartranslated',
     name: 'War Translated',
@@ -2895,22 +2535,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/wartranslated.bsky.social/rss',
     url: 'https://bsky.app/profile/wartranslated.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Russian/Ukrainian media translations'),
     baselinePostsPerDay: 10,
   },
-  {
-    id: 'def-mon',
-    name: 'Defense Monitor',
-    handle: '@defmon.bsky.social',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 82,
-    region: 'ukraine-russia' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/defmon.bsky.social/rss',
-    url: 'https://bsky.app/profile/defmon.bsky.social',
-    provenance: provenanceTemplates.osintAnalysis,
-    baselinePostsPerDay: 15,
-  },
+  // REMOVED: defmon.bsky.social - not on Bluesky
   {
     id: 'intel-crab',
     name: 'Intel Crab',
@@ -2921,22 +2548,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/intelcrab.bsky.social/rss',
     url: 'https://bsky.app/profile/intelcrab.bsky.social',
-    provenance: provenanceTemplates.osintAnalysis,
     baselinePostsPerDay: 15,
   },
-  {
-    id: 'eyes-on-russia',
-    name: 'Eyes on Russia',
-    handle: '@eyesonrussia.bsky.social',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 80,
-    region: 'ukraine-russia' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/eyesonrussia.bsky.social/rss',
-    url: 'https://bsky.app/profile/eyesonrussia.bsky.social',
-    provenance: provenanceTemplates.osintAnalysis,
-    baselinePostsPerDay: 10,
-  },
+  // REMOVED: eyesonrussia.bsky.social - not on Bluesky
   // --- ADDITIONAL NEWS ORGS ---
   {
     id: 'intercept',
@@ -2948,22 +2562,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/theintercept.com/rss',
     url: 'https://bsky.app/profile/theintercept.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 10,
   },
-  {
-    id: 'daily-beast',
-    name: 'The Daily Beast',
-    handle: '@thedailybeast.com',
-    platform: 'bluesky',
-    tier: 'reporter',
-    confidence: 82,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/thedailybeast.com/rss',
-    url: 'https://bsky.app/profile/thedailybeast.com',
-    provenance: provenanceTemplates.newsOrg,
-    baselinePostsPerDay: 30,
-  },
+  // REMOVED: thedailybeast.com - not on Bluesky
   {
     id: 'mother-jones',
     name: 'Mother Jones',
@@ -2974,7 +2575,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/motherjones.com/rss',
     url: 'https://bsky.app/profile/motherjones.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 20,
   },
   {
@@ -2987,7 +2587,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/axios.com/rss',
     url: 'https://bsky.app/profile/axios.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 40,
   },
   {
@@ -3000,7 +2599,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/npr.org/rss',
     url: 'https://bsky.app/profile/npr.org',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 50,
   },
   {
@@ -3013,7 +2611,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/newshour.bsky.social/rss',
     url: 'https://bsky.app/profile/newshour.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 20,
   },
   {
@@ -3026,20 +2623,18 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/abcnews.bsky.social/rss',
     url: 'https://bsky.app/profile/abcnews.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 50,
   },
   {
     id: 'cbs-news',
     name: 'CBS News',
-    handle: '@cbsnews.bsky.social',
+    handle: '@cbsnews.com',
     platform: 'bluesky',
     tier: 'reporter',
     confidence: 88,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/cbsnews.bsky.social/rss',
-    url: 'https://bsky.app/profile/cbsnews.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
+    feedUrl: 'https://bsky.app/profile/cbsnews.com/rss',
+    url: 'https://bsky.app/profile/cbsnews.com',
     baselinePostsPerDay: 50,
   },
   // --- SCIENCE / HEALTH REPORTERS ---
@@ -3053,20 +2648,18 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/edyong.bsky.social/rss',
     url: 'https://bsky.app/profile/edyong.bsky.social',
-    provenance: createProvenance('reported', undefined, 'The Atlantic science journalist'),
     baselinePostsPerDay: 5,
   },
   {
     id: 'carl-zimmer',
     name: 'Carl Zimmer',
-    handle: '@carlzimmer.bsky.social',
+    handle: '@carlzimmer.com',
     platform: 'bluesky',
     tier: 'reporter',
     confidence: 90,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/carlzimmer.bsky.social/rss',
-    url: 'https://bsky.app/profile/carlzimmer.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NYT science columnist'),
+    feedUrl: 'https://bsky.app/profile/carlzimmer.com/rss',
+    url: 'https://bsky.app/profile/carlzimmer.com',
     baselinePostsPerDay: 5,
   },
   {
@@ -3079,7 +2672,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/helenbranswell.bsky.social/rss',
     url: 'https://bsky.app/profile/helenbranswell.bsky.social',
-    provenance: createProvenance('reported', undefined, 'STAT News infectious disease reporter'),
     baselinePostsPerDay: 8,
   },
   {
@@ -3092,7 +2684,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/statnews.com/rss',
     url: 'https://bsky.app/profile/statnews.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 20,
   },
   {
@@ -3105,7 +2696,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nature.com/rss',
     url: 'https://bsky.app/profile/nature.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 15,
   },
   {
@@ -3118,21 +2708,19 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/sciencemagazine.bsky.social/rss',
     url: 'https://bsky.app/profile/sciencemagazine.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 10,
   },
   // --- ECONOMICS / FINANCE REPORTERS ---
   {
     id: 'financial-times',
     name: 'Financial Times',
-    handle: '@ft.com',
+    handle: '@financialtimes.com',
     platform: 'bluesky',
     tier: 'reporter',
     confidence: 92,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/ft.com/rss',
-    url: 'https://bsky.app/profile/ft.com',
-    provenance: provenanceTemplates.newsOrg,
+    feedUrl: 'https://bsky.app/profile/financialtimes.com/rss',
+    url: 'https://bsky.app/profile/financialtimes.com',
     baselinePostsPerDay: 50,
   },
   {
@@ -3145,7 +2733,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bloomberg.com/rss',
     url: 'https://bsky.app/profile/bloomberg.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 80,
   },
   {
@@ -3158,20 +2745,18 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/wsj.com/rss',
     url: 'https://bsky.app/profile/wsj.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 60,
   },
   {
     id: 'paul-krugman',
     name: 'Paul Krugman',
-    handle: '@paulkrugman.bsky.social',
+    handle: '@pkrugman.bsky.social',
     platform: 'bluesky',
     tier: 'osint',
     confidence: 88,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/paulkrugman.bsky.social/rss',
-    url: 'https://bsky.app/profile/paulkrugman.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Nobel economist, NYT columnist'),
+    feedUrl: 'https://bsky.app/profile/pkrugman.bsky.social/rss',
+    url: 'https://bsky.app/profile/pkrugman.bsky.social',
     baselinePostsPerDay: 5,
   },
   // --- MORE ASIA SPECIALISTS ---
@@ -3185,7 +2770,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/billbishop.bsky.social/rss',
     url: 'https://bsky.app/profile/billbishop.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Sinocism newsletter, China expert'),
     baselinePostsPerDay: 5,
   },
   {
@@ -3198,22 +2782,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jamespalmer.bsky.social/rss',
     url: 'https://bsky.app/profile/jamespalmer.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Foreign Policy deputy editor, China'),
     baselinePostsPerDay: 8,
   },
-  {
-    id: 'isaac-stone-fish',
-    name: 'Isaac Stone Fish',
-    handle: '@isaacstonefish.bsky.social',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 85,
-    region: 'china-taiwan' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/isaacstonefish.bsky.social/rss',
-    url: 'https://bsky.app/profile/isaacstonefish.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Strategy Risks CEO, China analyst'),
-    baselinePostsPerDay: 5,
-  },
+  // REMOVED: isaacstonefish.bsky.social - not on Bluesky
   {
     id: 'asia-society',
     name: 'Asia Society',
@@ -3224,7 +2795,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/asiasociety.org/rss',
     url: 'https://bsky.app/profile/asiasociety.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 5,
   },
   {
@@ -3237,7 +2807,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/koreaherald.bsky.social/rss',
     url: 'https://bsky.app/profile/koreaherald.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   // --- MORE MIDDLE EAST SPECIALISTS ---
@@ -3251,7 +2820,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/barakravid.bsky.social/rss',
     url: 'https://bsky.app/profile/barakravid.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Axios Israel correspondent'),
     baselinePostsPerDay: 10,
   },
   {
@@ -3264,7 +2832,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nerizilber.bsky.social/rss',
     url: 'https://bsky.app/profile/nerizilber.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Daily Beast, Tel Aviv-based journalist'),
     baselinePostsPerDay: 5,
   },
   {
@@ -3277,7 +2844,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/joycekaram.bsky.social/rss',
     url: 'https://bsky.app/profile/joycekaram.bsky.social',
-    provenance: createProvenance('reported', undefined, 'The National correspondent'),
     baselinePostsPerDay: 10,
   },
   {
@@ -3290,7 +2856,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/rafsanchez.bsky.social/rss',
     url: 'https://bsky.app/profile/rafsanchez.bsky.social',
-    provenance: createProvenance('reported', undefined, 'NBC News Middle East correspondent'),
     baselinePostsPerDay: 8,
   },
   {
@@ -3303,7 +2868,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/lizsly.bsky.social/rss',
     url: 'https://bsky.app/profile/lizsly.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Washington Post Beirut bureau chief'),
     baselinePostsPerDay: 5,
   },
   // --- MORE TECH / AI JOURNALISTS ---
@@ -3317,7 +2881,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/karaswisher.bsky.social/rss',
     url: 'https://bsky.app/profile/karaswisher.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Tech journalist, Pivot podcast'),
     baselinePostsPerDay: 15,
   },
   {
@@ -3330,22 +2893,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/caseynewton.bsky.social/rss',
     url: 'https://bsky.app/profile/caseynewton.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Platformer newsletter, tech platforms'),
     baselinePostsPerDay: 10,
   },
-  {
-    id: 'will-oremus',
-    name: 'Will Oremus',
-    handle: '@willoremus.bsky.social',
-    platform: 'bluesky',
-    tier: 'reporter',
-    confidence: 85,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/willoremus.bsky.social/rss',
-    url: 'https://bsky.app/profile/willoremus.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Washington Post tech policy reporter'),
-    baselinePostsPerDay: 5,
-  },
+  // REMOVED: willoremus.bsky.social - not on Bluesky
   {
     id: 'emily-chang',
     name: 'Emily Chang',
@@ -3356,7 +2906,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/emilychang.bsky.social/rss',
     url: 'https://bsky.app/profile/emilychang.bsky.social',
-    provenance: createProvenance('reported', undefined, 'Bloomberg Technology anchor'),
     baselinePostsPerDay: 5,
   },
   {
@@ -3369,7 +2918,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/techmeme.com/rss',
     url: 'https://bsky.app/profile/techmeme.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   {
@@ -3382,7 +2930,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/technologyreview.com/rss',
     url: 'https://bsky.app/profile/technologyreview.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 15,
   },
   // --- NUCLEAR / ARMS CONTROL ---
@@ -3396,22 +2943,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/armscontrolwonk.bsky.social/rss',
     url: 'https://bsky.app/profile/armscontrolwonk.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Nuclear policy analysis'),
     baselinePostsPerDay: 3,
   },
-  {
-    id: 'fas',
-    name: 'Federation of American Scientists',
-    handle: '@fas.org',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 92,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/fas.org/rss',
-    url: 'https://bsky.app/profile/fas.org',
-    provenance: provenanceTemplates.research,
-    baselinePostsPerDay: 3,
-  },
+  // REMOVED: fas.org - not on Bluesky
   {
     id: 'nti',
     name: 'Nuclear Threat Initiative',
@@ -3422,7 +2956,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nti.org/rss',
     url: 'https://bsky.app/profile/nti.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 3,
   },
   // --- INVESTIGATIVE JOURNALISM ---
@@ -3436,7 +2969,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/icij.org/rss',
     url: 'https://bsky.app/profile/icij.org',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 3,
   },
   {
@@ -3449,7 +2981,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/occrp.org/rss',
     url: 'https://bsky.app/profile/occrp.org',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 5,
   },
   {
@@ -3462,7 +2993,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/revealnews.org/rss',
     url: 'https://bsky.app/profile/revealnews.org',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 5,
   },
   {
@@ -3475,21 +3005,19 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/themarshallproject.org/rss',
     url: 'https://bsky.app/profile/themarshallproject.org',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 5,
   },
   // --- UK NEWS ---
   {
     id: 'guardian',
     name: 'The Guardian',
-    handle: '@guardian.com',
+    handle: '@theguardian.com',
     platform: 'bluesky',
     tier: 'reporter',
     confidence: 90,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/guardian.com/rss',
-    url: 'https://bsky.app/profile/guardian.com',
-    provenance: provenanceTemplates.newsOrg,
+    feedUrl: 'https://bsky.app/profile/theguardian.com/rss',
+    url: 'https://bsky.app/profile/theguardian.com',
     baselinePostsPerDay: 80,
   },
   {
@@ -3502,22 +3030,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/telegraph.co.uk/rss',
     url: 'https://bsky.app/profile/telegraph.co.uk',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 60,
   },
-  {
-    id: 'times-uk',
-    name: 'The Times',
-    handle: '@thetimes.co.uk',
-    platform: 'bluesky',
-    tier: 'reporter',
-    confidence: 88,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/thetimes.co.uk/rss',
-    url: 'https://bsky.app/profile/thetimes.co.uk',
-    provenance: provenanceTemplates.newsOrg,
-    baselinePostsPerDay: 50,
-  },
+  // REMOVED: thetimes.co.uk - not on Bluesky
   {
     id: 'sky-news',
     name: 'Sky News',
@@ -3528,34 +3043,31 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/skynews.bsky.social/rss',
     url: 'https://bsky.app/profile/skynews.bsky.social',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 60,
   },
   // --- ADDITIONAL ACADEMIC EXPERTS ---
   {
     id: 'ian-bremmer',
     name: 'Ian Bremmer',
-    handle: '@ianbremmer.bsky.social',
+    handle: '@ianbremmer.com',
     platform: 'bluesky',
     tier: 'osint',
     confidence: 90,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/ianbremmer.bsky.social/rss',
-    url: 'https://bsky.app/profile/ianbremmer.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Eurasia Group president, political scientist'),
+    feedUrl: 'https://bsky.app/profile/ianbremmer.com/rss',
+    url: 'https://bsky.app/profile/ianbremmer.com',
     baselinePostsPerDay: 10,
   },
   {
     id: 'eurasia-group',
     name: 'Eurasia Group',
-    handle: '@eurasiagroup.bsky.social',
+    handle: '@eurasiagroup.net',
     platform: 'bluesky',
     tier: 'osint',
     confidence: 90,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/eurasiagroup.bsky.social/rss',
-    url: 'https://bsky.app/profile/eurasiagroup.bsky.social',
-    provenance: provenanceTemplates.research,
+    feedUrl: 'https://bsky.app/profile/eurasiagroup.net/rss',
+    url: 'https://bsky.app/profile/eurasiagroup.net',
     baselinePostsPerDay: 5,
   },
   {
@@ -3568,7 +3080,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/fionahill.bsky.social/rss',
     url: 'https://bsky.app/profile/fionahill.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Former NSC Russia expert, Brookings fellow'),
     baselinePostsPerDay: 3,
   },
   {
@@ -3581,7 +3092,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mcfaul.bsky.social/rss',
     url: 'https://bsky.app/profile/mcfaul.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Former US Ambassador to Russia, Stanford'),
     baselinePostsPerDay: 10,
   },
   {
@@ -3594,36 +3104,11 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/tomwright.bsky.social/rss',
     url: 'https://bsky.app/profile/tomwright.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Brookings senior fellow, foreign policy'),
     baselinePostsPerDay: 5,
   },
   // --- DISASTER / EMERGENCY ---
-  {
-    id: 'fema',
-    name: 'FEMA',
-    handle: '@fema.gov',
-    platform: 'bluesky',
-    tier: 'official',
-    confidence: 95,
-    region: 'us-domestic' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/fema.gov/rss',
-    url: 'https://bsky.app/profile/fema.gov',
-    provenance: createProvenance('direct', undefined, 'Federal Emergency Management Agency'),
-    baselinePostsPerDay: 5,
-  },
-  {
-    id: 'nws',
-    name: 'National Weather Service',
-    handle: '@nws.gov',
-    platform: 'bluesky',
-    tier: 'official',
-    confidence: 98,
-    region: 'us-domestic' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/nws.gov/rss',
-    url: 'https://bsky.app/profile/nws.gov',
-    provenance: createProvenance('direct', undefined, 'Official US weather alerts'),
-    baselinePostsPerDay: 20,
-  },
+  // REMOVED: fema.gov - not on Bluesky
+  // REMOVED: nws.gov - not on Bluesky
   {
     id: 'noaa',
     name: 'NOAA',
@@ -3634,22 +3119,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/noaa.gov/rss',
     url: 'https://bsky.app/profile/noaa.gov',
-    provenance: createProvenance('direct', undefined, 'National Oceanic and Atmospheric Administration'),
     baselinePostsPerDay: 10,
   },
-  {
-    id: 'nasa',
-    name: 'NASA',
-    handle: '@nasa.gov',
-    platform: 'bluesky',
-    tier: 'official',
-    confidence: 98,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/nasa.gov/rss',
-    url: 'https://bsky.app/profile/nasa.gov',
-    provenance: createProvenance('direct', undefined, 'National Aeronautics and Space Administration'),
-    baselinePostsPerDay: 10,
-  },
+  // REMOVED: nasa.gov - not on Bluesky
   // --- ELECTION / DEMOCRACY ---
   {
     id: 'brennan-center',
@@ -3661,7 +3133,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/brennancenter.org/rss',
     url: 'https://bsky.app/profile/brennancenter.org',
-    provenance: provenanceTemplates.research,
     baselinePostsPerDay: 5,
   },
   {
@@ -3674,23 +3145,10 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/aclu.org/rss',
     url: 'https://bsky.app/profile/aclu.org',
-    provenance: createProvenance('analysis', undefined, 'American Civil Liberties Union'),
     baselinePostsPerDay: 8,
   },
   // --- MORE OSINT / VERIFICATION ---
-  {
-    id: 'first-draft',
-    name: 'First Draft',
-    handle: '@firstdraftnews.bsky.social',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 88,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/firstdraftnews.bsky.social/rss',
-    url: 'https://bsky.app/profile/firstdraftnews.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Misinformation research'),
-    baselinePostsPerDay: 3,
-  },
+  // REMOVED: firstdraftnews.bsky.social - not on Bluesky
   {
     id: 'dfrlab',
     name: 'DFRLab',
@@ -3701,7 +3159,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/dfrlab.bsky.social/rss',
     url: 'https://bsky.app/profile/dfrlab.bsky.social',
-    provenance: createProvenance('analysis', undefined, 'Atlantic Council Digital Forensic Research Lab'),
     baselinePostsPerDay: 5,
   },
   {
@@ -3714,22 +3171,9 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/snopes.com/rss',
     url: 'https://bsky.app/profile/snopes.com',
-    provenance: createProvenance('analysis', undefined, 'Fact-checking organization'),
     baselinePostsPerDay: 10,
   },
-  {
-    id: 'politifact',
-    name: 'PolitiFact',
-    handle: '@politifact.com',
-    platform: 'bluesky',
-    tier: 'osint',
-    confidence: 88,
-    region: 'us-domestic' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/politifact.com/rss',
-    url: 'https://bsky.app/profile/politifact.com',
-    provenance: createProvenance('analysis', undefined, 'Political fact-checking'),
-    baselinePostsPerDay: 8,
-  },
+  // REMOVED: PolitiFact - not on Bluesky
   // --- ADDITIONAL INTERNATIONAL ---
   {
     id: 'new-york-times',
@@ -3741,7 +3185,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nytimes.com/rss',
     url: 'https://bsky.app/profile/nytimes.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 100,
   },
   {
@@ -3754,7 +3197,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/washingtonpost.com/rss',
     url: 'https://bsky.app/profile/washingtonpost.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 80,
   },
   {
@@ -3767,7 +3209,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/theatlantic.com/rss',
     url: 'https://bsky.app/profile/theatlantic.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   {
@@ -3780,7 +3221,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/newyorker.com/rss',
     url: 'https://bsky.app/profile/newyorker.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 20,
   },
   {
@@ -3793,7 +3233,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/time.com/rss',
     url: 'https://bsky.app/profile/time.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   {
@@ -3806,7 +3245,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/vox.com/rss',
     url: 'https://bsky.app/profile/vox.com',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   {
@@ -3819,20 +3257,18 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/propublica.org/rss',
     url: 'https://bsky.app/profile/propublica.org',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 10,
   },
   {
     id: 'bbc-news',
     name: 'BBC News',
-    handle: '@bbc.com',
+    handle: '@bbcnews.bsky.social',
     platform: 'bluesky',
     tier: 'reporter',
     confidence: 95,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://bsky.app/profile/bbc.com/rss',
-    url: 'https://bsky.app/profile/bbc.com',
-    provenance: provenanceTemplates.newsOrg,
+    feedUrl: 'https://bsky.app/profile/bbcnews.bsky.social/rss',
+    url: 'https://bsky.app/profile/bbcnews.bsky.social',
     baselinePostsPerDay: 80,
   },
   // --- OFFICIAL GOVERNMENT ACCOUNTS ---
@@ -3846,7 +3282,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/usarmy.bsky.social/rss',
     url: 'https://bsky.app/profile/usarmy.bsky.social',
-    provenance: createProvenance('direct', undefined, 'Official United States Army account'),
     baselinePostsPerDay: 5,
   },
   {
@@ -3859,7 +3294,6 @@ export const newsOrgs: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ministerbz.bsky.social/rss',
     url: 'https://bsky.app/profile/ministerbz.bsky.social',
-    provenance: createProvenance('direct', undefined, 'Netherlands Minister of Foreign Affairs'),
     baselinePostsPerDay: 3,
   },
 ];
@@ -3877,7 +3311,6 @@ export const rssSources: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://feeds.bbci.co.uk/news/world/rss.xml',
     url: 'https://www.bbc.com/news/world',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 100,
   },
   {
@@ -3889,7 +3322,6 @@ export const rssSources: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.aljazeera.com/xml/rss/all.xml',
     url: 'https://www.aljazeera.com/',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 80,
   },
   {
@@ -3901,7 +3333,6 @@ export const rssSources: (Source & { feedUrl: string })[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://feeds.bbci.co.uk/news/world/middle_east/rss.xml',
     url: 'https://www.bbc.com/news/world/middle_east',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 30,
   },
   {
@@ -3913,7 +3344,6 @@ export const rssSources: (Source & { feedUrl: string })[] = [
     region: 'ukraine-russia' as WatchpointId,
     feedUrl: 'https://feeds.bbci.co.uk/news/world/europe/rss.xml',
     url: 'https://www.bbc.com/news/world/europe',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 25,
   },
   {
@@ -3925,7 +3355,6 @@ export const rssSources: (Source & { feedUrl: string })[] = [
     region: 'china-taiwan' as WatchpointId,
     feedUrl: 'https://feeds.bbci.co.uk/news/world/asia/rss.xml',
     url: 'https://www.bbc.com/news/world/asia',
-    provenance: provenanceTemplates.newsOrg,
     baselinePostsPerDay: 25,
   },
 ];
@@ -3945,7 +3374,6 @@ export const governmentSources: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/state-department.bsky.social/rss',
     url: 'https://bsky.app/profile/state-department.bsky.social',
-    provenance: createProvenance('direct', undefined, 'Official US foreign policy statements'),
     baselinePostsPerDay: 5,
   },
   {
@@ -3958,7 +3386,6 @@ export const governmentSources: (Source & { feedUrl: string })[] = [
     region: 'us-domestic' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/homelandgov.bsky.social/rss',
     url: 'https://bsky.app/profile/homelandgov.bsky.social',
-    provenance: createProvenance('direct', undefined, 'Official homeland security alerts and statements'),
     baselinePostsPerDay: 3,
   },
   // --- EARTHQUAKE ALERTS ---
@@ -3972,7 +3399,6 @@ export const governmentSources: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/earthquake.bsky.social/rss',
     url: 'https://bsky.app/profile/earthquake.bsky.social',
-    provenance: createProvenance('direct', undefined, 'Automated USGS earthquake alerts, 5.0+ magnitude'),
     baselinePostsPerDay: 10,
   },
   // --- INTERNATIONAL ORGANIZATIONS ---
@@ -3986,7 +3412,6 @@ export const governmentSources: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/who.int/rss',
     url: 'https://bsky.app/profile/who.int',
-    provenance: createProvenance('direct', undefined, 'World Health Organization official alerts'),
     baselinePostsPerDay: 10,
   },
   {
@@ -3999,7 +3424,6 @@ export const governmentSources: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/unep.org/rss',
     url: 'https://bsky.app/profile/unep.org',
-    provenance: createProvenance('direct', undefined, 'UN Environment Programme updates'),
     baselinePostsPerDay: 8,
   },
   // --- EUROPEAN UNION ---
@@ -4013,7 +3437,6 @@ export const governmentSources: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/eudiplomacy.bsky.social/rss',
     url: 'https://bsky.app/profile/eudiplomacy.bsky.social',
-    provenance: createProvenance('direct', undefined, 'EU External Action Service - foreign policy'),
     baselinePostsPerDay: 5,
   },
   {
@@ -4026,7 +3449,6 @@ export const governmentSources: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ec.europa.eu/rss',
     url: 'https://bsky.app/profile/ec.europa.eu',
-    provenance: createProvenance('direct', undefined, 'European Commission official statements'),
     baselinePostsPerDay: 10,
   },
   {
@@ -4039,7 +3461,6 @@ export const governmentSources: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/coe.int/rss',
     url: 'https://bsky.app/profile/coe.int',
-    provenance: createProvenance('direct', undefined, '46 countries - human rights, democracy, rule of law'),
     baselinePostsPerDay: 5,
   },
   // --- HUMAN RIGHTS ORGANIZATIONS ---
@@ -4053,7 +3474,6 @@ export const governmentSources: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/hrw.org/rss',
     url: 'https://bsky.app/profile/hrw.org',
-    provenance: createProvenance('direct', undefined, 'Human rights investigations and advocacy'),
     baselinePostsPerDay: 15,
   },
   {
@@ -4066,7 +3486,6 @@ export const governmentSources: (Source & { feedUrl: string })[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/amnesty.org/rss',
     url: 'https://bsky.app/profile/amnesty.org',
-    provenance: createProvenance('direct', undefined, 'Global human rights advocacy and investigations'),
     baselinePostsPerDay: 10,
   },
 ];
@@ -4092,18 +3511,6 @@ export const blueskySources = [...osintAnalysts, ...osintAggregators, ...dataTra
 export function getSourcesByRegion(region: WatchpointId) {
   if (region === 'all') return allSources;
   return allSources.filter((s) => s.region === region || s.region === 'all');
-}
-
-// Get sources by provenance type
-export function getSourcesByProvenance(provenanceType: string) {
-  return allSources.filter((s) => s.provenance.type === provenanceType);
-}
-
-// Get aggregators that amplify a specific type
-export function getAggregatorsByTarget(target: string) {
-  return allSources.filter(
-    (s) => s.provenance.type === 'aggregated' && s.provenance.amplifies === target
-  );
 }
 
 // Region keywords for classification

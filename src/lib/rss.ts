@@ -197,6 +197,16 @@ interface BlueskyFeedResponse {
   feed: BlueskyPost[];
 }
 
+interface BlueskyErrorResponse {
+  error: string;
+  message?: string;
+}
+
+// Cache for invalid Bluesky handles to avoid repeated failed API calls
+// Key: handle, Value: { error, timestamp }
+const invalidHandleCache = new Map<string, { error: string; timestamp: number }>();
+const INVALID_HANDLE_CACHE_TTL = 60 * 60 * 1000; // 1 hour TTL
+
 // Extract Bluesky handle from feedUrl (e.g., 'https://bsky.app/profile/bellingcat.com/rss' -> 'bellingcat.com')
 function extractBlueskyHandle(feedUrl: string): string | null {
   const match = feedUrl.match(/bsky\.app\/profile\/([^\/]+)/);
@@ -208,11 +218,29 @@ function isBlueskySource(source: Source & { feedUrl: string }): boolean {
   return source.platform === 'bluesky' || source.feedUrl.includes('bsky.app');
 }
 
+// Check if handle is cached as invalid
+function isHandleCachedAsInvalid(handle: string): boolean {
+  const cached = invalidHandleCache.get(handle);
+  if (!cached) return false;
+
+  // Check if cache entry has expired
+  if (Date.now() - cached.timestamp > INVALID_HANDLE_CACHE_TTL) {
+    invalidHandleCache.delete(handle);
+    return false;
+  }
+  return true;
+}
+
 // Fetch posts from Bluesky using their public API
 async function fetchBlueskyFeed(source: Source & { feedUrl: string }): Promise<RssItem[]> {
   const handle = extractBlueskyHandle(source.feedUrl);
   if (!handle) {
-    console.error(`Could not extract Bluesky handle from ${source.feedUrl}`);
+    console.error(`[Bluesky] Invalid feedUrl format: ${source.feedUrl}`);
+    return [];
+  }
+
+  // Skip if handle is cached as invalid
+  if (isHandleCachedAsInvalid(handle)) {
     return [];
   }
 
@@ -231,11 +259,50 @@ async function fetchBlueskyFeed(source: Source & { feedUrl: string }): Promise<R
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      console.error(`Bluesky fetch failed for ${source.name}: ${response.status}`);
-      return [];
+      // Handle expected errors as return values (not thrown)
+      const errorData = await response.json().catch(() => null) as BlueskyErrorResponse | null;
+      const errorType = errorData?.error ?? 'UnknownError';
+      const errorMessage = errorData?.message ?? 'No message';
+
+      // Handle specific error types
+      switch (response.status) {
+        case 400:
+        case 404:
+          // Cache invalid/missing handles to avoid repeated failures
+          invalidHandleCache.set(handle, { error: errorType, timestamp: Date.now() });
+          console.warn(
+            `[Bluesky] ${source.name} (${handle}): ${errorType} - ${errorMessage}. Cached for 1 hour.`
+          );
+          break;
+        case 429:
+          // Rate limited - log but don't cache (transient)
+          console.warn(`[Bluesky] Rate limited. Consider reducing batch size or adding delays.`);
+          break;
+        case 401:
+        case 403:
+          // Auth errors - could indicate API key issues
+          console.error(`[Bluesky] Auth error (${response.status}): Check API credentials if using authenticated requests.`);
+          break;
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          // Server errors - transient, don't cache
+          console.warn(`[Bluesky] ${source.name}: Server error (${response.status}) - service may be temporarily unavailable.`);
+          break;
+        default:
+          console.error(`[Bluesky] ${source.name} (${handle}): HTTP ${response.status} - ${errorType}`);
+      }
+
+      return []; // Expected error → return empty result
     }
 
     const data: BlueskyFeedResponse = await response.json();
+
+    // Handle empty feed gracefully
+    if (!data.feed || !Array.isArray(data.feed)) {
+      return [];
+    }
 
     return data.feed.map((item) => {
       const text = item.post.record.text;
@@ -254,12 +321,22 @@ async function fetchBlueskyFeed(source: Source & { feedUrl: string }): Promise<R
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error(`Bluesky fetch timeout for ${source.name} (10s exceeded)`);
-    } else {
-      console.error(`Bluesky fetch error for ${source.name}:`, error);
+      console.warn(`[Bluesky] ${source.name} (${handle}): Request timeout (10s)`);
+    } else if (error instanceof Error) {
+      console.error(`[Bluesky] ${source.name} (${handle}): ${error.message}`);
     }
     return [];
   }
+}
+
+// Get count of cached invalid handles (for diagnostics)
+export function getInvalidHandleCacheSize(): number {
+  return invalidHandleCache.size;
+}
+
+// Clear invalid handle cache (for testing/maintenance)
+export function clearInvalidHandleCache(): void {
+  invalidHandleCache.clear();
 }
 
 // Fetch and parse RSS feed (or Bluesky API for Bluesky sources)

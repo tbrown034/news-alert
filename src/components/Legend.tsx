@@ -5,7 +5,6 @@ import {
   InformationCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { provenanceSpectrum, provenanceConfig, provenanceColors } from '@/lib/provenance';
 
 export function Legend() {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,79 +44,30 @@ export function Legend() {
 
             {/* Content */}
             <div className="p-5 space-y-6 max-h-[70vh] overflow-y-auto">
-              {/* Source Access Key - The Core Concept */}
+              {/* Source Tiers */}
               <section>
                 <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">
-                  Source Access Key
-                </h3>
-                <p className="text-xs text-slate-500 mb-4">
-                  Shows how information was obtained, not how &quot;true&quot; it is.
-                  Closer to the event = warmer colors.
-                </p>
-
-                {/* Provenance Spectrum - Visual gradient bar */}
-                <div className="mb-4">
-                  <div className="flex h-2 rounded-full overflow-hidden">
-                    {provenanceSpectrum.map((type) => (
-                      <div
-                        key={type}
-                        className="flex-1"
-                        style={{ backgroundColor: provenanceColors[type] }}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-1 text-2xs text-slate-400">
-                    <span>Close to event</span>
-                    <span>Further from event</span>
-                  </div>
-                </div>
-
-                {/* Provenance Types */}
-                <div className="space-y-3">
-                  {provenanceSpectrum.map((type) => {
-                    const config = provenanceConfig[type];
-                    return (
-                      <div key={type} className="flex items-start gap-3">
-                        <div
-                          className={`flex items-center gap-1.5 px-2 py-1 ${config.bgColor} rounded-md min-w-[110px]`}
-                        >
-                          <span className="text-sm">{config.icon}</span>
-                          <span className={`text-xs font-medium ${config.color}`}>
-                            {config.label}
-                          </span>
-                        </div>
-                        <span className="text-xs text-slate-500 leading-relaxed">
-                          {config.description}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-
-              {/* Aggregator Chains */}
-              <section>
-                <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">
-                  Aggregator Chains
+                  Source Tiers
                 </h3>
                 <p className="text-xs text-slate-500 mb-3">
-                  Aggregators show what type of content they typically amplify.
+                  Sources are categorized by their typical relationship to events.
                 </p>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-amber-600">📡 Aggregated → Ground</span>
-                    <span className="text-slate-300">·</span>
-                    <span className="text-slate-500">Amplifies eyewitness reports</span>
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded font-medium">OFFICIAL</span>
+                    <span className="text-slate-500">Government, military, agency accounts</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-amber-600">📡 Aggregated → Analysis</span>
-                    <span className="text-slate-300">·</span>
-                    <span className="text-slate-500">Amplifies OSINT analysis</span>
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded font-medium">OSINT</span>
+                    <span className="text-slate-500">Open-source intelligence analysts</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-amber-600">📡 Aggregated → Mixed</span>
-                    <span className="text-slate-300">·</span>
-                    <span className="text-slate-500">Multiple source types</span>
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-medium">REPORTER</span>
+                    <span className="text-slate-500">Journalists and news organizations</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded font-medium">GROUND</span>
+                    <span className="text-slate-500">Eyewitnesses and local sources</span>
                   </div>
                 </div>
               </section>
@@ -177,14 +127,28 @@ export function Legend() {
                 </div>
               </section>
 
-              {/* Philosophy */}
-              <section className="pt-2 border-t border-slate-200">
-                <p className="text-caption text-slate-500 leading-relaxed">
-                  <strong className="text-slate-600">Philosophy:</strong> We show you <em>access</em>, not <em>truth claims</em>.
-                  A reporter may cite &quot;anonymous sources&quot; while an aggregator shares raw footage.
-                  Both have value. This system helps you understand the information chain without
-                  making the judgment for you.
+              {/* Severity */}
+              <section>
+                <h3 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">
+                  Severity Levels
+                </h3>
+                <p className="text-xs text-slate-500 mb-3">
+                  Detected from keywords and patterns in posts.
                 </p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded font-medium">CRITICAL</span>
+                    <span className="text-slate-500">Major incidents, attacks, disasters</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded font-medium">HIGH</span>
+                    <span className="text-slate-500">Significant events, escalations</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-medium">MODERATE</span>
+                    <span className="text-slate-500">Developments worth monitoring</span>
+                  </div>
+                </div>
               </section>
             </div>
 

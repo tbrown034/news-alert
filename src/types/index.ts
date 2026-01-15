@@ -39,35 +39,6 @@ export interface Watchpoint {
 export type SourceTier = 'official' | 'reporter' | 'osint' | 'ground';
 
 // =============================================================================
-// SOURCE PROVENANCE - "How was this information obtained?"
-// =============================================================================
-// Based on the Source Provenance concept: show access, not truth claims.
-// Answers: "How close was the source to the original event?"
-
-// Primary provenance types
-export type ProvenanceType =
-  | 'on-ground'   // 📍 First-hand witness, video from scene
-  | 'direct'      // 🎙 Official statement, primary document
-  | 'analysis'    // 🔍 OSINT analysis of imagery/data
-  | 'aggregated'  // 📡 Curating/compiling multiple reports
-  | 'reported';   // 📰 News org citing sources
-
-// For aggregators: what type of content do they typically amplify?
-export type AggregationTarget =
-  | 'ground'      // Amplifies ground/eyewitness content
-  | 'official'    // Amplifies official statements
-  | 'analysis'    // Amplifies OSINT analysis
-  | 'mixed';      // Mixed content types
-
-export interface SourceProvenance {
-  type: ProvenanceType;
-  // For aggregated sources: what do they typically amplify?
-  amplifies?: AggregationTarget;
-  // Human-readable description shown on hover
-  description: string;
-}
-
-// =============================================================================
 // SOURCE ACTIVITY TRACKING
 // =============================================================================
 // Detect when a source is posting more than usual
@@ -93,9 +64,7 @@ export interface Source {
   confidence: number; // 1-100
   region: WatchpointId;
   url?: string;
-  // NEW: Source provenance information
-  provenance: SourceProvenance;
-  // NEW: Expected posting frequency (posts per day, for anomaly detection)
+  // Expected posting frequency (posts per day, for anomaly detection)
   baselinePostsPerDay?: number;
 }
 
