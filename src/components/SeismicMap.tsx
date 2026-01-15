@@ -6,7 +6,6 @@ import {
   Geographies,
   Geography,
   Marker,
-  ZoomableGroup,
 } from 'react-simple-maps';
 import type { Earthquake } from '@/types';
 
@@ -65,7 +64,7 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
   if (!isMounted) {
     return (
       <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-        <div className="relative h-[200px] sm:h-[280px] flex items-center justify-center">
+        <div className="relative h-[180px] sm:h-[220px] flex items-center justify-center">
           <div className="text-gray-600 text-sm">Loading seismic map...</div>
         </div>
       </div>
@@ -74,39 +73,38 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
 
   return (
     <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-      <div className="relative h-[200px] sm:h-[280px]">
+      <div className="relative h-[180px] sm:h-[220px]">
         <ComposableMap
-          projection="geoMercator"
+          projection="geoEqualEarth"
           projectionConfig={{
-            scale: 100,
-            center: [0, 20],
+            scale: 160,
+            center: [0, 10], // Centered globally, slight north bias
           }}
           style={{
             width: '100%',
             height: '100%',
           }}
         >
-          <ZoomableGroup>
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="#1a1f2e"
-                    stroke="#2d3748"
-                    strokeWidth={0.5}
-                    style={{
-                      default: { outline: 'none' },
-                      hover: { outline: 'none', fill: '#252d3d' },
-                      pressed: { outline: 'none' },
-                    }}
-                  />
-                ))
-              }
-            </Geographies>
+          <Geographies geography={geoUrl}>
+            {({ geographies }) =>
+              geographies.map((geo) => (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill="#1a1f2e"
+                  stroke="#2d3748"
+                  strokeWidth={0.3}
+                  style={{
+                    default: { outline: 'none' },
+                    hover: { outline: 'none', fill: '#252d3d' },
+                    pressed: { outline: 'none' },
+                  }}
+                />
+              ))
+            }
+          </Geographies>
 
-            {/* Earthquake markers */}
+          {/* Earthquake markers */}
             {earthquakes.map((eq) => {
               const isSelected = selected?.id === eq.id;
               const radius = getMagnitudeRadius(eq.magnitude);
@@ -155,7 +153,6 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
                 </Marker>
               );
             })}
-          </ZoomableGroup>
         </ComposableMap>
 
         {/* Loading overlay */}

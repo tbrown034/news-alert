@@ -6,7 +6,6 @@ import {
   Geographies,
   Geography,
   Marker,
-  ZoomableGroup,
 } from 'react-simple-maps';
 import { Watchpoint, WatchpointId } from '@/types';
 
@@ -82,7 +81,7 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {} 
   if (!isMounted) {
     return (
       <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-        <div className="relative h-[200px] sm:h-[240px] flex items-center justify-center">
+        <div className="relative h-[180px] sm:h-[220px] flex items-center justify-center">
           <div className="text-gray-600 text-sm">Loading map...</div>
         </div>
       </div>
@@ -91,40 +90,39 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {} 
 
   return (
     <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-      {/* Map Container */}
-      <div className="relative h-[200px] sm:h-[240px]">
+      {/* Map Container - Fixed view centered on Eurasia where most hotspots are */}
+      <div className="relative h-[180px] sm:h-[220px]">
         <ComposableMap
-          projection="geoMercator"
+          projection="geoEqualEarth"
           projectionConfig={{
-            scale: 120,
-            center: [30, 30], // Center on Middle East / Europe area
+            scale: 180,
+            center: [45, 30], // Center between Middle East and Europe
           }}
           style={{
             width: '100%',
             height: '100%',
           }}
         >
-          <ZoomableGroup>
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill="#1a1f2e"
-                    stroke="#2d3748"
-                    strokeWidth={0.5}
-                    style={{
-                      default: { outline: 'none' },
-                      hover: { outline: 'none', fill: '#252d3d' },
-                      pressed: { outline: 'none' },
-                    }}
-                  />
-                ))
-              }
-            </Geographies>
+          <Geographies geography={geoUrl}>
+            {({ geographies }) =>
+              geographies.map((geo) => (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill="#1a1f2e"
+                  stroke="#2d3748"
+                  strokeWidth={0.3}
+                  style={{
+                    default: { outline: 'none' },
+                    hover: { outline: 'none', fill: '#252d3d' },
+                    pressed: { outline: 'none' },
+                  }}
+                />
+              ))
+            }
+          </Geographies>
 
-            {/* Region Markers */}
+          {/* Region Markers */}
             {Object.entries(regionMarkers).map(([id, marker]) => {
               const activityLevel = getActivityLevel(id);
               const colors = activityColors[activityLevel];
@@ -221,7 +219,6 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {} 
                 </Marker>
               );
             })}
-          </ZoomableGroup>
         </ComposableMap>
 
         {/* "All Regions" button */}
