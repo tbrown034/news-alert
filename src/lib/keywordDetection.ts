@@ -163,17 +163,22 @@ const DEVELOPING_MARKERS = [
   'possible',
 ];
 
-// Negation patterns that reduce score
-const NEGATION_PATTERNS = [
-  'no ',
-  'not ',
+// Negation words that reduce score when near keywords
+const NEGATION_WORDS = [
+  'no',
+  'not',
+  'none',
   'denied',
+  'denies',
+  'deny',
   'false',
   'hoax',
   'debunked',
   'fake',
   'satire',
   'parody',
+  'untrue',
+  'unfounded',
 ];
 
 // Event type detection patterns
@@ -212,39 +217,83 @@ const EVENT_TYPE_PATTERNS: Record<EventType, RegExp[]> = {
 };
 
 /**
+ * Check if a negation word appears within N words before the keyword position
+ * This prevents false negatives like "nuclear weapons confirmed" scoring low
+ * because "no" appears elsewhere in the text
+ */
+function hasNegationNearKeyword(words: string[], keywordWordIndex: number, windowSize: number = 5): boolean {
+  const startIndex = Math.max(0, keywordWordIndex - windowSize);
+  for (let i = startIndex; i < keywordWordIndex; i++) {
+    if (NEGATION_WORDS.includes(words[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Find word index where keyword starts in the text
+ */
+function findKeywordWordIndex(words: string[], keyword: string): number {
+  const keywordWords = keyword.split(' ');
+  const firstWord = keywordWords[0];
+
+  for (let i = 0; i < words.length; i++) {
+    if (words[i] === firstWord || words[i].includes(firstWord)) {
+      // For multi-word keywords, verify subsequent words match
+      if (keywordWords.length > 1) {
+        let allMatch = true;
+        for (let j = 1; j < keywordWords.length && i + j < words.length; j++) {
+          if (!words[i + j].includes(keywordWords[j])) {
+            allMatch = false;
+            break;
+          }
+        }
+        if (allMatch) return i;
+      } else {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
+/**
  * Analyze text for keyword matches and calculate score
+ * Uses proximity-based negation: only reduces score if negation is within 5 words of keyword
  */
 function analyzeText(text: string): { score: number; matches: string[] } {
   const lowerText = text.toLowerCase();
+  // Split into words, keeping alphanumeric characters
+  const words = lowerText.split(/\s+/).map(w => w.replace(/[^a-z0-9-]/g, ''));
   let score = 0;
   const matches: string[] = [];
 
-  // Check for negation - if the content is negating something, reduce impact
-  const hasNegation = NEGATION_PATTERNS.some(neg => lowerText.includes(neg));
-  const negationMultiplier = hasNegation ? 0.3 : 1.0;
+  // Helper to check and score a keyword
+  const checkKeyword = (keyword: string, weight: number) => {
+    if (lowerText.includes(keyword)) {
+      const keywordIndex = findKeywordWordIndex(words, keyword);
+      // Only apply negation multiplier if negation word is near the keyword
+      const isNegated = keywordIndex >= 0 && hasNegationNearKeyword(words, keywordIndex);
+      const multiplier = isNegated ? 0.3 : 1.0;
+      score += weight * multiplier;
+      matches.push(keyword);
+    }
+  };
 
   // Check critical keywords
   for (const [keyword, weight] of Object.entries(CRITICAL_KEYWORDS)) {
-    if (lowerText.includes(keyword)) {
-      score += weight * negationMultiplier;
-      matches.push(keyword);
-    }
+    checkKeyword(keyword, weight);
   }
 
   // Check high keywords
   for (const [keyword, weight] of Object.entries(HIGH_KEYWORDS)) {
-    if (lowerText.includes(keyword)) {
-      score += weight * negationMultiplier;
-      matches.push(keyword);
-    }
+    checkKeyword(keyword, weight);
   }
 
   // Check moderate keywords
   for (const [keyword, weight] of Object.entries(MODERATE_KEYWORDS)) {
-    if (lowerText.includes(keyword)) {
-      score += weight * negationMultiplier;
-      matches.push(keyword);
-    }
+    checkKeyword(keyword, weight);
   }
 
   return { score, matches: [...new Set(matches)] };

@@ -8,15 +8,31 @@ import {
   detectAllRegionalSurges,
 } from '@/lib/activityDetection';
 import { analyzeNewsItem, getRegionalAlert } from '@/lib/keywordDetection';
-import { WatchpointId, RegionalSurge, NewsItem } from '@/types';
+import { WatchpointId } from '@/types';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Revalidate every minute
 
+// Valid regions and limits for input validation
+const VALID_REGIONS: WatchpointId[] = ['all', 'middle-east', 'ukraine-russia', 'china-taiwan', 'venezuela', 'us-domestic', 'seismic'];
+const MAX_LIMIT = 500;
+const DEFAULT_LIMIT = 50;
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const region = (searchParams.get('region') || 'all') as WatchpointId;
-  const limit = parseInt(searchParams.get('limit') || '50', 10);
+  const regionParam = searchParams.get('region') || 'all';
+  const limitParam = parseInt(searchParams.get('limit') || String(DEFAULT_LIMIT), 10);
+
+  // Validate region parameter
+  if (!VALID_REGIONS.includes(regionParam as WatchpointId)) {
+    return NextResponse.json(
+      { error: 'Invalid region parameter', validRegions: VALID_REGIONS },
+      { status: 400 }
+    );
+  }
+
+  const region = regionParam as WatchpointId;
+  const limit = Math.min(Math.max(1, isNaN(limitParam) ? DEFAULT_LIMIT : limitParam), MAX_LIMIT);
 
   try {
     // Get sources for the requested region
@@ -116,10 +132,32 @@ export async function GET(request: Request) {
   }
 }
 
-// Calculate activity levels based on recent news volume
+// Baseline estimates: expected posts per hour under "normal" conditions
+// These are estimates based on typical OSINT activity patterns
+const REGION_BASELINES: Record<WatchpointId, number> = {
+  'middle-east': 8,      // High activity region, many sources
+  'ukraine-russia': 10,  // Very active conflict zone
+  'china-taiwan': 3,     // Lower baseline, spikes during tensions
+  'venezuela': 2,        // Lower activity region
+  'us-domestic': 4,      // Moderate baseline
+  'seismic': 0,          // Not used for seismic (separate data source)
+  'all': 20,             // Combined baseline
+};
+
+interface RegionActivity {
+  level: string;
+  count: number;
+  breaking: number;
+  baseline: number;
+  multiplier: number;      // e.g., 2.5 = 2.5x normal
+  vsNormal: string;        // "above" | "below" | "normal"
+  percentChange: number;   // e.g., 150 = 150% above normal
+}
+
+// Calculate activity levels based on recent news volume vs baseline
 function calculateActivityLevels(
   items: { region: WatchpointId; isBreaking?: boolean; timestamp: Date }[]
-): Record<WatchpointId, { level: string; count: number; breaking: number }> {
+): Record<WatchpointId, RegionActivity> {
   const now = Date.now();
   const oneHour = 60 * 60 * 1000;
 
@@ -131,7 +169,7 @@ function calculateActivityLevels(
     'us-domestic',
   ];
 
-  const activity = {} as Record<WatchpointId, { level: string; count: number; breaking: number }>;
+  const activity = {} as Record<WatchpointId, RegionActivity>;
 
   for (const region of regions) {
     const regionItems = items.filter(
@@ -140,18 +178,34 @@ function calculateActivityLevels(
     );
     const breakingCount = regionItems.filter((item) => item.isBreaking).length;
     const totalCount = regionItems.length;
+    const baseline = REGION_BASELINES[region] || 5;
 
+    // Calculate multiplier vs baseline
+    const multiplier = baseline > 0 ? Math.round((totalCount / baseline) * 10) / 10 : 0;
+    const percentChange = baseline > 0 ? Math.round(((totalCount - baseline) / baseline) * 100) : 0;
+
+    // Determine vs normal status
+    let vsNormal: string;
+    if (multiplier >= 1.3) vsNormal = 'above';
+    else if (multiplier <= 0.7) vsNormal = 'below';
+    else vsNormal = 'normal';
+
+    // Determine level based on multiplier AND absolute breaking count
     let level: string;
-    if (breakingCount >= 3 || totalCount >= 15) level = 'critical';
-    else if (breakingCount >= 2 || totalCount >= 10) level = 'high';
-    else if (breakingCount >= 1 || totalCount >= 5) level = 'elevated';
-    else if (totalCount >= 2) level = 'normal';
+    if (breakingCount >= 3 || multiplier >= 3) level = 'critical';
+    else if (breakingCount >= 2 || multiplier >= 2) level = 'high';
+    else if (breakingCount >= 1 || multiplier >= 1.5) level = 'elevated';
+    else if (multiplier >= 0.5) level = 'normal';
     else level = 'low';
 
     activity[region] = {
       level,
       count: totalCount,
       breaking: breakingCount,
+      baseline,
+      multiplier,
+      vsNormal,
+      percentChange,
     };
   }
 

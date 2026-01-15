@@ -4,3 +4,7 @@ export { NewsFeed } from './NewsFeed';
 export { Legend } from './Legend';
 export { WorldMap } from './WorldMap';
 export { PlatformIcon, platformColors } from './PlatformIcon';
+export { SituationBriefing } from './SituationBriefing';
+export { InlineBriefing } from './InlineBriefing';
+export { SeismicMap } from './SeismicMap';
+export { SeismicFeed } from './SeismicFeed';

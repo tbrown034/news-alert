@@ -5,6 +5,7 @@ import { CheckBadgeIcon as CheckBadgeSolid } from '@heroicons/react/24/solid';
 import { NewsItem } from '@/types';
 import { getActivityIndicator } from '@/lib/activityDetection';
 import { getSeverityIndicator, getEventTypeLabel } from '@/lib/keywordDetection';
+import { analyzeMessage, contentTypeDisplay, verificationDisplay, provenanceDisplay } from '@/lib/messageAnalysis';
 import { PlatformIcon, platformColors } from './PlatformIcon';
 
 interface NewsCardProps {
@@ -46,9 +47,25 @@ export function NewsCard({ item }: NewsCardProps) {
   const severityIndicator = showSeverity ? getSeverityIndicator(eventSignal.severity) : null;
   const eventTypeLabel = eventSignal ? getEventTypeLabel(eventSignal.type) : null;
 
+  // Message-level analysis
+  const messageAnalysis = analyzeMessage(item.title + ' ' + (item.content || ''));
+  const ctStyle = contentTypeDisplay[messageAnalysis.contentType.type];
+  const vStyle = verificationDisplay[messageAnalysis.verification.level];
+  const pStyle = provenanceDisplay[messageAnalysis.provenance.type];
+  const showMessageIndicators = messageAnalysis.contentType.type !== 'general' ||
+    messageAnalysis.verification.confidence > 0.5 ||
+    messageAnalysis.provenance.confidence > 0.5;
+
   const handleOpenSource = () => {
     if (item.url) {
       window.open(item.url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleOpenSource();
     }
   };
 
@@ -62,12 +79,17 @@ export function NewsCard({ item }: NewsCardProps) {
 
   return (
     <article
+      role="button"
+      tabIndex={0}
+      aria-label={`${item.title}. From ${item.source.name}. Click to open source.`}
       className={`
         relative px-4 py-4 border-b border-gray-800/50
         hover:bg-white/[0.02] transition-all duration-200 cursor-pointer
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900
         ${getCardAccent()}
       `}
       onClick={handleOpenSource}
+      onKeyDown={handleKeyDown}
     >
       {/* Severity Banner for Critical/High */}
       {showSeverity && severityIndicator && (eventSignal?.severity === 'critical' || eventSignal?.severity === 'high') && (
@@ -119,6 +141,36 @@ export function NewsCard({ item }: NewsCardProps) {
             <div className={`flex items-center gap-1 text-xs ${activityIndicator.color}`}>
               <span>{activityIndicator.icon}</span>
               <span className="font-medium">{activityIndicator.multiplier}× more active than usual</span>
+            </div>
+          )}
+
+          {/* Message-level indicators */}
+          {showMessageIndicators && (
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              {/* Content type pill */}
+              {messageAnalysis.contentType.type !== 'general' && (
+                <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded ${ctStyle.bgColor} ${ctStyle.color}`}>
+                  {ctStyle.label}
+                </span>
+              )}
+              {/* Verification indicator */}
+              {messageAnalysis.verification.confidence > 0.5 && messageAnalysis.verification.level !== 'unverified' && (
+                <span className={`text-[10px] ${vStyle.color}`}>
+                  {vStyle.icon} {vStyle.label}
+                </span>
+              )}
+              {/* Show unverified only with high confidence (explicit markers) */}
+              {messageAnalysis.verification.level === 'unverified' && messageAnalysis.verification.confidence > 0.7 && (
+                <span className={`text-[10px] ${vStyle.color}`}>
+                  {vStyle.icon} {vStyle.label}
+                </span>
+              )}
+              {/* Provenance with cited sources */}
+              {messageAnalysis.provenance.citedSources.length > 0 && (
+                <span className={`text-[10px] ${pStyle.color}`}>
+                  via {messageAnalysis.provenance.citedSources.slice(0, 2).join(', ')}
+                </span>
+              )}
             </div>
           )}
         </div>

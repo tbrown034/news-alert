@@ -987,6 +987,7 @@ export const regionKeywords: Record<WatchpointId, string[]> = {
     'washington', 'pentagon', 'white house', 'congress', 'senate',
     'biden', 'trump', 'state department', 'cia', 'fbi',
   ],
+  'seismic': [], // Seismic data comes from USGS API, not keyword classification
   all: [],
 };
 

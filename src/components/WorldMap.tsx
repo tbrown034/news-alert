@@ -13,6 +13,25 @@ import { Watchpoint, WatchpointId } from '@/types';
 // World map TopoJSON - using a CDN for the geography data
 const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
+/**
+ * Get local time at a given longitude with city name
+ */
+function getLocalTime(longitude: number, city: string): string {
+  const now = new Date();
+  // Approximate timezone offset from longitude (15 degrees = 1 hour)
+  const offsetHours = Math.round(longitude / 15);
+  const utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
+  const localTime = new Date(utcTime + offsetHours * 3600000);
+
+  const time = localTime.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+  return `${time} ${city}`;
+}
+
 interface WorldMapProps {
   watchpoints: Watchpoint[];
   selected: WatchpointId;
@@ -29,20 +48,29 @@ const activityColors: Record<string, { fill: string; glow: string; text: string 
   low: { fill: '#10b981', glow: 'rgba(16, 185, 129, 0.3)', text: 'text-emerald-400' },
 };
 
-// Region marker positions (longitude, latitude)
-const regionMarkers: Record<string, { coordinates: [number, number]; label: string }> = {
-  'middle-east': { coordinates: [51.4, 32.4], label: 'Middle East' }, // Iran area
-  'ukraine-russia': { coordinates: [37.6, 50.4], label: 'Ukraine' }, // Eastern Ukraine
-  'china-taiwan': { coordinates: [121.5, 25.0], label: 'Taiwan' },
-  'venezuela': { coordinates: [-66.9, 10.5], label: 'Venezuela' },
-  'us-domestic': { coordinates: [-98.5, 39.8], label: 'United States' },
+// Region marker positions (longitude, latitude) with representative cities
+const regionMarkers: Record<string, { coordinates: [number, number]; label: string; city: string }> = {
+  'middle-east': { coordinates: [51.4, 32.4], label: 'Middle East', city: 'Tehran' },
+  'ukraine-russia': { coordinates: [37.6, 50.4], label: 'Ukraine', city: 'Kyiv' },
+  'china-taiwan': { coordinates: [121.5, 25.0], label: 'Taiwan', city: 'Taipei' },
+  'venezuela': { coordinates: [-66.9, 10.5], label: 'Venezuela', city: 'Caracas' },
+  'us-domestic': { coordinates: [-98.5, 39.8], label: 'United States', city: 'DC' },
 };
 
 function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {} }: WorldMapProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     setIsMounted(true);
+  }, []);
+
+  // Update time every minute for local times display
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
   }, []);
 
   const getActivityLevel = (id: string) => {
@@ -175,6 +203,21 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {} 
                   >
                     {marker.label}
                   </text>
+
+                  {/* Local Time with City */}
+                  <text
+                    y={32}
+                    textAnchor="middle"
+                    fill="#6b7280"
+                    fontSize={8}
+                    fontFamily="monospace"
+                    style={{
+                      textShadow: '0 1px 2px rgba(0,0,0,0.8)',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {getLocalTime(marker.coordinates[0], marker.city)}
+                  </text>
                 </Marker>
               );
             })}
@@ -228,11 +271,9 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {} 
               {getActivityLevel(selected).charAt(0).toUpperCase() + getActivityLevel(selected).slice(1)} Activity
             </span>
           </div>
-          {regionCounts[selected] && regionCounts[selected] > 0 && (
-            <span className="text-xs text-gray-400">
-              {regionCounts[selected]} updates
-            </span>
-          )}
+          <span className="text-xs text-gray-400">
+            {regionCounts[selected] || 0} in last hour
+          </span>
         </div>
       )}
     </div>

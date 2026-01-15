@@ -1,5 +1,6 @@
 import { NewsItem, Source, VerificationStatus, WatchpointId } from '@/types';
 import { classifyRegion, isBreakingNews } from './sources';
+import { createHash } from 'crypto';
 
 interface RssItem {
   title: string;
@@ -169,13 +170,19 @@ function decodeHtmlEntities(text: string): string {
 export async function fetchRssFeed(
   source: Source & { feedUrl: string }
 ): Promise<NewsItem[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
   try {
     const response = await fetch(source.feedUrl, {
+      signal: controller.signal,
       next: { revalidate: 60 }, // Cache for 1 minute
       headers: {
         'User-Agent': 'newsAlert/1.0 (+https://github.com/newsalert)',
       },
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       console.error(`RSS fetch failed for ${source.name}: ${response.status}`);
@@ -204,7 +211,12 @@ export async function fetchRssFeed(
       };
     });
   } catch (error) {
-    console.error(`RSS fetch error for ${source.name}:`, error);
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`RSS fetch timeout for ${source.name} (10s exceeded)`);
+    } else {
+      console.error(`RSS fetch error for ${source.name}:`, error);
+    }
     return [];
   }
 }
@@ -219,15 +231,9 @@ function getVerificationStatus(
   return 'unverified';
 }
 
-// Simple hash function for generating IDs
+// SHA-256 hash function for generating collision-resistant IDs
 function hashString(str: string): string {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(36);
+  return createHash('sha256').update(str).digest('hex').slice(0, 16);
 }
 
 // Fetch multiple RSS feeds in parallel

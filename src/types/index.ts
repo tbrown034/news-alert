@@ -5,7 +5,26 @@ export type WatchpointId =
   | 'china-taiwan'
   | 'venezuela'
   | 'us-domestic'
+  | 'seismic'
   | 'all';
+
+// =============================================================================
+// SEISMIC / EARTHQUAKE DATA
+// =============================================================================
+
+export interface Earthquake {
+  id: string;
+  magnitude: number;
+  place: string;
+  time: Date;
+  coordinates: [number, number, number]; // [longitude, latitude, depth in km]
+  url: string;
+  tsunami: boolean;
+  felt: number | null; // Number of felt reports
+  alert: 'green' | 'yellow' | 'orange' | 'red' | null;
+  significance: number; // USGS significance score 0-1000+
+  depth: number; // km
+}
 
 export interface Watchpoint {
   id: WatchpointId;
