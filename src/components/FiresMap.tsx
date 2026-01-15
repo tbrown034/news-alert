@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import {
   ComposableMap,
   Geographies,
@@ -9,46 +9,37 @@ import {
   ZoomableGroup,
 } from 'react-simple-maps';
 import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
-import type { Earthquake } from '@/types';
+import { FireIcon } from '@heroicons/react/24/solid';
 
 // Default zoom settings
-const DEFAULT_CENTER: [number, number] = [0, 15];
+const DEFAULT_CENTER: [number, number] = [0, 20];
 const DEFAULT_ZOOM = 1;
 
 const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
-interface SeismicMapProps {
-  earthquakes: Earthquake[];
-  selected: Earthquake | null;
-  onSelect: (eq: Earthquake | null) => void;
-  isLoading?: boolean;
+interface FireEvent {
+  id: string;
+  title: string;
+  description: string;
+  coordinates: [number, number];
+  date: Date;
+  source: 'EONET' | 'GDACS' | 'FIRMS';
+  severity: 'critical' | 'severe' | 'moderate' | 'minor';
+  url: string;
+  category?: string;
+  area?: string;
 }
 
-// Get circle radius based on magnitude (exponential scaling)
-function getMagnitudeRadius(mag: number): number {
-  // More visible scaling: mag 2.5 = 6px, mag 5 = 16px, mag 7 = 40px
-  return Math.pow(2, mag - 1) * 1.5;
+interface FiresMapProps {
+  onFireSelect?: (fire: FireEvent | null) => void;
 }
 
-// Get color based on magnitude
-function getMagnitudeColor(mag: number): string {
-  if (mag >= 7) return '#dc2626'; // Red - major
-  if (mag >= 6) return '#ea580c'; // Orange - strong
-  if (mag >= 5) return '#f59e0b'; // Amber - moderate
-  if (mag >= 4) return '#eab308'; // Yellow - light
-  return '#22c55e'; // Green - minor
-}
-
-// Get alert color
-function getAlertColor(alert: Earthquake['alert']): string {
-  switch (alert) {
-    case 'red': return '#dc2626';
-    case 'orange': return '#ea580c';
-    case 'yellow': return '#eab308';
-    case 'green': return '#22c55e';
-    default: return '#6b7280';
-  }
-}
+const severityStyles = {
+  critical: { color: '#dc2626', label: 'CRITICAL' },
+  severe: { color: '#f97316', label: 'SEVERE' },
+  moderate: { color: '#eab308', label: 'MODERATE' },
+  minor: { color: '#84cc16', label: 'MINOR' },
+};
 
 function formatTimeAgo(date: Date): string {
   const now = new Date();
@@ -60,8 +51,12 @@ function formatTimeAgo(date: Date): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
-function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: SeismicMapProps) {
+function FiresMapComponent({ onFireSelect }: FiresMapProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [fires, setFires] = useState<FireEvent[]>([]);
+  const [selected, setSelected] = useState<FireEvent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
 
   const handleZoomIn = () => {
@@ -82,19 +77,52 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
     setPosition(position);
   };
 
+  const fetchFires = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/fires');
+      const data = await response.json();
+      if (data.fires) {
+        setFires(data.fires.map((f: any) => ({
+          ...f,
+          date: new Date(f.date),
+        })));
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch fires:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    fetchFires();
+  }, [fetchFires]);
+
+  // Auto-refresh every 10 minutes
+  useEffect(() => {
+    const timer = setInterval(fetchFires, 10 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [fetchFires]);
+
+  const handleSelect = (fire: FireEvent | null) => {
+    setSelected(fire);
+    onFireSelect?.(fire);
+  };
 
   if (!isMounted) {
     return (
       <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
         <div className="relative h-[280px] sm:h-[340px] flex items-center justify-center">
-          <div className="text-gray-600 text-sm">Loading seismic map...</div>
+          <div className="text-gray-600 text-sm">Loading fire data...</div>
         </div>
       </div>
     );
   }
+
+  const hasFires = fires.length > 0;
 
   return (
     <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
@@ -136,52 +164,56 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
             }
           </Geographies>
 
-          {/* Earthquake markers */}
-          {earthquakes.map((eq) => {
-            const isSelected = selected?.id === eq.id;
-            const radius = getMagnitudeRadius(eq.magnitude);
-            const color = getMagnitudeColor(eq.magnitude);
+          {/* Fire markers */}
+          {fires.map((fire) => {
+            const isSelected = selected?.id === fire.id;
+            const style = severityStyles[fire.severity];
+            const baseRadius = fire.severity === 'critical' ? 14 :
+                              fire.severity === 'severe' ? 12 : 10;
 
             return (
               <Marker
-                key={eq.id}
-                coordinates={[eq.coordinates[0], eq.coordinates[1]]}
-                onClick={() => onSelect(isSelected ? null : eq)}
+                key={fire.id}
+                coordinates={fire.coordinates}
+                onClick={() => handleSelect(isSelected ? null : fire)}
                 style={{ default: { cursor: 'pointer' } }}
               >
-                {/* Outer glow for significant quakes */}
-                {eq.magnitude >= 5 && (
+                {/* Animated pulse for critical fires */}
+                {fire.severity === 'critical' && (
                   <circle
-                    r={radius * 1.6}
-                    fill={color}
-                    fillOpacity={0.25}
-                    className={eq.magnitude >= 6 ? 'animate-ping' : ''}
+                    r={baseRadius * 2}
+                    fill={style.color}
+                    fillOpacity={0.3}
+                    className="animate-ping"
                   />
                 )}
 
-                {/* Main marker */}
+                {/* Outer glow */}
                 <circle
-                  r={radius}
-                  fill={color}
-                  fillOpacity={0.8}
-                  stroke={isSelected ? '#fff' : 'rgba(255,255,255,0.4)'}
-                  strokeWidth={isSelected ? 3 : 1}
-                  className="transition-all duration-200 hover:fill-opacity-100"
+                  r={isSelected ? baseRadius * 1.5 : baseRadius * 1.2}
+                  fill={style.color}
+                  fillOpacity={0.4}
                 />
 
-                {/* Magnitude label for large quakes */}
-                {eq.magnitude >= 5 && (
-                  <text
-                    y={radius + 16}
-                    textAnchor="middle"
-                    fill="#fff"
-                    fontSize={12}
-                    fontWeight="bold"
-                    style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9)' }}
-                  >
-                    M{eq.magnitude.toFixed(1)}
-                  </text>
-                )}
+                {/* Main marker */}
+                <circle
+                  r={isSelected ? baseRadius : baseRadius * 0.8}
+                  fill={style.color}
+                  fillOpacity={0.9}
+                  stroke={isSelected ? '#fff' : 'rgba(255,255,255,0.3)'}
+                  strokeWidth={isSelected ? 3 : 1}
+                />
+
+                {/* Fire icon indicator */}
+                <text
+                  y={3}
+                  textAnchor="middle"
+                  fill="#fff"
+                  fontSize={baseRadius * 0.7}
+                  style={{ pointerEvents: 'none' }}
+                >
+                  🔥
+                </text>
               </Marker>
             );
           })}
@@ -216,7 +248,7 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
         {/* Loading overlay */}
         {isLoading && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
@@ -224,29 +256,34 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
         <div className="absolute bottom-4 right-4 flex items-center gap-4 text-xs text-gray-400 z-10 bg-black/60 px-3 py-2 rounded-lg">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-red-500" />
-            <span>7+</span>
+            <span>Critical</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full bg-orange-500" />
-            <span>6+</span>
+            <span>Severe</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-amber-500" />
-            <span>5+</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-green-500" />
-            <span>&lt;5</span>
+            <span className="w-3 h-3 rounded-full bg-yellow-500" />
+            <span>Moderate</span>
           </div>
         </div>
 
         {/* Stats badge */}
-        <div className="absolute top-4 left-4 text-sm text-gray-300 z-10 bg-black/60 px-3 py-2 rounded-lg font-medium">
-          {earthquakes.length} earthquakes (24h)
+        <div className="absolute top-4 left-4 z-10 bg-black/60 px-3 py-2 rounded-lg flex items-center gap-2">
+          <FireIcon className="w-4 h-4 text-orange-500" />
+          {hasFires ? (
+            <span className="text-sm text-gray-300 font-medium">
+              {fires.length} active {fires.length === 1 ? 'fire' : 'fires'}
+            </span>
+          ) : (
+            <span className="text-sm text-emerald-400 font-medium">
+              No major fires detected
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Selected earthquake details */}
+      {/* Selected fire details */}
       {selected && (
         <div className="px-4 py-4 bg-black/40 border-t border-gray-800/40">
           <div className="flex items-start justify-between gap-4">
@@ -255,49 +292,45 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
                 <span
                   className="px-3 py-1 text-sm font-bold rounded-lg"
                   style={{
-                    backgroundColor: `${getMagnitudeColor(selected.magnitude)}25`,
-                    color: getMagnitudeColor(selected.magnitude),
+                    backgroundColor: `${severityStyles[selected.severity].color}25`,
+                    color: severityStyles[selected.severity].color,
                   }}
                 >
-                  M{selected.magnitude.toFixed(1)}
+                  {severityStyles[selected.severity].label}
                 </span>
-                <span className="text-sm text-gray-400">{formatTimeAgo(selected.time)}</span>
-                {selected.tsunami && (
-                  <span className="px-2 py-1 text-xs font-medium bg-blue-500/20 text-blue-400 rounded-lg">
-                    TSUNAMI
-                  </span>
-                )}
-                {selected.alert && (
-                  <span
-                    className="px-2 py-1 text-xs font-medium rounded-lg"
-                    style={{
-                      backgroundColor: `${getAlertColor(selected.alert)}20`,
-                      color: getAlertColor(selected.alert),
-                    }}
-                  >
-                    {selected.alert.toUpperCase()} ALERT
-                  </span>
-                )}
+                <span className="text-sm text-gray-400">{formatTimeAgo(selected.date)}</span>
+                <span className="text-xs text-gray-500 bg-gray-800 px-2 py-0.5 rounded">
+                  {selected.source}
+                </span>
               </div>
-              <p className="text-base text-gray-200 truncate">{selected.place}</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Depth: {selected.depth.toFixed(1)}km
-                {selected.felt && ` • ${selected.felt} felt reports`}
-              </p>
+              <p className="text-base font-medium text-gray-200">{selected.title}</p>
+              {selected.area && (
+                <p className="text-sm text-gray-400 mt-1">{selected.area}</p>
+              )}
+              <p className="text-xs text-gray-500 mt-2 line-clamp-2">{selected.description}</p>
             </div>
             <a
               href={selected.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-400 hover:text-blue-300 whitespace-nowrap font-medium"
+              className="text-sm text-orange-400 hover:text-orange-300 whitespace-nowrap font-medium"
             >
-              USGS Details →
+              Details →
             </a>
           </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!hasFires && !isLoading && !selected && (
+        <div className="px-4 py-3 bg-emerald-900/20 border-t border-emerald-800/30">
+          <p className="text-sm text-emerald-400 text-center">
+            No significant wildfire activity detected globally.
+          </p>
         </div>
       )}
     </div>
   );
 }
 
-export const SeismicMap = memo(SeismicMapComponent);
+export const FiresMap = memo(FiresMapComponent);

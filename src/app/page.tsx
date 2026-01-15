@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { WatchpointSelector, NewsFeed, Legend, WorldMap, SituationBriefing, SeismicMap } from '@/components';
+import { WatchpointSelector, NewsFeed, Legend, WorldMap, SituationBriefing, SeismicMap, WeatherMap, OutagesMap, TravelMap, FiresMap } from '@/components';
 import { watchpoints as defaultWatchpoints } from '@/lib/mockData';
 import { NewsItem, WatchpointId, Watchpoint, Earthquake } from '@/types';
-import { SparklesIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { SparklesIcon, GlobeAltIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon } from '@heroicons/react/24/outline';
 import { BoltIcon, MapPinIcon } from '@heroicons/react/24/solid';
 
 interface ApiResponse {
@@ -14,7 +14,7 @@ interface ApiResponse {
   totalItems: number;
 }
 
-type HeroView = 'hotspots' | 'seismic';
+type HeroView = 'hotspots' | 'seismic' | 'weather' | 'outages' | 'travel' | 'fires';
 
 export default function Home() {
   const [selectedWatchpoint, setSelectedWatchpoint] = useState<WatchpointId>('all');
@@ -202,23 +202,88 @@ export default function Home() {
             <GlobeAltIcon className="w-3.5 h-3.5" />
             Seismic
           </button>
+          <button
+            onClick={() => setHeroView('weather')}
+            className={`
+              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+              ${heroView === 'weather'
+                ? 'bg-cyan-500 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-white/10'
+              }
+            `}
+          >
+            <CloudIcon className="w-3.5 h-3.5" />
+            Weather
+          </button>
+          <button
+            onClick={() => setHeroView('outages')}
+            className={`
+              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+              ${heroView === 'outages'
+                ? 'bg-purple-500 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-white/10'
+              }
+            `}
+          >
+            <SignalIcon className="w-3.5 h-3.5" />
+            Outages
+          </button>
+          <button
+            onClick={() => setHeroView('travel')}
+            className={`
+              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+              ${heroView === 'travel'
+                ? 'bg-rose-500 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-white/10'
+              }
+            `}
+          >
+            <ExclamationTriangleIcon className="w-3.5 h-3.5" />
+            Travel
+          </button>
+          <button
+            onClick={() => setHeroView('fires')}
+            className={`
+              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+              ${heroView === 'fires'
+                ? 'bg-orange-500 text-white'
+                : 'text-gray-400 hover:text-white hover:bg-white/10'
+              }
+            `}
+          >
+            <FireIcon className="w-3.5 h-3.5" />
+            Fires
+          </button>
         </div>
 
         {/* Map Views */}
-        {heroView === 'hotspots' ? (
+        {heroView === 'hotspots' && (
           <WorldMap
             watchpoints={watchpoints}
             selected={selectedWatchpoint}
             onSelect={setSelectedWatchpoint}
             regionCounts={regionCounts}
           />
-        ) : (
+        )}
+        {heroView === 'seismic' && (
           <SeismicMap
             earthquakes={earthquakes}
             selected={selectedQuake}
             onSelect={setSelectedQuake}
             isLoading={seismicLoading}
           />
+        )}
+        {heroView === 'weather' && (
+          <WeatherMap />
+        )}
+        {heroView === 'outages' && (
+          <OutagesMap />
+        )}
+        {heroView === 'travel' && (
+          <TravelMap />
+        )}
+        {heroView === 'fires' && (
+          <FiresMap />
         )}
       </div>
 

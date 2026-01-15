@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import {
   ComposableMap,
   Geographies,
@@ -9,7 +9,6 @@ import {
   ZoomableGroup,
 } from 'react-simple-maps';
 import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
-import type { Earthquake } from '@/types';
 
 // Default zoom settings
 const DEFAULT_CENTER: [number, number] = [0, 15];
@@ -17,38 +16,41 @@ const DEFAULT_ZOOM = 1;
 
 const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
-interface SeismicMapProps {
-  earthquakes: Earthquake[];
-  selected: Earthquake | null;
-  onSelect: (eq: Earthquake | null) => void;
-  isLoading?: boolean;
+interface WeatherEvent {
+  id: string;
+  type: 'hurricane' | 'typhoon' | 'storm' | 'wildfire' | 'flood' | 'tornado' | 'extreme_temp';
+  name: string;
+  description: string;
+  severity: 'extreme' | 'severe' | 'moderate' | 'minor';
+  coordinates: [number, number];
+  startTime: Date;
+  endTime?: Date;
+  source: string;
+  url?: string;
+  affectedAreas?: string[];
 }
 
-// Get circle radius based on magnitude (exponential scaling)
-function getMagnitudeRadius(mag: number): number {
-  // More visible scaling: mag 2.5 = 6px, mag 5 = 16px, mag 7 = 40px
-  return Math.pow(2, mag - 1) * 1.5;
+interface WeatherMapProps {
+  onEventSelect?: (event: WeatherEvent | null) => void;
 }
 
-// Get color based on magnitude
-function getMagnitudeColor(mag: number): string {
-  if (mag >= 7) return '#dc2626'; // Red - major
-  if (mag >= 6) return '#ea580c'; // Orange - strong
-  if (mag >= 5) return '#f59e0b'; // Amber - moderate
-  if (mag >= 4) return '#eab308'; // Yellow - light
-  return '#22c55e'; // Green - minor
-}
+// Event type icons and colors
+const eventStyles: Record<WeatherEvent['type'], { color: string; icon: string }> = {
+  hurricane: { color: '#dc2626', icon: '🌀' },
+  typhoon: { color: '#dc2626', icon: '🌀' },
+  storm: { color: '#f59e0b', icon: '⛈️' },
+  tornado: { color: '#7c3aed', icon: '🌪️' },
+  wildfire: { color: '#ea580c', icon: '🔥' },
+  flood: { color: '#3b82f6', icon: '🌊' },
+  extreme_temp: { color: '#06b6d4', icon: '🌡️' },
+};
 
-// Get alert color
-function getAlertColor(alert: Earthquake['alert']): string {
-  switch (alert) {
-    case 'red': return '#dc2626';
-    case 'orange': return '#ea580c';
-    case 'yellow': return '#eab308';
-    case 'green': return '#22c55e';
-    default: return '#6b7280';
-  }
-}
+const severityColors = {
+  extreme: '#dc2626',
+  severe: '#f59e0b',
+  moderate: '#3b82f6',
+  minor: '#6b7280',
+};
 
 function formatTimeAgo(date: Date): string {
   const now = new Date();
@@ -60,8 +62,12 @@ function formatTimeAgo(date: Date): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
-function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: SeismicMapProps) {
+function WeatherMapComponent({ onEventSelect }: WeatherMapProps) {
   const [isMounted, setIsMounted] = useState(false);
+  const [events, setEvents] = useState<WeatherEvent[]>([]);
+  const [selected, setSelected] = useState<WeatherEvent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
 
   const handleZoomIn = () => {
@@ -82,15 +88,47 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
     setPosition(position);
   };
 
+  const fetchEvents = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/weather');
+      const data = await response.json();
+      if (data.events) {
+        setEvents(data.events.map((e: any) => ({
+          ...e,
+          startTime: new Date(e.startTime),
+          endTime: e.endTime ? new Date(e.endTime) : undefined,
+        })));
+        setStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch weather events:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    fetchEvents();
+  }, [fetchEvents]);
+
+  // Auto-refresh every 15 minutes
+  useEffect(() => {
+    const timer = setInterval(fetchEvents, 15 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [fetchEvents]);
+
+  const handleSelect = (event: WeatherEvent | null) => {
+    setSelected(event);
+    onEventSelect?.(event);
+  };
 
   if (!isMounted) {
     return (
       <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
         <div className="relative h-[280px] sm:h-[340px] flex items-center justify-center">
-          <div className="text-gray-600 text-sm">Loading seismic map...</div>
+          <div className="text-gray-600 text-sm">Loading weather map...</div>
         </div>
       </div>
     );
@@ -136,50 +174,55 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
             }
           </Geographies>
 
-          {/* Earthquake markers */}
-          {earthquakes.map((eq) => {
-            const isSelected = selected?.id === eq.id;
-            const radius = getMagnitudeRadius(eq.magnitude);
-            const color = getMagnitudeColor(eq.magnitude);
+          {/* Weather event markers */}
+          {events.map((event) => {
+            const isSelected = selected?.id === event.id;
+            const style = eventStyles[event.type];
+            const baseRadius = event.severity === 'extreme' ? 14 :
+                              event.severity === 'severe' ? 12 : 10;
 
             return (
               <Marker
-                key={eq.id}
-                coordinates={[eq.coordinates[0], eq.coordinates[1]]}
-                onClick={() => onSelect(isSelected ? null : eq)}
+                key={event.id}
+                coordinates={event.coordinates}
+                onClick={() => handleSelect(isSelected ? null : event)}
                 style={{ default: { cursor: 'pointer' } }}
               >
-                {/* Outer glow for significant quakes */}
-                {eq.magnitude >= 5 && (
+                {/* Pulse for extreme events */}
+                {event.severity === 'extreme' && (
                   <circle
-                    r={radius * 1.6}
-                    fill={color}
-                    fillOpacity={0.25}
-                    className={eq.magnitude >= 6 ? 'animate-ping' : ''}
+                    r={baseRadius * 2}
+                    fill={style.color}
+                    fillOpacity={0.2}
+                    className="animate-ping"
                   />
                 )}
 
-                {/* Main marker */}
+                {/* Outer glow */}
                 <circle
-                  r={radius}
-                  fill={color}
-                  fillOpacity={0.8}
-                  stroke={isSelected ? '#fff' : 'rgba(255,255,255,0.4)'}
-                  strokeWidth={isSelected ? 3 : 1}
-                  className="transition-all duration-200 hover:fill-opacity-100"
+                  r={isSelected ? baseRadius * 1.5 : baseRadius * 1.2}
+                  fill={style.color}
+                  fillOpacity={0.3}
                 />
 
-                {/* Magnitude label for large quakes */}
-                {eq.magnitude >= 5 && (
+                {/* Main marker */}
+                <circle
+                  r={isSelected ? baseRadius : baseRadius * 0.8}
+                  fill={style.color}
+                  fillOpacity={0.9}
+                  stroke={isSelected ? '#fff' : 'rgba(255,255,255,0.3)'}
+                  strokeWidth={isSelected ? 3 : 1}
+                />
+
+                {/* Icon for significant events */}
+                {(event.severity === 'extreme' || event.severity === 'severe') && (
                   <text
-                    y={radius + 16}
+                    y={baseRadius + 18}
                     textAnchor="middle"
-                    fill="#fff"
-                    fontSize={12}
-                    fontWeight="bold"
+                    fontSize={14}
                     style={{ textShadow: '0 2px 4px rgba(0,0,0,0.9)' }}
                   >
-                    M{eq.magnitude.toFixed(1)}
+                    {style.icon}
                   </text>
                 )}
               </Marker>
@@ -216,83 +259,73 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
         {/* Loading overlay */}
         {isLoading && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
         {/* Legend */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-4 text-xs text-gray-400 z-10 bg-black/60 px-3 py-2 rounded-lg">
+        <div className="absolute bottom-4 right-4 flex items-center gap-3 text-xs text-gray-400 z-10 bg-black/60 px-3 py-2 rounded-lg">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-red-500" />
-            <span>7+</span>
+            <span>🌀</span>
+            <span>Hurricane</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-orange-500" />
-            <span>6+</span>
+            <span>🔥</span>
+            <span>Fire</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-amber-500" />
-            <span>5+</span>
+            <span>⛈️</span>
+            <span>Storm</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-green-500" />
-            <span>&lt;5</span>
+            <span>🌊</span>
+            <span>Flood</span>
           </div>
         </div>
 
         {/* Stats badge */}
         <div className="absolute top-4 left-4 text-sm text-gray-300 z-10 bg-black/60 px-3 py-2 rounded-lg font-medium">
-          {earthquakes.length} earthquakes (24h)
+          {events.length} active alerts
         </div>
       </div>
 
-      {/* Selected earthquake details */}
+      {/* Selected event details */}
       {selected && (
         <div className="px-4 py-4 bg-black/40 border-t border-gray-800/40">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2">
+                <span className="text-lg">{eventStyles[selected.type].icon}</span>
                 <span
                   className="px-3 py-1 text-sm font-bold rounded-lg"
                   style={{
-                    backgroundColor: `${getMagnitudeColor(selected.magnitude)}25`,
-                    color: getMagnitudeColor(selected.magnitude),
+                    backgroundColor: `${severityColors[selected.severity]}25`,
+                    color: severityColors[selected.severity],
                   }}
                 >
-                  M{selected.magnitude.toFixed(1)}
+                  {selected.severity.toUpperCase()}
                 </span>
-                <span className="text-sm text-gray-400">{formatTimeAgo(selected.time)}</span>
-                {selected.tsunami && (
-                  <span className="px-2 py-1 text-xs font-medium bg-blue-500/20 text-blue-400 rounded-lg">
-                    TSUNAMI
-                  </span>
-                )}
-                {selected.alert && (
-                  <span
-                    className="px-2 py-1 text-xs font-medium rounded-lg"
-                    style={{
-                      backgroundColor: `${getAlertColor(selected.alert)}20`,
-                      color: getAlertColor(selected.alert),
-                    }}
-                  >
-                    {selected.alert.toUpperCase()} ALERT
-                  </span>
-                )}
+                <span className="text-sm text-gray-400">{formatTimeAgo(selected.startTime)}</span>
               </div>
-              <p className="text-base text-gray-200 truncate">{selected.place}</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Depth: {selected.depth.toFixed(1)}km
-                {selected.felt && ` • ${selected.felt} felt reports`}
-              </p>
+              <p className="text-base font-medium text-gray-200">{selected.name}</p>
+              <p className="text-sm text-gray-400 mt-1 line-clamp-2">{selected.description}</p>
+              {selected.affectedAreas && selected.affectedAreas.length > 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Areas: {selected.affectedAreas.slice(0, 3).join(', ')}
+                  {selected.affectedAreas.length > 3 && ` +${selected.affectedAreas.length - 3} more`}
+                </p>
+              )}
             </div>
-            <a
-              href={selected.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-blue-400 hover:text-blue-300 whitespace-nowrap font-medium"
-            >
-              USGS Details →
-            </a>
+            {selected.url && (
+              <a
+                href={selected.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-amber-400 hover:text-amber-300 whitespace-nowrap font-medium"
+              >
+                Details →
+              </a>
+            )}
           </div>
         </div>
       )}
@@ -300,4 +333,4 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
   );
 }
 
-export const SeismicMap = memo(SeismicMapComponent);
+export const WeatherMap = memo(WeatherMapComponent);

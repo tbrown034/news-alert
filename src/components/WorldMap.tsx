@@ -6,7 +6,9 @@ import {
   Geographies,
   Geography,
   Marker,
+  ZoomableGroup,
 } from 'react-simple-maps';
+import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
 import { Watchpoint, WatchpointId } from '@/types';
 
 // World map TopoJSON - using a CDN for the geography data
@@ -56,9 +58,32 @@ const regionMarkers: Record<string, { coordinates: [number, number]; label: stri
   'us-domestic': { coordinates: [-98.5, 39.8], label: 'United States', city: 'DC' },
 };
 
+// Default zoom settings
+const DEFAULT_CENTER: [number, number] = [40, 25];
+const DEFAULT_ZOOM = 1;
+
 function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {} }: WorldMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
+
+  const handleZoomIn = () => {
+    if (position.zoom >= 4) return;
+    setPosition(pos => ({ ...pos, zoom: pos.zoom * 1.5 }));
+  };
+
+  const handleZoomOut = () => {
+    if (position.zoom <= 0.5) return;
+    setPosition(pos => ({ ...pos, zoom: pos.zoom / 1.5 }));
+  };
+
+  const handleReset = () => {
+    setPosition({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
+  };
+
+  const handleMoveEnd = (position: { coordinates: [number, number]; zoom: number }) => {
+    setPosition(position);
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -96,13 +121,20 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {} 
           projection="geoEqualEarth"
           projectionConfig={{
             scale: 280,
-            center: [40, 25],
+            center: [0, 0],
           }}
           style={{
             width: '100%',
             height: '100%',
           }}
         >
+          <ZoomableGroup
+            zoom={position.zoom}
+            center={position.coordinates}
+            onMoveEnd={handleMoveEnd}
+            minZoom={0.5}
+            maxZoom={4}
+          >
           <Geographies geography={geoUrl}>
             {({ geographies }) =>
               geographies.map((geo) => (
@@ -221,7 +253,33 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {} 
               </Marker>
             );
           })}
+          </ZoomableGroup>
         </ComposableMap>
+
+        {/* Zoom Controls */}
+        <div className="absolute top-4 left-4 flex flex-col gap-1 z-10">
+          <button
+            onClick={handleZoomIn}
+            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+            title="Zoom in"
+          >
+            <PlusIcon className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleZoomOut}
+            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+            title="Zoom out"
+          >
+            <MinusIcon className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleReset}
+            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+            title="Reset view"
+          >
+            <ArrowPathIcon className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* "All Regions" button */}
         <button

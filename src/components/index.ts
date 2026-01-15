@@ -8,3 +8,7 @@ export { SituationBriefing } from './SituationBriefing';
 export { InlineBriefing } from './InlineBriefing';
 export { SeismicMap } from './SeismicMap';
 export { SeismicFeed } from './SeismicFeed';
+export { WeatherMap } from './WeatherMap';
+export { OutagesMap } from './OutagesMap';
+export { TravelMap } from './TravelMap';
+export { FiresMap } from './FiresMap';
