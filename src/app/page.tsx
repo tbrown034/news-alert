@@ -151,11 +151,11 @@ export default function Home() {
           {/* Logo + Tagline */}
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <BoltIcon className="w-4 h-4 text-white" />
+              <GlobeAltIcon className="w-4 h-4 text-white" />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-[15px] font-bold text-white leading-none">newsAlert</h1>
-              <p className="text-[11px] text-gray-500 leading-none mt-0.5">Breaking news before it&apos;s news</p>
+              <h1 className="text-[15px] font-bold text-white leading-none">Sentinel</h1>
+              <p className="text-[11px] text-gray-500 leading-none mt-0.5">Global intelligence, real-time</p>
             </div>
           </div>
 

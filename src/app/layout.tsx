@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "newsAlert",
-  description: "Real-time geopolitical situational awareness dashboard",
+  title: "Sentinel",
+  description: "Real-time OSINT and geopolitical monitoring dashboard",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

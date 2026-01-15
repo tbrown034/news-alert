@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Globe outline -->
+  <circle cx="32" cy="32" r="24" stroke="#3b82f6" stroke-width="2" fill="none"/>
+
+  <!-- Horizontal lines (latitude) -->
+  <ellipse cx="32" cy="32" rx="24" ry="8" stroke="#3b82f6" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <ellipse cx="32" cy="32" rx="24" ry="16" stroke="#3b82f6" stroke-width="1.5" fill="none" opacity="0.4"/>
+
+  <!-- Vertical line (meridian) -->
+  <ellipse cx="32" cy="32" rx="8" ry="24" stroke="#3b82f6" stroke-width="1.5" fill="none" opacity="0.6"/>
+
+  <!-- Radar pulse arcs -->
+  <path d="M32 8 A24 24 0 0 1 56 32" stroke="#3b82f6" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.9"/>
+  <path d="M32 12 A20 20 0 0 1 52 32" stroke="#3b82f6" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M32 16 A16 16 0 0 1 48 32" stroke="#3b82f6" stroke-width="1" fill="none" stroke-linecap="round" opacity="0.4"/>
+
+  <!-- Center dot -->
+  <circle cx="32" cy="32" r="3" fill="#3b82f6"/>
+</svg>
