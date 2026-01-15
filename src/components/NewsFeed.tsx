@@ -27,20 +27,23 @@ interface NewsFeedProps {
   onRetry?: () => void;
 }
 
-// Skeleton loader for news cards - Light theme
-function NewsCardSkeleton() {
+// Skeleton loader for news cards - Light theme with shimmer
+function NewsCardSkeleton({ index = 0 }: { index?: number }) {
   return (
-    <div className="px-4 py-4 border-b border-slate-100 animate-pulse">
+    <div
+      className="px-4 py-4 border-b border-slate-100"
+      style={{ animationDelay: `${index * 100}ms` }}
+    >
       <div className="flex flex-col gap-3">
         <div className="space-y-2">
-          <div className="h-4 bg-slate-200 rounded w-[90%]" />
-          <div className="h-4 bg-slate-200 rounded w-[70%]" />
+          <div className="h-4 skeleton-shimmer rounded w-[90%]" />
+          <div className="h-4 skeleton-shimmer rounded w-[70%]" />
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-4 h-4 bg-slate-200 rounded" />
-          <div className="h-3 bg-slate-200 rounded w-24" />
-          <div className="h-3 bg-slate-200 rounded w-16" />
-          <div className="h-3 bg-slate-200 rounded w-12" />
+          <div className="w-4 h-4 skeleton-shimmer rounded" />
+          <div className="h-3 skeleton-shimmer rounded w-24" />
+          <div className="h-3 skeleton-shimmer rounded w-16" />
+          <div className="h-3 skeleton-shimmer rounded w-12" />
         </div>
       </div>
     </div>
@@ -213,7 +216,7 @@ export function NewsFeed({
           {isLoading && sortedItems.length === 0 && !error && (
             <div className="flex flex-col">
               {[...Array(5)].map((_, i) => (
-                <NewsCardSkeleton key={i} />
+                <NewsCardSkeleton key={i} index={i} />
               ))}
             </div>
           )}

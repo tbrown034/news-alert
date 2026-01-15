@@ -189,7 +189,7 @@ export default function Home() {
               </a>
               <button
                 onClick={() => setShowBriefing(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 shadow-sm btn-press hover:shadow-md"
               >
                 <SparklesIcon className="w-4 h-4" />
                 AI Briefing
@@ -223,7 +223,7 @@ export default function Home() {
                 key={tab.id}
                 onClick={() => setHeroView(tab.id)}
                 className={`
-                  flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all flex-shrink-0
+                  flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold flex-shrink-0 btn-press
                   ${getTabClasses(tab.id, tab.color)}
                 `}
               >

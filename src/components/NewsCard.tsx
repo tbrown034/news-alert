@@ -84,7 +84,8 @@ export function NewsCard({ item }: NewsCardProps) {
       aria-label={`${item.title}. From ${item.source.name}. Click to open source.`}
       className={`
         relative px-4 py-4 border-b border-slate-100
-        hover:bg-slate-50 transition-all duration-200 cursor-pointer
+        hover:bg-gradient-to-r hover:from-slate-50 hover:to-transparent
+        transition-all duration-300 cursor-pointer group
         focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white
         ${getCardAccent()}
       `}
