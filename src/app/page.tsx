@@ -175,11 +175,11 @@ export default function Home() {
       {/* Hero Section - Map with view tabs */}
       <div className="relative">
         {/* View Mode Tabs */}
-        <div className="absolute top-3 right-4 z-20 flex gap-1 bg-black/60 backdrop-blur-sm rounded-full p-1">
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-4 z-20 flex gap-1 bg-black/60 backdrop-blur-sm rounded-full p-1 max-w-[calc(100vw-2rem)] overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setHeroView('hotspots')}
             className={`
-              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0
               ${heroView === 'hotspots'
                 ? 'bg-blue-500 text-white'
                 : 'text-gray-400 hover:text-white hover:bg-white/10'
@@ -192,7 +192,7 @@ export default function Home() {
           <button
             onClick={() => setHeroView('seismic')}
             className={`
-              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0
               ${heroView === 'seismic'
                 ? 'bg-amber-500 text-white'
                 : 'text-gray-400 hover:text-white hover:bg-white/10'
@@ -205,7 +205,7 @@ export default function Home() {
           <button
             onClick={() => setHeroView('weather')}
             className={`
-              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0
               ${heroView === 'weather'
                 ? 'bg-cyan-500 text-white'
                 : 'text-gray-400 hover:text-white hover:bg-white/10'
@@ -218,7 +218,7 @@ export default function Home() {
           <button
             onClick={() => setHeroView('outages')}
             className={`
-              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0
               ${heroView === 'outages'
                 ? 'bg-purple-500 text-white'
                 : 'text-gray-400 hover:text-white hover:bg-white/10'
@@ -231,7 +231,7 @@ export default function Home() {
           <button
             onClick={() => setHeroView('travel')}
             className={`
-              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0
               ${heroView === 'travel'
                 ? 'bg-rose-500 text-white'
                 : 'text-gray-400 hover:text-white hover:bg-white/10'
@@ -244,7 +244,7 @@ export default function Home() {
           <button
             onClick={() => setHeroView('fires')}
             className={`
-              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all
+              flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all flex-shrink-0
               ${heroView === 'fires'
                 ? 'bg-orange-500 text-white'
                 : 'text-gray-400 hover:text-white hover:bg-white/10'
