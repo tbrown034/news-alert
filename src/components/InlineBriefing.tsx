@@ -4,6 +4,27 @@ import { useState, useEffect, useRef } from 'react';
 import { WatchpointId } from '@/types';
 import { regionDisplayNames } from '@/lib/regionDetection';
 
+// Client-side cache - persists across region switches
+const CACHE_TTL_MS = 3 * 60 * 1000; // 3 minutes minimum between API calls per region
+const briefingCache = new Map<string, { data: BriefingData; cachedAt: number }>();
+
+function getCachedBriefing(region: WatchpointId): BriefingData | null {
+  const cached = briefingCache.get(region);
+  if (!cached) return null;
+
+  const age = Date.now() - cached.cachedAt;
+  if (age > CACHE_TTL_MS) {
+    briefingCache.delete(region);
+    return null;
+  }
+
+  return cached.data;
+}
+
+function setCachedBriefing(region: WatchpointId, data: BriefingData): void {
+  briefingCache.set(region, { data, cachedAt: Date.now() });
+}
+
 interface BriefingData {
   region: WatchpointId;
   timeWindowHours: number;
@@ -49,6 +70,15 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
     const controller = new AbortController();
 
     const fetchBriefing = async () => {
+      // Check client-side cache first
+      const cached = getCachedBriefing(region);
+      if (cached && retryCount === 0) {
+        console.log(`[InlineBriefing] Using cached briefing for ${region}`);
+        setBriefing({ ...cached, fromCache: true });
+        setLoadTimeMs(0);
+        return;
+      }
+
       setLoading(true);
       setError(null);
       setLoadTimeMs(null);
@@ -83,6 +113,11 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
         const data = await response.json();
         console.log(`[InlineBriefing] Briefing loaded in ${elapsed}ms, ${data.sourcesAnalyzed} sources analyzed`);
         setBriefing(data);
+
+        // Cache the result (only if not pending/limited)
+        if (!data.pending && !data.limited) {
+          setCachedBriefing(region, data);
+        }
 
         // If data is pending or limited, schedule auto-refresh to get fuller data
         if ((data.pending || data.limited) && retryCount < 5) {
