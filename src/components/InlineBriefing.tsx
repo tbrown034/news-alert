@@ -15,6 +15,13 @@ interface BriefingData {
   fromCache?: boolean;
   pending?: boolean; // Data still loading
   limited?: boolean; // Only partial data available
+  usage?: {
+    model: string;
+    inputTokens: number;
+    outputTokens: number;
+    latencyMs: number;
+    costUsd: number;
+  };
 }
 
 interface InlineBriefingProps {
@@ -185,22 +192,27 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
         </p>
       </div>
 
-      {/* Footer - minimal stats with latency */}
-      <div className="px-4 py-2 bg-slate-50 dark:bg-[#16181c] border-t border-slate-100 dark:border-[#2f3336] text-2xs text-slate-400 dark:text-[#536471] flex justify-between">
+      {/* Footer - stats with tokens, latency, cost */}
+      <div className="px-4 py-2 bg-slate-50 dark:bg-[#16181c] border-t border-slate-100 dark:border-[#2f3336] text-2xs text-slate-400 dark:text-[#536471] flex justify-between flex-wrap gap-1">
         <div className="flex items-center gap-2">
-          <span>{briefing.sourcesAnalyzed} posts analyzed</span>
+          <span>{briefing.sourcesAnalyzed} posts</span>
           {(briefing.pending || briefing.limited) && (
             <span className="flex items-center gap-1 text-blue-500">
               <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-              updating...
+              updating
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
-          {briefing.fromCache && (
-            <span className="text-slate-400 dark:text-[#536471]">cached</span>
+          {briefing.fromCache && <span>cached</span>}
+          {briefing.usage && (
+            <>
+              <span>{briefing.usage.inputTokens + briefing.usage.outputTokens} tok</span>
+              <span>{briefing.usage.latencyMs > 1000 ? `${(briefing.usage.latencyMs / 1000).toFixed(1)}s` : `${briefing.usage.latencyMs}ms`}</span>
+              <span>${briefing.usage.costUsd.toFixed(4)}</span>
+            </>
           )}
-          {loadTimeMs !== null && (
+          {!briefing.usage && loadTimeMs !== null && (
             <span className={loadTimeMs > 10000 ? 'text-amber-500' : ''}>
               {loadTimeMs > 1000 ? `${(loadTimeMs / 1000).toFixed(1)}s` : `${loadTimeMs}ms`}
             </span>
