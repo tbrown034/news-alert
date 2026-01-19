@@ -237,10 +237,11 @@ export async function generateSummary(
   // Build enhanced prompt
   const prompt = buildEnhancedPrompt(structuredPosts, region, timeWindowHours);
 
-  // Call Claude API
+  // Call Claude API with streaming to avoid Vercel timeout
   const client = new Anthropic();
 
-  const response = await client.messages.create({
+  // Use streaming to keep connection alive (avoids 10s Vercel Hobby timeout)
+  const stream = client.messages.stream({
     model,
     max_tokens: 1024,
     messages: [
@@ -251,25 +252,29 @@ export async function generateSummary(
     ],
   });
 
+  // Collect streamed text
+  let fullText = '';
+  for await (const event of stream) {
+    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+      fullText += event.delta.text;
+    }
+  }
+
+  // Get final message for usage stats
+  const finalMessage = await stream.finalMessage();
   const latencyMs = Date.now() - startTime;
 
   // Extract usage
-  const inputTokens = response.usage?.input_tokens || 0;
-  const outputTokens = response.usage?.output_tokens || 0;
+  const inputTokens = finalMessage.usage?.input_tokens || 0;
+  const outputTokens = finalMessage.usage?.output_tokens || 0;
 
   // Calculate cost
   const pricing = MODEL_PRICING[model] || { input: 3.0, output: 15.0 };
   const costUsd = (inputTokens * pricing.input / 1_000_000) +
                   (outputTokens * pricing.output / 1_000_000);
 
-  // Parse response
-  const textContent = response.content.find(c => c.type === 'text');
-  if (!textContent || textContent.type !== 'text') {
-    throw new Error('No text response from Claude');
-  }
-
   // Extract JSON from response (handle markdown code blocks if any)
-  let jsonStr = textContent.text;
+  let jsonStr = fullText;
   const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonMatch) {
     jsonStr = jsonMatch[1];

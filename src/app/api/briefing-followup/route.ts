@@ -84,31 +84,36 @@ Provide a concise, factual response (2-4 sentences). Focus on what's known from 
 
     const client = new Anthropic();
 
-    const response = await client.messages.create({
+    // Use streaming to avoid Vercel timeout
+    const stream = client.messages.stream({
       model,
       max_tokens: 256,
       messages: [{ role: 'user', content: prompt }],
     });
 
+    // Collect streamed text
+    let fullText = '';
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+        fullText += event.delta.text;
+      }
+    }
+
+    // Get final message for usage stats
+    const finalMessage = await stream.finalMessage();
     const latencyMs = Date.now() - startTime;
 
     // Extract usage
-    const inputTokens = response.usage?.input_tokens || 0;
-    const outputTokens = response.usage?.output_tokens || 0;
+    const inputTokens = finalMessage.usage?.input_tokens || 0;
+    const outputTokens = finalMessage.usage?.output_tokens || 0;
 
     // Calculate cost
     const pricing = MODEL_PRICING[model];
     const costUsd = (inputTokens * pricing.input / 1_000_000) +
                     (outputTokens * pricing.output / 1_000_000);
 
-    // Get response text
-    const textContent = response.content.find(c => c.type === 'text');
-    if (!textContent || textContent.type !== 'text') {
-      throw new Error('No text response from Claude');
-    }
-
     return NextResponse.json({
-      answer: textContent.text,
+      answer: fullText,
       usage: {
         model,
         inputTokens,
