@@ -336,8 +336,23 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
               className="flex items-center gap-2 sm:gap-4 hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-lg"
               aria-label="News Alert home - reset to all regions"
             >
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-slate-700 dark:to-slate-900 rounded-xl flex items-center justify-center shadow-md shadow-black/20 dark:shadow-black/30 border border-blue-400 dark:border-slate-600">
-                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 animate-pulse-subtle" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl flex items-center justify-center shadow-md shadow-black/30 border border-slate-600">
+                <svg viewBox="0 0 32 32" className="w-5 h-5 sm:w-6 sm:h-6">
+                  <defs>
+                    <linearGradient id="headerPulseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#22d3ee"/>
+                      <stop offset="100%" stopColor="#3b82f6"/>
+                    </linearGradient>
+                  </defs>
+                  {/* Globe outline */}
+                  <circle cx="16" cy="16" r="9" fill="none" stroke="url(#headerPulseGrad)" strokeWidth="2"/>
+                  {/* Globe meridian */}
+                  <ellipse cx="16" cy="16" rx="3.5" ry="9" fill="none" stroke="url(#headerPulseGrad)" strokeWidth="1.5" opacity="0.7"/>
+                  {/* Globe equator */}
+                  <ellipse cx="16" cy="16" rx="9" ry="3.5" fill="none" stroke="url(#headerPulseGrad)" strokeWidth="1.5" opacity="0.7"/>
+                  {/* Outer pulse ring */}
+                  <circle cx="16" cy="16" r="14" fill="none" stroke="url(#headerPulseGrad)" strokeWidth="1.5" opacity="0.35" className="animate-pulse-subtle"/>
+                </svg>
               </div>
               <div className="text-left">
                 <h1 className="text-xl sm:text-2xl font-bold headline text-slate-900 dark:text-white">
@@ -393,43 +408,88 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
             </button>
           </div>
 
-          {/* Mobile Menu Dropdown */}
+{/* Mobile Menu - Slide-out Panel */}
           {mobileMenuOpen && (
-            <nav className="md:hidden border-t border-slate-200 dark:border-slate-800 py-3 space-y-1 bg-white dark:bg-black">
-              <a
-                href="#map"
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 bg-black/50 z-40 md:hidden"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-              >
-                <MapPinIcon className="w-4 h-4 inline mr-2" />
-                Map View
-              </a>
-              <a
-                href="#feed"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-              >
-                <GlobeAltIcon className="w-4 h-4 inline mr-2" />
-                Live Feed
-              </a>
-              {/* Theme Toggle for mobile */}
-              <button
-                onClick={toggleTheme}
-                className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-              >
-                {theme === 'dark' ? (
-                  <>
-                    <SunIcon className="w-4 h-4 mr-2" />
-                    Light Mode
-                  </>
-                ) : (
-                  <>
-                    <MoonIcon className="w-4 h-4 mr-2" />
-                    Dark Mode
-                  </>
-                )}
-              </button>
-            </nav>
+                aria-hidden="true"
+              />
+
+              {/* Panel */}
+              <div className="fixed top-0 right-0 bottom-0 w-72 bg-white dark:bg-slate-900 z-50 md:hidden shadow-2xl transform transition-transform duration-300 ease-out">
+                {/* Panel Header */}
+                <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200 dark:border-slate-800">
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">Menu</span>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="p-2 -mr-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                    aria-label="Close menu"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Panel Content */}
+                <div className="flex flex-col h-[calc(100%-3.5rem)] overflow-y-auto">
+                  {/* Navigation Section */}
+                  <div className="p-2">
+                    <p className="px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                      Navigation
+                    </p>
+                    <a
+                      href="#map"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                    >
+                      <MapPinIcon className="w-5 h-5 text-slate-400" />
+                      Map View
+                    </a>
+                    <a
+                      href="#feed"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                    >
+                      <GlobeAltIcon className="w-5 h-5 text-slate-400" />
+                      Live Feed
+                    </a>
+                  </div>
+
+                  {/* Preferences Section */}
+                  <div className="p-2 border-t border-slate-200 dark:border-slate-800">
+                    <p className="px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                      Preferences
+                    </p>
+                    <button
+                      onClick={toggleTheme}
+                      className="flex items-center justify-between w-full px-3 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        {theme === 'dark' ? (
+                          <SunIcon className="w-5 h-5 text-slate-400" />
+                        ) : (
+                          <MoonIcon className="w-5 h-5 text-slate-400" />
+                        )}
+                        <span>Appearance</span>
+                      </div>
+                      <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
+                        {theme === 'dark' ? 'Dark' : 'Light'}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Account Section - Push to bottom */}
+                  <div className="mt-auto p-2 border-t border-slate-200 dark:border-slate-800">
+                    <p className="px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                      Account
+                    </p>
+                    <AuthButton variant="mobile" onNavigate={() => setMobileMenuOpen(false)} />
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </header>
