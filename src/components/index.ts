@@ -12,3 +12,4 @@ export { WeatherMap } from './WeatherMap';
 export { OutagesMap } from './OutagesMap';
 export { TravelMap } from './TravelMap';
 export { FiresMap } from './FiresMap';
+export { AuthButton } from './AuthButton';
