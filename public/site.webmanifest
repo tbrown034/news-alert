@@ -1,0 +1,27 @@
+{
+  "name": "Pulse",
+  "short_name": "Pulse",
+  "description": "Real-time global intelligence dashboard. Monitor breaking news, seismic activity, and geopolitical events from 380+ verified sources worldwide.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#22d3ee",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

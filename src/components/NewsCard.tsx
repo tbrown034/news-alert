@@ -80,10 +80,10 @@ export function NewsCard({ item }: NewsCardProps) {
       tabIndex={0}
       aria-label={`${item.title}. From ${item.source.name}. Click to open source.`}
       className="
-        relative px-3 py-3 sm:px-4 sm:py-4 bg-white dark:bg-[#16181c] rounded-xl
-        border border-slate-200/80 dark:border-[#2f3336]
-        hover:border-slate-300 dark:hover:border-[#536471]
-        hover:shadow-md hover:shadow-slate-200/50 dark:hover:shadow-none dark:hover:bg-[#1c1f23]
+        relative px-3 py-3 sm:px-4 sm:py-4 bg-white dark:bg-slate-900 rounded-xl
+        border border-slate-200/80 dark:border-slate-800
+        hover:border-slate-300 dark:hover:border-slate-600
+        hover:shadow-md hover:shadow-slate-200/50 dark:hover:shadow-none dark:hover:bg-slate-800
         transition-all duration-200 cursor-pointer group
         focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-black
       "
@@ -98,16 +98,16 @@ export function NewsCard({ item }: NewsCardProps) {
             <span className={platformColor}>
               <PlatformIcon platform={item.source.platform} className="w-4 h-4" />
             </span>
-            <span className="text-xs font-semibold text-slate-700 dark:text-[#e7e9ea] truncate">
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-100 truncate">
               {item.source.name}
             </span>
             {isVerified && (
               <CheckBadgeSolid className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
             )}
-            <span className="text-2xs text-slate-400 dark:text-[#71767b]" suppressHydrationWarning>
+            <span className="text-2xs text-slate-400 dark:text-slate-500" suppressHydrationWarning>
               · {formatTimeAgo(item.timestamp)}
             </span>
-            <span className="hidden sm:inline text-2xs text-slate-400 dark:text-[#71767b]" suppressHydrationWarning>
+            <span className="hidden sm:inline text-2xs text-slate-400 dark:text-slate-500" suppressHydrationWarning>
               · {item.timestamp.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
             </span>
           </div>
@@ -118,7 +118,7 @@ export function NewsCard({ item }: NewsCardProps) {
         </div>
 
         {/* Main content */}
-        <p className="text-sm text-slate-800 dark:text-[#e7e9ea] leading-relaxed">
+        <p className="text-sm text-slate-800 dark:text-slate-100 leading-relaxed">
           {item.title}
         </p>
 
@@ -133,7 +133,7 @@ export function NewsCard({ item }: NewsCardProps) {
                 🖼
               </span>
             )}
-            <span className="inline-flex items-center gap-1 text-2xs text-slate-400 dark:text-[#71767b] group-hover:text-blue-500 dark:group-hover:text-[#1d9bf0] transition-colors">
+            <span className="inline-flex items-center gap-1 text-2xs text-slate-400 dark:text-slate-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors">
               <span className="sr-only">Opens in new tab</span>
               <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" aria-hidden="true" />
             </span>

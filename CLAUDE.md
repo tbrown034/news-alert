@@ -1,6 +1,6 @@
-# Sentinel
+# Pulse
 
-Real-time OSINT dashboard for geopolitical situational awareness.
+Real-time global intelligence dashboard for monitoring breaking news, seismic activity, and geopolitical events.
 
 ## Quick Start
 ```bash
@@ -31,11 +31,11 @@ src/
 ```
 
 ## Key Features
-- **285 OSINT sources** (Bluesky + RSS)
-- **AI briefings** with tension scoring (1-10)
+- **380+ OSINT sources** (Bluesky + RSS)
 - **Source tiers**: OFFICIAL, OSINT, REPORTER, GROUND
 - **Severity detection**: CRITICAL, HIGH, MODERATE
-- **Multi-layer maps**: Hotspots, Seismic, Weather, Fires, Outages, Travel
+- **Multi-layer maps**: Main, Seismic, Weather, Fires, Outages, Travel
+- **6.0+ earthquake overlay** on Main view
 
 ## Environment Variables
 ```env

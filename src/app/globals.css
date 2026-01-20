@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Enable class-based dark mode in Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
+
 :root {
   /* Trevor Touch - Light theme */
   --background: #f5f5f7;

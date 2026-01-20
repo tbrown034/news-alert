@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { NewsFeed, Legend, WorldMap, SituationBriefing, SeismicMap, WeatherMap, OutagesMap, TravelMap, FiresMap, AuthButton } from '@/components';
+import { NewsFeed, Legend, WorldMap, SeismicMap, WeatherMap, OutagesMap, TravelMap, FiresMap, AuthButton } from '@/components';
 import { watchpoints as defaultWatchpoints } from '@/lib/mockData';
 import { NewsItem, WatchpointId, Watchpoint, Earthquake } from '@/types';
-import { SparklesIcon, GlobeAltIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon, EllipsisHorizontalIcon, Bars3Icon, XMarkIcon, ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { GlobeAltIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon, EllipsisHorizontalIcon, Bars3Icon, XMarkIcon, ChevronUpIcon, ChevronDownIcon, SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { MapPinIcon } from '@heroicons/react/24/solid';
 import { RegionActivity } from '@/lib/activityDetection';
 import { tier1Sources, tier2Sources, tier3Sources } from '@/lib/sources-clean';
@@ -19,7 +19,7 @@ interface ApiResponse {
   sourcesCount?: number;
 }
 
-type HeroView = 'hotspots' | 'seismic' | 'weather' | 'outages' | 'travel' | 'fires';
+type HeroView = 'main' | 'seismic' | 'weather' | 'outages' | 'travel' | 'fires';
 
 interface HomeClientProps {
   initialData: ApiResponse | null;
@@ -47,21 +47,44 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
     });
   });
   const [lastFetched, setLastFetched] = useState<string | null>(initialData?.fetchedAt || null);
-  const [showBriefing, setShowBriefing] = useState(false);
   const [activityData, setActivityData] = useState<ApiResponse['activity'] | null>(initialData?.activity || null);
   const [newsError, setNewsError] = useState<string | null>(null);
   const [newsLoadTimeMs, setNewsLoadTimeMs] = useState<number | null>(null);
+  const [hoursWindow, setHoursWindow] = useState<number>(initialData?.hoursWindow || 12);
 
   // Hero view mode
-  const [heroView, setHeroView] = useState<HeroView>('hotspots');
+  const [heroView, setHeroView] = useState<HeroView>('main');
   const [earthquakes, setEarthquakes] = useState<Earthquake[]>([]);
+  const [significantQuakes, setSignificantQuakes] = useState<Earthquake[]>([]); // 6.0+ for Main view
   const [selectedQuake, setSelectedQuake] = useState<Earthquake | null>(null);
   const [seismicLoading, setSeismicLoading] = useState(false);
   const [showMoreTabs, setShowMoreTabs] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mapCollapsed, setMapCollapsed] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-  // Ref for dropdown click-outside handling
+  // Initialize theme from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+  }, []);
+
+  // Toggle theme and persist to localStorage
+  const toggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  // Refs for dropdown click-outside handling (separate for xl and smaller screens)
+  const xlDropdownRef = useRef<HTMLDivElement>(null);
   const moreDropdownRef = useRef<HTMLDivElement>(null);
 
   // Dynamic source count
@@ -149,6 +172,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
 
       setNewsItems(items);
       setLastFetched(data.fetchedAt);
+      if (data.hoursWindow) setHoursWindow(data.hoursWindow);
 
       if (data.activity) {
         setActivityData(data.activity);
@@ -231,10 +255,33 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
     }
   }, [heroView, earthquakes.length, fetchEarthquakes]);
 
-  // Click outside handler for dropdown
+  // Fetch significant earthquakes (6.0+) for Main view on mount
+  useEffect(() => {
+    const fetchSignificantQuakes = async () => {
+      try {
+        const response = await fetch('/api/seismic?period=day&minMag=6');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.earthquakes) {
+          setSignificantQuakes(data.earthquakes.map((eq: any) => ({
+            ...eq,
+            time: new Date(eq.time),
+          })));
+        }
+      } catch {
+        // Silent fail for Main view - earthquakes are supplementary
+      }
+    };
+    fetchSignificantQuakes();
+  }, []);
+
+  // Click outside handler for dropdown (check both refs)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (moreDropdownRef.current && !moreDropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const clickedInsideXl = xlDropdownRef.current?.contains(target);
+      const clickedInsideMore = moreDropdownRef.current?.contains(target);
+      if (!clickedInsideXl && !clickedInsideMore) {
         setShowMoreTabs(false);
       }
     };
@@ -261,8 +308,8 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
   }, {} as Record<string, number>);
 
   const mainTabs = [
-    { id: 'hotspots', label: 'Hotspots', icon: MapPinIcon, color: 'blue' },
-    { id: 'seismic', label: 'Seismic', icon: GlobeAltIcon, color: 'amber' },
+    { id: 'main', label: 'Main', icon: GlobeAltIcon, color: 'blue' },
+    { id: 'seismic', label: 'Seismic', icon: MapPinIcon, color: 'amber' },
     { id: 'weather', label: 'Weather', icon: CloudIcon, color: 'cyan' },
   ] as const;
 
@@ -272,10 +319,12 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
     { id: 'fires', label: 'Fires', icon: FireIcon, color: 'orange' },
   ] as const;
 
+  const allTabs = [...mainTabs, ...secondaryTabs];
+
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
+    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[var(--background)] border-b border-slate-200 dark:border-[#2f3336]">
+      <header className="sticky top-0 z-50 bg-white dark:bg-black border-b border-slate-200 dark:border-slate-800">
         <div className="max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <button
@@ -285,23 +334,23 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               className="flex items-center gap-2 sm:gap-4 hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-lg"
-              aria-label="Sentinel home - reset to all regions"
+              aria-label="News Alert home - reset to all regions"
             >
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md shadow-blue-600/20">
-                <GlobeAltIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-slate-700 dark:to-slate-900 rounded-xl flex items-center justify-center shadow-md shadow-black/20 dark:shadow-black/30 border border-blue-400 dark:border-slate-600">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gradient-to-br from-cyan-400 to-blue-500 animate-pulse-subtle" />
               </div>
               <div className="text-left">
-                <h1 className="text-xl sm:text-2xl font-bold headline" style={{ color: 'white' }}>
-                  Sentinel
+                <h1 className="text-xl sm:text-2xl font-bold headline text-slate-900 dark:text-white">
+                  News Alert
                 </h1>
-                <p className="text-2xs sm:text-xs font-medium tracking-wide uppercase hidden xs:block" style={{ color: '#1d9bf0' }}>
-                  Global Intelligence
+                <p className="text-2xs sm:text-xs font-medium tracking-wide uppercase hidden xs:block text-cyan-600 dark:text-cyan-400">
+                  News Before Its News
                 </p>
               </div>
             </button>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-6">
+            <nav className="hidden md:flex items-center gap-4">
               <a
                 href="#map"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
@@ -314,12 +363,17 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
               >
                 Feed
               </a>
+              {/* Theme Toggle */}
               <button
-                onClick={() => setShowBriefing(true)}
-                className="flex items-center gap-1.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
+                onClick={toggleTheme}
+                className="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
               >
-                <SparklesIcon className="w-4 h-4" />
-                Summary
+                {theme === 'dark' ? (
+                  <SunIcon className="w-5 h-5" />
+                ) : (
+                  <MoonIcon className="w-5 h-5" />
+                )}
               </button>
               <AuthButton />
             </nav>
@@ -341,7 +395,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
 
           {/* Mobile Menu Dropdown */}
           {mobileMenuOpen && (
-            <nav className="md:hidden border-t border-slate-200 dark:border-[#2f3336] py-3 space-y-1">
+            <nav className="md:hidden border-t border-slate-200 dark:border-slate-800 py-3 space-y-1 bg-white dark:bg-black">
               <a
                 href="#map"
                 onClick={() => setMobileMenuOpen(false)}
@@ -358,15 +412,22 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
                 <GlobeAltIcon className="w-4 h-4 inline mr-2" />
                 Live Feed
               </a>
+              {/* Theme Toggle for mobile */}
               <button
-                onClick={() => {
-                  setShowBriefing(true);
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full text-left px-3 py-2.5 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                onClick={toggleTheme}
+                className="w-full flex items-center px-3 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
               >
-                <SparklesIcon className="w-4 h-4 inline mr-2" />
-                AI Summary
+                {theme === 'dark' ? (
+                  <>
+                    <SunIcon className="w-4 h-4 mr-2" />
+                    Light Mode
+                  </>
+                ) : (
+                  <>
+                    <MoonIcon className="w-4 h-4 mr-2" />
+                    Dark Mode
+                  </>
+                )}
               </button>
             </nav>
           )}
@@ -375,152 +436,266 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
 
       {/* Hero Map Section */}
       <section id="map" className="max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-4 pt-4">
-        <div className="relative bg-slate-800 rounded-2xl overflow-hidden shadow-xl shadow-black/20">
-          {/* Collapse/Expand button - positioned at bottom */}
-          <button
-            onClick={() => setMapCollapsed(!mapCollapsed)}
-            className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 z-20 flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700/80 transition-colors text-xs font-medium"
-            aria-expanded={!mapCollapsed}
-            aria-label={mapCollapsed ? 'Expand map' : 'Collapse map'}
-          >
+        {/* Map Layer Tabs - Above the map */}
+        <div className="flex items-center mb-2">
+          <div className="flex items-center gap-1 bg-white dark:bg-slate-900 rounded-lg p-1 border border-slate-200 dark:border-slate-700 shadow-sm">
             {mapCollapsed ? (
-              <>
+              /* Show Map button when collapsed */
+              <button
+                onClick={() => setMapCollapsed(false)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
                 <ChevronUpIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Show Map</span>
-              </>
+                <span>Show Map</span>
+              </button>
             ) : (
+              /* Normal tabs when expanded */
               <>
-                <ChevronDownIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Hide Map</span>
-              </>
-            )}
-          </button>
-
-          {!mapCollapsed && (
-            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-20">
-              <div className="flex items-center gap-0.5 sm:gap-1 bg-slate-900/90 backdrop-blur-sm rounded-lg p-0.5 sm:p-1 border border-slate-700">
-                {mainTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setHeroView(tab.id)}
-                    aria-label={tab.label}
-                    aria-pressed={heroView === tab.id}
-                    className={`
-                      flex items-center gap-1 sm:gap-1.5 px-3 py-2.5 sm:px-3.5 rounded-md text-xs font-medium transition-colors min-h-[44px]
-                      ${heroView === tab.id
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                      }
-                    `}
-                  >
-                    <tab.icon className="w-4 h-4" />
-                    <span className="hidden xs:inline sm:inline">{tab.label}</span>
-                  </button>
-                ))}
-
-                <div className="relative" ref={moreDropdownRef}>
-                  <button
-                    onClick={() => setShowMoreTabs(!showMoreTabs)}
-                    className={`
-                      flex items-center gap-1 sm:gap-1.5 px-3 py-2.5 sm:px-3.5 rounded-md text-xs font-medium transition-colors min-h-[44px]
-                      focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
-                      ${secondaryTabs.some(t => t.id === heroView)
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                      }
-                    `}
-                    aria-expanded={showMoreTabs}
-                    aria-haspopup="true"
-                    aria-label="More map layers"
-                  >
-                    <EllipsisHorizontalIcon className="w-4 h-4" />
-                    <span className="hidden xs:inline sm:inline">More</span>
-                  </button>
-
-                  {showMoreTabs && (
-                    <div
-                      className="absolute top-full right-0 mt-2 bg-slate-800 rounded-lg shadow-xl border border-slate-700 py-1 min-w-[160px] z-50"
-                      role="menu"
-                      aria-orientation="vertical"
+                {/* All tabs on xl screens */}
+                <div className="hidden xl:flex items-center gap-1">
+                  {allTabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setHeroView(tab.id as HeroView)}
+                      aria-label={tab.label}
+                      aria-pressed={heroView === tab.id}
+                      className={`
+                        flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors
+                        ${heroView === tab.id
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }
+                      `}
                     >
-                      {secondaryTabs.map((tab) => (
+                      <tab.icon className="w-4 h-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+                  {/* Hide option on xl */}
+                  <div className="relative" ref={xlDropdownRef}>
+                    <button
+                      onClick={() => setShowMoreTabs(!showMoreTabs)}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700"
+                      aria-expanded={showMoreTabs}
+                      aria-haspopup="true"
+                    >
+                      <EllipsisHorizontalIcon className="w-4 h-4" />
+                    </button>
+                    {showMoreTabs && (
+                      <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-50">
                         <button
-                          key={tab.id}
-                          role="menuitem"
                           onClick={() => {
-                            setHeroView(tab.id);
+                            setMapCollapsed(true);
                             setShowMoreTabs(false);
                           }}
-                          className={`
-                            w-full flex items-center gap-2.5 px-4 py-3 text-sm font-medium text-left transition-colors min-h-[44px]
-                            focus:outline-none focus-visible:bg-slate-600
-                            ${heroView === tab.id ? 'bg-slate-700 text-white' : 'text-slate-300 hover:bg-slate-700 hover:text-white'}
-                          `}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-left transition-colors text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                         >
-                          <tab.icon className="w-4 h-4" />
-                          {tab.label}
+                          <ChevronDownIcon className="w-4 h-4" />
+                          Hide Map
                         </button>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* Collapsed state indicator */}
-          {mapCollapsed ? (
-            <div className="h-12 flex items-center justify-center">
-              <span className="text-slate-400 text-sm">Map hidden</span>
+                {/* Compact tabs with More dropdown on smaller screens */}
+                <div className="flex xl:hidden items-center gap-1">
+                  {mainTabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setHeroView(tab.id)}
+                      aria-label={tab.label}
+                      aria-pressed={heroView === tab.id}
+                      className={`
+                        flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors
+                        ${heroView === tab.id
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }
+                      `}
+                    >
+                      <tab.icon className="w-4 h-4" />
+                      <span>{tab.label}</span>
+                    </button>
+                  ))}
+
+                  <div className="relative" ref={moreDropdownRef}>
+                    <button
+                      onClick={() => setShowMoreTabs(!showMoreTabs)}
+                      className={`
+                        flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-colors
+                        focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500
+                        ${secondaryTabs.some(t => t.id === heroView)
+                          ? 'bg-blue-600 text-white'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }
+                      `}
+                      aria-expanded={showMoreTabs}
+                      aria-haspopup="true"
+                      aria-label="More map layers"
+                    >
+                      <EllipsisHorizontalIcon className="w-4 h-4" />
+                      <span>More</span>
+                    </button>
+
+                    {showMoreTabs && (
+                      <div
+                        className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 min-w-[160px] z-50"
+                        role="menu"
+                        aria-orientation="vertical"
+                      >
+                        {secondaryTabs.map((tab) => (
+                          <button
+                            key={tab.id}
+                            role="menuitem"
+                            onClick={() => {
+                              setHeroView(tab.id);
+                              setShowMoreTabs(false);
+                            }}
+                            className={`
+                              w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-left transition-colors
+                              focus:outline-none focus-visible:bg-slate-100 dark:focus-visible:bg-slate-800
+                              ${heroView === tab.id ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'}
+                            `}
+                          >
+                            <tab.icon className="w-4 h-4" />
+                            {tab.label}
+                          </button>
+                        ))}
+                        {/* Hide Map option */}
+                        <div className="border-t border-slate-200 dark:border-slate-700 mt-1 pt-1">
+                          <button
+                            role="menuitem"
+                            onClick={() => {
+                              setMapCollapsed(true);
+                              setShowMoreTabs(false);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-left transition-colors text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white focus:outline-none focus-visible:bg-slate-100 dark:focus-visible:bg-slate-800"
+                          >
+                            <ChevronDownIcon className="w-4 h-4" />
+                            Hide Map
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Map Container - Hidden when collapsed */}
+        {!mapCollapsed && (
+          <div className="relative bg-slate-200 dark:bg-slate-800 rounded-2xl overflow-hidden shadow-xl shadow-black/10 dark:shadow-black/20">
+            {heroView === 'main' && (
+              <WorldMap
+                watchpoints={watchpoints}
+                selected={selectedWatchpoint}
+                onSelect={setSelectedWatchpoint}
+                regionCounts={regionCounts}
+                activity={activityData || undefined}
+                significantQuakes={significantQuakes}
+                hoursWindow={hoursWindow}
+              />
+            )}
+            {heroView === 'seismic' && (
+              <SeismicMap
+                earthquakes={earthquakes}
+                selected={selectedQuake}
+                onSelect={setSelectedQuake}
+                isLoading={seismicLoading}
+              />
+            )}
+            {heroView === 'weather' && <WeatherMap />}
+            {heroView === 'outages' && <OutagesMap />}
+            {heroView === 'travel' && <TravelMap />}
+            {heroView === 'fires' && <FiresMap />}
+          </div>
+        )}
+
+        {/* Unified Stats Bar */}
+        <div className="mt-2 flex items-center justify-between px-3 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto">
+            {/* All Elevated/Critical Regions */}
+            {(() => {
+              const regionNames: Record<string, string> = {
+                'us': 'US',
+                'middle-east': 'MidEast',
+                'europe-russia': 'Europe',
+                'asia': 'Asia',
+                'latam': 'LatAm',
+              };
+
+              // Get all regions with elevated or critical activity
+              const elevatedRegions = activityData
+                ? Object.entries(activityData)
+                    .filter(([, data]) => data.level === 'elevated' || data.level === 'critical')
+                    .sort((a, b) => b[1].multiplier - a[1].multiplier) // Sort by multiplier desc
+                : [];
+
+              if (elevatedRegions.length === 0) {
+                return (
+                  <div className="flex items-center gap-1.5 pr-2 border-r border-slate-300 dark:border-slate-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                    <span className="text-slate-700 dark:text-slate-300 font-medium">All Normal</span>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="flex items-center gap-2 pr-2 border-r border-slate-300 dark:border-slate-700">
+                  {elevatedRegions.map(([regionId, data]) => {
+                    const color = data.level === 'critical' ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400';
+                    const dotColor = data.level === 'critical' ? 'bg-red-500' : 'bg-orange-500';
+                    return (
+                      <div key={regionId} className="flex items-center gap-1">
+                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                        <span className={`font-medium ${color}`}>{regionNames[regionId] || regionId}</span>
+                        <span className={`font-mono ${color}`}>{data.multiplier.toFixed(1)}x</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-slate-700 dark:text-slate-300">{hoursWindow}h</span>
             </div>
-          ) : (
-            <>
-              {heroView === 'hotspots' && (
-                <WorldMap
-                  watchpoints={watchpoints}
-                  selected={selectedWatchpoint}
-                  onSelect={setSelectedWatchpoint}
-                  regionCounts={regionCounts}
-                  activity={activityData || undefined}
-                />
-              )}
-              {heroView === 'seismic' && (
-                <SeismicMap
-                  earthquakes={earthquakes}
-                  selected={selectedQuake}
-                  onSelect={setSelectedQuake}
-                  isLoading={seismicLoading}
-                />
-              )}
-              {heroView === 'weather' && <WeatherMap />}
-              {heroView === 'outages' && <OutagesMap />}
-              {heroView === 'travel' && <TravelMap />}
-              {heroView === 'fires' && <FiresMap />}
-            </>
-          )}
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400 dark:text-slate-500">Latency:</span>
+              <span className="font-mono text-slate-700 dark:text-slate-300">{newsLoadTimeMs ? `${(newsLoadTimeMs / 1000).toFixed(1)}s` : '—'}</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-1.5">
+              <span className="font-mono text-slate-700 dark:text-slate-300">{totalSources} sources</span>
+            </div>
+            {significantQuakes.length > 0 && (
+              <div className="hidden xs:flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                <span className="text-slate-700 dark:text-slate-300">{significantQuakes.length} M6+</span>
+              </div>
+            )}
+            <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded text-2xs font-semibold uppercase tracking-wider">Beta</span>
+          </div>
         </div>
       </section>
 
       {/* Main Content */}
       <main id="feed" className="max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-4 pb-20 pt-4 sm:pt-6">
-        <div className="mb-4 sm:mb-5 flex items-end justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: '#1d9bf0' }} />
-              <span className="text-2xs sm:text-xs font-semibold uppercase tracking-wider" style={{ color: '#1d9bf0' }}>
-                Live Feed
-              </span>
-            </div>
-            <h2 className="text-lg sm:text-xl md:text-2xl font-bold headline" style={{ color: '#e7e9ea' }}>
-              Intelligence Updates
+        <div className="mb-4 sm:mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full animate-pulse-soft bg-emerald-500" />
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
+              Live Wire
             </h2>
           </div>
-          <p className="text-2xs sm:text-xs" style={{ color: '#71767b' }}>
-            {totalSources} verified sources
+          <p className="text-2xs sm:text-xs text-slate-500 dark:text-slate-500">
+            {totalSources} sources
           </p>
         </div>
 
-        <div className="card shadow-lg shadow-slate-200/50 dark:shadow-none rounded-2xl overflow-hidden">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-none">
           <NewsFeed
             items={newsItems}
             selectedWatchpoint={selectedWatchpoint}
@@ -538,13 +713,6 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
       </main>
 
       <Legend />
-
-      {showBriefing && (
-        <SituationBriefing
-          region={selectedWatchpoint}
-          onClose={() => setShowBriefing(false)}
-        />
-      )}
     </div>
   );
 }

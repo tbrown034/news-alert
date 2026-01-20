@@ -9,7 +9,7 @@ import {
   ZoomableGroup,
 } from 'react-simple-maps';
 import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
-import { Watchpoint, WatchpointId } from '@/types';
+import { Watchpoint, WatchpointId, Earthquake } from '@/types';
 import { RegionActivity } from '@/lib/activityDetection';
 
 // World map TopoJSON - using a CDN for the geography data
@@ -40,6 +40,8 @@ interface WorldMapProps {
   onSelect: (id: WatchpointId) => void;
   regionCounts?: Record<string, number>;
   activity?: Record<string, RegionActivity>;
+  significantQuakes?: Earthquake[]; // 6.0+ earthquakes for Main view
+  hoursWindow?: number; // Time window in hours
 }
 
 // Activity level colors - visual language:
@@ -63,11 +65,16 @@ const regionMarkers: Record<string, { coordinates: [number, number]; label: stri
 const DEFAULT_CENTER: [number, number] = [40, 25];
 const DEFAULT_ZOOM = 1;
 
-function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {}, activity = {} }: WorldMapProps) {
+function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {}, activity = {}, significantQuakes = [], hoursWindow = 12 }: WorldMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
   const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
+  const [hoveredQuake, setHoveredQuake] = useState<string | null>(null);
+
+  const handleMoveEnd = (position: { coordinates: [number, number]; zoom: number }) => {
+    setPosition(position);
+  };
 
   const handleZoomIn = () => {
     if (position.zoom >= 4) return;
@@ -83,8 +90,11 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
     setPosition({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
   };
 
-  const handleMoveEnd = (position: { coordinates: [number, number]; zoom: number }) => {
-    setPosition(position);
+  // Get earthquake marker color based on magnitude
+  const getQuakeColor = (magnitude: number) => {
+    if (magnitude >= 7) return '#ef4444'; // Red
+    if (magnitude >= 6.5) return '#f97316'; // Orange
+    return '#eab308'; // Yellow
   };
 
   useEffect(() => {
@@ -144,8 +154,8 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
   // Show loading placeholder during SSR to avoid hydration mismatch
   if (!isMounted) {
     return (
-      <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-        <div className="relative h-[280px] sm:h-[340px] flex items-center justify-center">
+      <div className="relative w-full bg-[#0a0d12] overflow-hidden">
+        <div className="relative h-[200px] sm:h-[260px] flex items-center justify-center">
           <div className="text-gray-600 text-sm">Loading map...</div>
         </div>
       </div>
@@ -153,9 +163,9 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
   }
 
   return (
-    <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
+    <div className="relative w-full bg-[#0a0d12] overflow-hidden">
       {/* Map Container */}
-      <div className="relative h-[280px] sm:h-[340px]">
+      <div className="relative h-[200px] sm:h-[260px]">
         <ComposableMap
           projection="geoEqualEarth"
           projectionConfig={{
@@ -312,112 +322,100 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
               </Marker>
             );
           })}
+
+          {/* Significant Earthquake Markers (6.0+) */}
+          {significantQuakes.map((quake) => (
+            <Marker
+              key={quake.id}
+              coordinates={[quake.coordinates[0], quake.coordinates[1]]}
+              onMouseEnter={() => setHoveredQuake(quake.id)}
+              onMouseLeave={() => setHoveredQuake(null)}
+            >
+              {/* Pulse effect for major quakes */}
+              <circle
+                r={8}
+                fill="none"
+                stroke={getQuakeColor(quake.magnitude)}
+                strokeWidth={1.5}
+                opacity={0.4}
+                className="animate-ping-subtle"
+              />
+              {/* Main marker */}
+              <circle
+                r={hoveredQuake === quake.id ? 6 : 5}
+                fill={getQuakeColor(quake.magnitude)}
+                stroke="#fff"
+                strokeWidth={1.5}
+                style={{ cursor: 'pointer', transition: 'r 150ms ease' }}
+              />
+              {/* Tooltip on hover */}
+              {hoveredQuake === quake.id && (
+                <g>
+                  <rect
+                    x={-50}
+                    y={-35}
+                    width={100}
+                    height={26}
+                    rx={4}
+                    fill="rgba(0,0,0,0.9)"
+                  />
+                  <text
+                    y={-18}
+                    textAnchor="middle"
+                    fill={getQuakeColor(quake.magnitude)}
+                    fontSize={11}
+                    fontWeight="700"
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    M{quake.magnitude.toFixed(1)} - {quake.place?.split(',')[0] || 'Unknown'}
+                  </text>
+                </g>
+              )}
+            </Marker>
+          ))}
           </ZoomableGroup>
         </ComposableMap>
 
         {/* Zoom Controls */}
-        <div className="absolute top-2 sm:top-4 left-2 sm:left-4 flex flex-col gap-1 z-10" role="group" aria-label="Map zoom controls">
+        <div className="absolute top-3 left-3 flex flex-col gap-1 z-10">
           <button
             onClick={handleZoomIn}
-            className="p-2.5 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Zoom in"
+            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+            title="Zoom in"
           >
-            <PlusIcon className="w-5 h-5" />
+            <PlusIcon className="w-4 h-4" />
           </button>
           <button
             onClick={handleZoomOut}
-            className="p-2.5 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Zoom out"
+            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+            title="Zoom out"
           >
-            <MinusIcon className="w-5 h-5" />
+            <MinusIcon className="w-4 h-4" />
           </button>
           <button
             onClick={handleReset}
-            className="p-2.5 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Reset map view"
+            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+            title="Reset view"
           >
-            <ArrowPathIcon className="w-5 h-5" />
+            <ArrowPathIcon className="w-4 h-4" />
           </button>
         </div>
 
-        {/* "All Regions" button */}
-        <button
-          onClick={() => onSelect('all')}
-          aria-pressed={selected === 'all'}
-          className={`
-            absolute bottom-4 left-4 px-4 py-2.5 rounded-full text-sm font-medium min-h-[44px]
-            transition-all duration-200 z-10
-            ${selected === 'all'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-800/90 text-gray-300 hover:bg-gray-700/90 hover:text-white'
-            }
-          `}
-        >
-          All Regions
-        </button>
-
         {/* Legend */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-3 text-xs text-gray-200 z-10 bg-slate-900/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-slate-700/50">
+        <div className="absolute bottom-3 right-3 flex items-center gap-3 sm:gap-4 text-[11px] sm:text-xs text-gray-200 z-10 bg-slate-900/90 backdrop-blur-sm px-3 py-2 rounded-lg border border-slate-600/50">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse-subtle" />
-            <span>Critical</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+            <span className="font-medium">Critical</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-orange-500" />
-            <span>Elevated</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+            <span className="font-medium">Elevated</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-green-500" />
-            <span>Normal</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+            <span className="font-medium">Normal</span>
           </div>
         </div>
-      </div>
-
-      {/* Activity Status Bar - Always visible */}
-      <div className="px-3 sm:px-4 py-2.5 sm:py-3 bg-slate-900/90 backdrop-blur-sm border-t border-slate-700/50 flex items-center justify-between">
-        {selected === 'all' ? (
-          // Global view
-          <>
-            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-              <span
-                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0 ${getGlobalActivity().level === 'critical' ? 'animate-pulse-subtle' : ''}`}
-                style={{ backgroundColor: (activityColors[getGlobalActivity().level] || activityColors.normal).fill }}
-              />
-              <span className="text-sm sm:text-base font-semibold text-white">
-                Global Activity
-              </span>
-              <span className={`text-xs sm:text-sm font-medium ${(activityColors[getGlobalActivity().level] || activityColors.normal).text}`}>
-                {getGlobalActivity().level.charAt(0).toUpperCase() + getGlobalActivity().level.slice(1)}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <span className="text-xs sm:text-sm font-mono text-gray-300">
-                {getGlobalActivity().multiplier.toFixed(1)}x normal
-              </span>
-            </div>
-          </>
-        ) : (
-          // Regional view
-          <>
-            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-              <span
-                className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0 ${getActivityLevel(selected) === 'critical' ? 'animate-pulse-subtle' : ''}`}
-                style={{ backgroundColor: (activityColors[getActivityLevel(selected)] || activityColors.normal).fill }}
-              />
-              <span className="text-sm sm:text-base font-semibold text-white">
-                {regionMarkers[selected]?.label || selected}
-              </span>
-              <span className={`text-xs sm:text-sm font-medium ${(activityColors[getActivityLevel(selected)] || activityColors.normal).text}`}>
-                {getActivityLevel(selected).charAt(0).toUpperCase() + getActivityLevel(selected).slice(1)}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <span className="text-xs sm:text-sm font-mono text-gray-300">
-                {formatActivityText(activity[selected])}
-              </span>
-            </div>
-          </>
-        )}
       </div>
     </div>
   );

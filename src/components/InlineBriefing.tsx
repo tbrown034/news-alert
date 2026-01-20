@@ -183,17 +183,12 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
       <div className="mx-3 sm:mx-4 my-3">
         <button
           onClick={handleRequestBriefing}
-          className="w-full px-4 py-3 border border-slate-200 dark:border-[#2f3336] rounded-xl bg-slate-50 dark:bg-[#16181c] hover:bg-slate-100 dark:hover:bg-[#1d1f23] hover:shadow-sm transition-all"
+          className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 hover:shadow-sm transition-all"
         >
-          <div className="flex items-center justify-center gap-2">
-            <SparklesIcon className="w-4 h-4 text-blue-500" />
-            <span className="text-sm font-medium text-slate-700 dark:text-[#e7e9ea]">
-              Generate AI Briefing
-            </span>
-            <span className="text-xs text-slate-400 dark:text-[#71767b]">
-              for {regionDisplayNames[region]}
-            </span>
-          </div>
+          <SparklesIcon className="w-4 h-4 text-blue-500" />
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-100">
+            Generate AI Briefing
+          </span>
         </button>
       </div>
     );
@@ -202,10 +197,10 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
   // Loading state - subtle and compact
   if (loading) {
     return (
-      <div className="mx-3 sm:mx-4 my-3 px-4 py-3 border border-slate-200 dark:border-[#2f3336] rounded-xl bg-slate-50 dark:bg-[#16181c]">
+      <div className="mx-3 sm:mx-4 my-3 px-4 py-3 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-900">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-slate-600 dark:text-[#71767b]">
+          <span className="text-xs text-slate-600 dark:text-slate-500">
             {retryCount > 0 ? `Loading briefing (attempt ${retryCount + 1})...` : 'Generating AI briefing...'}
           </span>
         </div>
@@ -239,14 +234,12 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
       <div className="mx-3 sm:mx-4 my-3">
         <button
           onClick={handleRequestBriefing}
-          className="w-full px-4 py-3 border border-slate-200 dark:border-[#2f3336] rounded-xl bg-slate-50 dark:bg-[#16181c] hover:bg-slate-100 dark:hover:bg-[#1d1f23] hover:shadow-sm transition-all"
+          className="inline-flex items-center gap-2 px-4 py-2.5 border border-slate-200 dark:border-slate-800 rounded-lg bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 hover:shadow-sm transition-all"
         >
-          <div className="flex items-center justify-center gap-2">
-            <SparklesIcon className="w-4 h-4 text-blue-500" />
-            <span className="text-sm font-medium text-slate-700 dark:text-[#e7e9ea]">
-              Generate AI Briefing
-            </span>
-          </div>
+          <SparklesIcon className="w-4 h-4 text-blue-500" />
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-100">
+            Generate AI Briefing
+          </span>
         </button>
       </div>
     );
@@ -256,16 +249,16 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
   const tension = getTensionStyle(tensionScore);
 
   return (
-    <div className="mx-3 sm:mx-4 my-3 border border-slate-200 dark:border-[#2f3336] rounded-xl overflow-hidden bg-white dark:bg-[#16181c] shadow-sm shadow-slate-200/50 dark:shadow-none news-initial-load">
+    <div className="mx-3 sm:mx-4 my-3 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm shadow-slate-200/50 dark:shadow-none news-initial-load">
       {/* Header - Clean and minimal */}
-      <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#16181c] border-b border-slate-200 dark:border-[#2f3336]">
+      <div className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-slate-600 dark:text-[#71767b] uppercase tracking-wide">
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-500 uppercase tracking-wide">
               AI Summary
             </span>
-            <span className="text-xs text-slate-300 dark:text-[#536471]">•</span>
-            <span className="text-xs text-slate-500 dark:text-[#71767b]">{regionDisplayNames[region]}</span>
+            <span className="text-xs text-slate-300 dark:text-slate-500">•</span>
+            <span className="text-xs text-slate-500 dark:text-slate-500">{regionDisplayNames[region]}</span>
           </div>
           <span className={`px-2 py-0.5 text-2xs font-medium rounded ${tension.bgColor} ${tension.color}`}>
             {tension.label}
@@ -275,13 +268,13 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
 
       {/* Body - Clean summary only */}
       <div className="px-4 py-3">
-        <p className="text-sm text-slate-700 dark:text-[#e7e9ea] leading-relaxed">
+        <p className="text-sm text-slate-700 dark:text-slate-100 leading-relaxed">
           {briefing.summary}
         </p>
       </div>
 
       {/* Footer - stats with tokens, latency, cost */}
-      <div className="px-4 py-2 bg-slate-50 dark:bg-[#16181c] border-t border-slate-100 dark:border-[#2f3336] text-2xs text-slate-400 dark:text-[#536471] flex flex-col xs:flex-row xs:justify-between gap-1">
+      <div className="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 text-2xs text-slate-400 dark:text-slate-500 flex flex-col xs:flex-row xs:justify-between gap-1">
         <div className="flex items-center gap-2">
           <span>{briefing.sourcesAnalyzed} posts</span>
           {(briefing.pending || briefing.limited) && (

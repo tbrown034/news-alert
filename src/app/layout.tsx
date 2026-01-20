@@ -23,13 +23,63 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "Sentinel",
-  description: "Real-time OSINT and geopolitical monitoring dashboard",
-  icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.svg",
-    apple: "/favicon.svg",
+  title: {
+    default: "News Alert",
+    template: "%s | News Alert",
   },
+  description: "News Before Its News. Real-time monitoring of breaking news, seismic activity, and geopolitical events from 380+ verified sources worldwide.",
+  keywords: ["news", "OSINT", "intelligence", "geopolitical", "monitoring", "real-time", "global news", "breaking news", "earthquake", "news alert"],
+  authors: [{ name: "News Alert" }],
+  creator: "News Alert",
+  publisher: "News Alert",
+  metadataBase: new URL("https://news-alert.vercel.app"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://news-alert.vercel.app",
+    siteName: "News Alert",
+    title: "News Alert - News Before Its News",
+    description: "Monitor breaking news, seismic activity, and geopolitical events from 380+ verified sources worldwide.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "News Alert - News Before Its News",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "News Alert - News Before Its News",
+    description: "Monitor breaking news, seismic activity, and geopolitical events from 380+ verified sources worldwide.",
+    images: ["/og-image.png"],
+    creator: "@newsalert",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/site.webmanifest",
 };
 
 export const viewport: Viewport = {
@@ -44,8 +94,28 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Theme initialization script to prevent FOUC
+  const themeScript = `
+    (function() {
+      try {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'light') {
+          document.documentElement.classList.remove('dark');
+        } else {
+          // Default to dark mode
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  `;
+
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${sourceSerif.variable} antialiased`}
       >

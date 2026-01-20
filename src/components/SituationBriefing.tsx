@@ -34,31 +34,31 @@ interface SituationBriefingProps {
   onClose: () => void;
 }
 
-// Light theme severity styles
+// Dark theme severity styles (matching Pulse aesthetic)
 const severityStyles = {
   critical: {
-    bg: 'bg-red-50',
-    border: 'border-red-200',
-    text: 'text-red-600',
-    icon: '🚨',
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/30',
+    text: 'text-red-400',
+    icon: '',
   },
   high: {
-    bg: 'bg-orange-50',
-    border: 'border-orange-200',
-    text: 'text-orange-600',
-    icon: '⚠️',
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/30',
+    text: 'text-orange-400',
+    icon: '',
   },
   moderate: {
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
-    text: 'text-amber-600',
-    icon: '📢',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-400',
+    icon: '',
   },
   routine: {
-    bg: 'bg-slate-50',
-    border: 'border-slate-200',
-    text: 'text-slate-600',
-    icon: '📰',
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/30',
+    text: 'text-slate-400',
+    icon: '',
   },
 };
 
@@ -105,28 +105,28 @@ export function SituationBriefing({ region, onClose }: SituationBriefingProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl border border-slate-200 shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-slate-900 rounded-xl border border-slate-700 shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-200">
+        <div className="flex items-center justify-between p-4 border-b border-slate-700">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <SparklesIcon className="w-5 h-5 text-blue-600" />
+            <div className="p-2 bg-cyan-500/20 rounded-lg">
+              <SparklesIcon className="w-5 h-5 text-cyan-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-slate-900 font-serif">
-                Situation Briefing
+              <h2 className="text-lg font-semibold text-white">
+                AI Briefing
               </h2>
-              <p className="text-sm text-slate-500">
-                {regionDisplayNames[region]} • Last {hours} hours
+              <p className="text-sm text-slate-400">
+                {regionDisplayNames[region]} - Last {hours} hours
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-800 rounded-lg transition-colors"
           >
-            <XMarkIcon className="w-5 h-5 text-slate-500" />
+            <XMarkIcon className="w-5 h-5 text-slate-400" />
           </button>
         </div>
 
@@ -134,24 +134,24 @@ export function SituationBriefing({ region, onClose }: SituationBriefingProps) {
         <div className="flex-1 overflow-y-auto p-4">
           {!briefing && !loading && !error && (
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <SparklesIcon className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 bg-cyan-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <SparklesIcon className="w-8 h-8 text-cyan-400" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2 font-serif">
+              <h3 className="text-lg font-semibold text-white mb-2">
                 Generate AI Summary
               </h3>
-              <p className="text-slate-500 mb-6 max-w-md mx-auto">
+              <p className="text-slate-400 mb-6 max-w-md mx-auto">
                 Get an AI-powered briefing of recent developments in{' '}
                 {regionDisplayNames[region]}.
               </p>
 
               {/* Time selector */}
               <div className="flex items-center justify-center gap-2 mb-6">
-                <ClockIcon className="w-5 h-5 text-slate-400" />
+                <ClockIcon className="w-5 h-5 text-slate-500" />
                 <select
                   value={hours}
                   onChange={(e) => setHours(parseInt(e.target.value))}
-                  className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                 >
                   <option value={1}>Last 1 hour</option>
                   <option value={2}>Last 2 hours</option>
@@ -163,7 +163,7 @@ export function SituationBriefing({ region, onClose }: SituationBriefingProps) {
 
               <button
                 onClick={() => fetchBriefing()}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+                className="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-medium rounded-lg transition-colors shadow-sm"
               >
                 Generate Briefing
               </button>
@@ -172,24 +172,24 @@ export function SituationBriefing({ region, onClose }: SituationBriefingProps) {
 
           {loading && (
             <div className="text-center py-12">
-              <div className="animate-spin w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
-              <p className="text-slate-600">Analyzing {regionDisplayNames[region]} posts...</p>
-              <p className="text-sm text-slate-400 mt-2">This may take a few seconds</p>
+              <div className="animate-spin w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full mx-auto mb-4" />
+              <p className="text-slate-300">Analyzing {regionDisplayNames[region]} posts...</p>
+              <p className="text-sm text-slate-500 mt-2">This may take a few seconds</p>
             </div>
           )}
 
           {error && (
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <ExclamationTriangleIcon className="w-8 h-8 text-red-500" />
+              <div className="w-16 h-16 bg-red-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <ExclamationTriangleIcon className="w-8 h-8 text-red-400" />
               </div>
-              <h3 className="text-lg font-medium text-red-600 mb-2">
+              <h3 className="text-lg font-medium text-red-400 mb-2">
                 Error Generating Summary
               </h3>
-              <p className="text-slate-500 mb-6">{error}</p>
+              <p className="text-slate-400 mb-6">{error}</p>
               <button
                 onClick={() => fetchBriefing()}
-                className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors"
+                className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium rounded-lg transition-colors"
               >
                 Try Again
               </button>
@@ -199,18 +199,18 @@ export function SituationBriefing({ region, onClose }: SituationBriefingProps) {
           {briefing && (
             <div className="space-y-6">
               {/* Summary */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-blue-600 mb-2 flex items-center gap-2 uppercase tracking-wide">
+              <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-cyan-400 mb-2 flex items-center gap-2 uppercase tracking-wide">
                   <InformationCircleIcon className="w-4 h-4" />
                   Executive Summary
                 </h3>
-                <p className="text-slate-700 leading-relaxed">{briefing.summary}</p>
+                <p className="text-slate-200 leading-relaxed">{briefing.summary}</p>
               </div>
 
               {/* Key Developments */}
               {briefing.keyDevelopments.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-blue-600 mb-3 uppercase tracking-wide">
+                  <h3 className="text-sm font-semibold text-cyan-400 mb-3 uppercase tracking-wide">
                     Key Developments
                   </h3>
                   <div className="space-y-3">
@@ -222,16 +222,16 @@ export function SituationBriefing({ region, onClose }: SituationBriefingProps) {
                           className={`${style.bg} border ${style.border} rounded-lg p-4`}
                         >
                           <div className="flex items-start gap-2">
-                            <span className="text-lg">{style.icon}</span>
+                            <div className={`w-2 h-2 rounded-full mt-2 ${style.text.replace('text-', 'bg-')}`} />
                             <div className="flex-1">
                               <h4 className={`font-medium ${style.text}`}>
                                 {dev.headline}
                               </h4>
-                              <p className="text-slate-600 text-sm mt-1">
+                              <p className="text-slate-300 text-sm mt-1">
                                 {dev.detail}
                               </p>
                               {dev.sources.length > 0 && (
-                                <p className="text-xs text-slate-400 mt-2">
+                                <p className="text-xs text-slate-500 mt-2">
                                   Sources: {dev.sources.join(', ')}
                                 </p>
                               )}
@@ -245,7 +245,7 @@ export function SituationBriefing({ region, onClose }: SituationBriefingProps) {
               )}
 
               {/* Meta info */}
-              <div className="text-xs text-slate-500 pt-4 border-t border-slate-200 flex items-center justify-between">
+              <div className="text-xs text-slate-500 pt-4 border-t border-slate-700 flex items-center justify-between">
                 <div>
                   Analyzed {briefing.sourcesAnalyzed} posts from{' '}
                   {briefing.topSources.slice(0, 3).join(', ')}
@@ -253,7 +253,7 @@ export function SituationBriefing({ region, onClose }: SituationBriefingProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   {briefing.fromCache && (
-                    <span className="text-amber-600">(cached)</span>
+                    <span className="text-amber-500">(cached)</span>
                   )}
                   <span>Generated {formatTime(briefing.generatedAt)}</span>
                 </div>
@@ -264,7 +264,7 @@ export function SituationBriefing({ region, onClose }: SituationBriefingProps) {
                 <button
                   onClick={() => fetchBriefing(true)}
                   disabled={loading}
-                  className="px-4 py-2 text-sm text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-sm text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors disabled:opacity-50"
                 >
                   Refresh Summary
                 </button>
