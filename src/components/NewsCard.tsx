@@ -202,13 +202,14 @@ export function NewsCard({ item }: NewsCardProps) {
                 <CheckBadgeSolid className="w-4 h-4 text-blue-500 flex-shrink-0" />
               )}
               <span className="text-xs text-slate-400 dark:text-slate-500 flex-shrink-0" suppressHydrationWarning>
-                · {formatTimeAgo(item.timestamp)} · {item.timestamp.toLocaleString('en-US', {
+                · {formatTimeAgo(item.timestamp)}
+                <span className="hidden sm:inline"> · {item.timestamp.toLocaleString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   hour: 'numeric',
                   minute: '2-digit',
                   hour12: true
-                })}
+                })}</span>
               </span>
             </div>
           </div>
