@@ -251,6 +251,37 @@ Otherwise → null
 
 ---
 
+## AI Briefing Feature
+
+### Overview
+The AI briefing generates a situation summary using Claude Sonnet. Located in `src/lib/aiSummary.ts`.
+
+### Output Format
+```
+Overview: 1-2 sentences describing the big picture (tensions rising/stable/easing)
+Developments:
+▸ Specific event with source (e.g., "Ukraine reported 49 clashes - Ukrinform")
+▸ Another key development with source
+▸ Third if significant
+```
+
+### Features
+- **Location highlighting**: Countries/regions (Ukraine, Gaza, etc.) displayed in bold
+- **Source name detection**: Skips bolding source names (Jerusalem Post, Washington Times)
+- **Temporal context**: Prompts include current time and date range
+- **Caching**: 10-minute server cache, 3-minute client cache
+
+### Time Windows
+- Default: 6 hours (optimized for "what's happening now")
+- Options: 3h, 6h, 12h, 24h in modal view
+
+### Components
+- `InlineBriefing.tsx` - Compact inline version (main feed)
+- `SituationBriefing.tsx` - Full modal version
+- `aiSummary.ts` - Prompt construction and API call
+
+---
+
 ## Principles
 - KISS - Keep It Simple
 - Mobile-first, dark theme
