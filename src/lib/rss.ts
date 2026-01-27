@@ -1,4 +1,4 @@
-import { NewsItem, Source, VerificationStatus } from '@/types';
+import { NewsItem, Source, VerificationStatus, MediaAttachment, ReplyContext, RepostContext } from '@/types';
 import { classifyRegion, isBreakingNews } from './sources';
 import { createHash } from 'crypto';
 
@@ -8,6 +8,10 @@ interface RssItem {
   link: string;
   pubDate: string;
   guid?: string;
+  // Extended fields for social media posts
+  media?: MediaAttachment[];
+  replyContext?: ReplyContext;
+  repostContext?: RepostContext;
 }
 
 // Parse RSS XML to items (supports both RSS and Atom formats)
@@ -140,6 +144,641 @@ function decodeHtmlEntities(text: string): string {
 }
 
 // =============================================================================
+// TELEGRAM WEB PREVIEW FETCHING
+// =============================================================================
+// Telegram doesn't have a public API - we scrape t.me/s/{channel} web preview
+
+interface TelegramFeedResult {
+  items: RssItem[];
+  channelAvatar?: string;
+}
+
+// Cache for invalid Telegram handles
+const invalidTelegramCache = new Map<string, { error: string; timestamp: number }>();
+const INVALID_TELEGRAM_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+// Extract Telegram handle from feedUrl (e.g., 'https://t.me/s/DeepStateUA' -> 'DeepStateUA')
+function extractTelegramHandle(feedUrl: string): string | null {
+  // Match t.me/s/channel or t.me/channel
+  const match = feedUrl.match(/t\.me\/(?:s\/)?([^\/\?]+)/);
+  return match ? match[1] : null;
+}
+
+// Check if source is a Telegram source
+function isTelegramSource(source: Source & { feedUrl: string }): boolean {
+  return source.platform === 'telegram' || source.feedUrl.includes('t.me/');
+}
+
+// Check if Telegram handle is cached as invalid
+function isTelegramHandleCachedAsInvalid(handle: string): boolean {
+  const cached = invalidTelegramCache.get(handle);
+  if (!cached) return false;
+  if (Date.now() - cached.timestamp > INVALID_TELEGRAM_CACHE_TTL) {
+    invalidTelegramCache.delete(handle);
+    return false;
+  }
+  return true;
+}
+
+// Parse Telegram HTML to extract messages
+function parseTelegramHtml(html: string, handle: string): TelegramFeedResult {
+  const items: RssItem[] = [];
+
+  // Extract channel avatar from the page header (use [\s\S] instead of /s flag for compatibility)
+  const avatarMatch = html.match(/tgme_page_photo_image[^>]*>[\s\S]*?<img[^>]*src="([^"]+)"/);
+  const channelAvatar = avatarMatch?.[1];
+
+  // Find all message blocks using data-post attribute
+  const messageRegex = /data-post="([^"]+)"[\s\S]*?<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>[\s\S]*?datetime="([^"]+)"/g;
+
+  let match;
+  while ((match = messageRegex.exec(html)) !== null) {
+    const [, postId, rawText, datetime] = match;
+
+    // Strip HTML tags and decode entities
+    let text = rawText
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      .trim();
+
+    // Skip empty messages
+    if (!text) continue;
+
+    // Extract message number from postId (e.g., "DeepStateUA/23100" -> "23100")
+    const messageNum = postId.split('/').pop() || '';
+    const link = `https://t.me/${handle}/${messageNum}`;
+
+    items.push({
+      title: text.slice(0, 500), // Telegram messages can be long
+      description: text,
+      link,
+      pubDate: datetime,
+      guid: `telegram-${postId}`,
+    });
+  }
+
+  return { items, channelAvatar };
+}
+
+// Fetch posts from Telegram using web preview
+async function fetchTelegramFeed(source: Source & { feedUrl: string }): Promise<TelegramFeedResult> {
+  const handle = extractTelegramHandle(source.feedUrl);
+  if (!handle) {
+    console.error(`[Telegram] Invalid feedUrl format: ${source.feedUrl}`);
+    return { items: [] };
+  }
+
+  // Skip if handle is cached as invalid
+  if (isTelegramHandleCachedAsInvalid(handle)) {
+    return { items: [] };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout (Telegram can be slow)
+
+  try {
+    // Use the /s/ (static) version which doesn't require JS
+    const webUrl = `https://t.me/s/${handle}`;
+    const response = await fetch(webUrl, {
+      signal: controller.signal,
+      headers: {
+        // Telegram requires a browser-like User-Agent
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        invalidTelegramCache.set(handle, { error: 'NotFound', timestamp: Date.now() });
+        console.warn(`[Telegram] Channel @${handle} not found. Cached for 1 hour.`);
+      } else {
+        console.error(`[Telegram] ${source.name} (@${handle}): HTTP ${response.status}`);
+      }
+      return { items: [] };
+    }
+
+    const html = await response.text();
+
+    // Check if channel exists (404 pages still return 200 with specific content)
+    if (html.includes('tgme_page_context_bot') || html.includes('If you have <strong>Telegram</strong>')) {
+      invalidTelegramCache.set(handle, { error: 'PrivateOrNotFound', timestamp: Date.now() });
+      console.warn(`[Telegram] Channel @${handle} is private or doesn't exist. Cached for 1 hour.`);
+      return { items: [] };
+    }
+
+    return parseTelegramHtml(html, handle);
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn(`[Telegram] ${source.name} (@${handle}): Request timeout (8s)`);
+    } else if (error instanceof Error) {
+      console.error(`[Telegram] ${source.name} (@${handle}): ${error.message}`);
+    }
+    return { items: [] };
+  }
+}
+
+// Get count of cached invalid Telegram handles (for diagnostics)
+export function getInvalidTelegramCacheSize(): number {
+  return invalidTelegramCache.size;
+}
+
+// Clear invalid Telegram cache (for testing/maintenance)
+export function clearInvalidTelegramCache(): void {
+  invalidTelegramCache.clear();
+}
+
+// =============================================================================
+// MASTODON API FETCHING
+// =============================================================================
+// Mastodon has a public API - no auth needed for public posts
+
+interface MastodonStatus {
+  id: string;
+  created_at: string;
+  content: string; // HTML content
+  url: string;
+  account: {
+    id: string;
+    username: string;
+    display_name: string;
+    avatar: string;
+    url: string;
+  };
+  media_attachments?: Array<{
+    type: 'image' | 'video' | 'gifv' | 'audio';
+    url: string;
+    preview_url?: string;
+    description?: string;
+  }>;
+  reblog?: MastodonStatus; // Boosted post
+  in_reply_to_id?: string;
+  visibility: 'public' | 'unlisted' | 'private' | 'direct';
+}
+
+interface MastodonFeedResult {
+  items: RssItem[];
+  authorAvatar?: string;
+}
+
+// Cache for invalid Mastodon handles
+const invalidMastodonCache = new Map<string, { error: string; timestamp: number }>();
+const INVALID_MASTODON_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+// Extract Mastodon handle and instance from feedUrl
+// Formats: https://mastodon.online/@bendobrown or @bendobrown@mastodon.online
+function extractMastodonInfo(feedUrl: string): { handle: string; instance: string } | null {
+  // Format: https://instance/@handle
+  const urlMatch = feedUrl.match(/https?:\/\/([^\/]+)\/@([^\/\?]+)/);
+  if (urlMatch) {
+    return { instance: urlMatch[1], handle: urlMatch[2] };
+  }
+  // Format: @handle@instance
+  const handleMatch = feedUrl.match(/@?([^@]+)@([^\/\s]+)/);
+  if (handleMatch) {
+    return { handle: handleMatch[1], instance: handleMatch[2] };
+  }
+  return null;
+}
+
+// Check if source is a Mastodon source
+function isMastodonSource(source: Source & { feedUrl: string }): boolean {
+  return source.platform === 'mastodon';
+}
+
+// Check if Mastodon handle is cached as invalid
+function isMastodonHandleCachedAsInvalid(handle: string, instance: string): boolean {
+  const key = `${handle}@${instance}`;
+  const cached = invalidMastodonCache.get(key);
+  if (!cached) return false;
+  if (Date.now() - cached.timestamp > INVALID_MASTODON_CACHE_TTL) {
+    invalidMastodonCache.delete(key);
+    return false;
+  }
+  return true;
+}
+
+// Strip HTML tags from Mastodon content
+function stripMastodonHtml(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>\s*<p>/gi, '\n\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .trim();
+}
+
+// Fetch posts from Mastodon using public API
+async function fetchMastodonFeed(source: Source & { feedUrl: string }): Promise<MastodonFeedResult> {
+  const info = extractMastodonInfo(source.feedUrl);
+  if (!info) {
+    console.error(`[Mastodon] Invalid feedUrl format: ${source.feedUrl}`);
+    return { items: [] };
+  }
+
+  const { handle, instance } = info;
+  const cacheKey = `${handle}@${instance}`;
+
+  // Skip if handle is cached as invalid
+  if (isMastodonHandleCachedAsInvalid(handle, instance)) {
+    return { items: [] };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    // First, look up the account ID by handle
+    const lookupUrl = `https://${instance}/api/v1/accounts/lookup?acct=${handle}`;
+    const lookupResponse = await fetch(lookupUrl, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' },
+    });
+
+    if (!lookupResponse.ok) {
+      if (lookupResponse.status === 404) {
+        invalidMastodonCache.set(cacheKey, { error: 'NotFound', timestamp: Date.now() });
+        console.warn(`[Mastodon] Account @${handle}@${instance} not found. Cached for 1 hour.`);
+      } else {
+        console.error(`[Mastodon] ${source.name}: Lookup failed with HTTP ${lookupResponse.status}`);
+      }
+      clearTimeout(timeoutId);
+      return { items: [] };
+    }
+
+    const account = await lookupResponse.json();
+    const accountId = account.id;
+    const authorAvatar = account.avatar;
+
+    // Now fetch the account's statuses
+    const statusesUrl = `https://${instance}/api/v1/accounts/${accountId}/statuses?limit=20&exclude_replies=true`;
+    const statusesResponse = await fetch(statusesUrl, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!statusesResponse.ok) {
+      console.error(`[Mastodon] ${source.name}: Statuses fetch failed with HTTP ${statusesResponse.status}`);
+      return { items: [] };
+    }
+
+    const statuses: MastodonStatus[] = await statusesResponse.json();
+
+    const items: RssItem[] = statuses
+      .filter(status => status.visibility === 'public' || status.visibility === 'unlisted')
+      .map(status => {
+        // Handle boosts (reblogs)
+        const content = status.reblog || status;
+        const text = stripMastodonHtml(content.content);
+
+        // Extract media attachments
+        const media: MediaAttachment[] = (content.media_attachments || []).map(att => ({
+          type: att.type === 'video' || att.type === 'gifv' ? 'video' : 'image',
+          url: att.url,
+          thumbnail: att.preview_url,
+          alt: att.description,
+        }));
+
+        return {
+          title: text.slice(0, 500),
+          description: text,
+          link: status.url,
+          pubDate: status.created_at,
+          guid: status.id,
+          media: media.length > 0 ? media : undefined,
+          repostContext: status.reblog ? {
+            originalAuthor: status.reblog.account.display_name || status.reblog.account.username,
+            originalHandle: `${status.reblog.account.username}@${new URL(status.reblog.account.url).hostname}`,
+          } : undefined,
+        };
+      });
+
+    return { items, authorAvatar };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn(`[Mastodon] ${source.name} (@${handle}@${instance}): Request timeout (8s)`);
+    } else if (error instanceof Error) {
+      console.error(`[Mastodon] ${source.name} (@${handle}@${instance}): ${error.message}`);
+    }
+    return { items: [] };
+  }
+}
+
+// Get count of cached invalid Mastodon handles (for diagnostics)
+export function getInvalidMastodonCacheSize(): number {
+  return invalidMastodonCache.size;
+}
+
+// Clear invalid Mastodon cache (for testing/maintenance)
+export function clearInvalidMastodonCache(): void {
+  invalidMastodonCache.clear();
+}
+
+// =============================================================================
+// REDDIT JSON FETCHING
+// =============================================================================
+// Reddit has public JSON API - append .json to any URL
+
+interface RedditPost {
+  kind: string;
+  data: {
+    id: string;
+    title: string;
+    selftext: string;
+    author: string;
+    url: string;
+    permalink: string;
+    created_utc: number;
+    score: number;
+    num_comments: number;
+    subreddit: string;
+    stickied?: boolean;
+    link_flair_text?: string;
+    thumbnail?: string;
+    preview?: {
+      images?: Array<{
+        source: { url: string; width: number; height: number };
+        resolutions?: Array<{ url: string; width: number; height: number }>;
+      }>;
+    };
+    is_video?: boolean;
+    media?: {
+      reddit_video?: {
+        fallback_url: string;
+        duration: number;
+      };
+    };
+  };
+}
+
+interface RedditListing {
+  kind: string;
+  data: {
+    children: RedditPost[];
+    after?: string;
+  };
+}
+
+interface RedditFeedResult {
+  items: RssItem[];
+  subredditIcon?: string;
+}
+
+// Cache for invalid Reddit subreddits
+const invalidRedditCache = new Map<string, { error: string; timestamp: number }>();
+const INVALID_REDDIT_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+// Minimum upvote threshold for quality filtering
+const REDDIT_MIN_SCORE = 100;
+
+// Megathread detection patterns (case-insensitive)
+const MEGATHREAD_PATTERNS = [
+  /live\s*thread/i,
+  /megathread/i,
+  /\[live\]/i,
+  /breaking:/i,
+  /developing:/i,
+];
+
+// Extract subreddit from feedUrl
+function extractSubreddit(feedUrl: string): string | null {
+  const match = feedUrl.match(/reddit\.com\/r\/([^\/\?\s]+)/i);
+  return match ? match[1] : null;
+}
+
+// Check if source is a Reddit source
+function isRedditSource(source: Source & { feedUrl: string }): boolean {
+  return source.platform === 'reddit' || source.feedUrl.includes('reddit.com/r/');
+}
+
+// Check if Reddit subreddit is cached as invalid
+function isRedditSubredditCachedAsInvalid(subreddit: string): boolean {
+  const cached = invalidRedditCache.get(subreddit);
+  if (!cached) return false;
+  if (Date.now() - cached.timestamp > INVALID_REDDIT_CACHE_TTL) {
+    invalidRedditCache.delete(subreddit);
+    return false;
+  }
+  return true;
+}
+
+// Decode Reddit's HTML-encoded URLs (they encode & as &amp;)
+function decodeRedditUrl(url: string): string {
+  return url.replace(/&amp;/g, '&');
+}
+
+// Fetch posts from Reddit using JSON API (megathreads only)
+async function fetchRedditFeed(source: Source & { feedUrl: string }): Promise<RedditFeedResult> {
+  const subreddit = extractSubreddit(source.feedUrl);
+  if (!subreddit) {
+    console.error(`[Reddit] Invalid feedUrl format: ${source.feedUrl}`);
+    return { items: [] };
+  }
+
+  // Skip if subreddit is cached as invalid
+  if (isRedditSubredditCachedAsInvalid(subreddit)) {
+    return { items: [] };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for Reddit
+
+  try {
+    const jsonUrl = `https://www.reddit.com/r/${subreddit}/hot.json?limit=50`;
+    const response = await fetch(jsonUrl, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; PulseAlert/1.0)',
+        'Accept': 'application/json',
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      if (response.status === 404 || response.status === 403) {
+        invalidRedditCache.set(subreddit, { error: 'NotFoundOrPrivate', timestamp: Date.now() });
+        console.warn(`[Reddit] Subreddit r/${subreddit} not found or private. Cached for 1 hour.`);
+      } else if (response.status === 429) {
+        console.warn(`[Reddit] Rate limited. Consider reducing request frequency.`);
+      } else {
+        console.error(`[Reddit] ${source.name}: HTTP ${response.status}`);
+      }
+      return { items: [] };
+    }
+
+    const listing: RedditListing = await response.json();
+
+    // Check if post is a megathread (stickied or matches pattern)
+    const isMegathread = (post: RedditPost): boolean => {
+      const title = post.data.title;
+      const isStickied = post.data.stickied === true;
+      const matchesPattern = MEGATHREAD_PATTERNS.some(pattern => pattern.test(title));
+      return isStickied || matchesPattern;
+    };
+
+    // Only show megathreads from news subreddits (skip regular posts)
+    const megathreads = listing.data.children.filter(post => isMegathread(post));
+
+    const items: RssItem[] = megathreads
+      .map(post => {
+        const data = post.data;
+        const link = `https://www.reddit.com${data.permalink}`;
+
+        // Build title with subreddit prefix
+        const title = data.title;
+
+        // For link posts, use the external URL; for self posts, use Reddit link
+        const externalUrl = data.url && !data.url.includes('reddit.com') ? data.url : link;
+
+        // Extract thumbnail/preview image
+        const media: MediaAttachment[] = [];
+
+        if (data.preview?.images?.[0]) {
+          const preview = data.preview.images[0];
+          // Use medium resolution if available, otherwise source
+          const imageUrl = preview.resolutions?.find(r => r.width >= 320)?.url || preview.source.url;
+          media.push({
+            type: 'image',
+            url: decodeRedditUrl(preview.source.url),
+            thumbnail: decodeRedditUrl(imageUrl),
+            alt: data.title,
+          });
+        } else if (data.is_video && data.media?.reddit_video) {
+          media.push({
+            type: 'video',
+            url: data.media.reddit_video.fallback_url,
+            thumbnail: data.thumbnail && data.thumbnail !== 'self' ? data.thumbnail : undefined,
+          });
+        } else if (data.thumbnail && !['self', 'default', 'nsfw', 'spoiler'].includes(data.thumbnail)) {
+          media.push({
+            type: 'image',
+            url: data.thumbnail,
+            thumbnail: data.thumbnail,
+            alt: data.title,
+          });
+        }
+
+        // Build description with score and comments
+        const description = data.selftext
+          ? data.selftext.slice(0, 500)
+          : `${data.score.toLocaleString()} upvotes | ${data.num_comments.toLocaleString()} comments`;
+
+        return {
+          title,
+          description,
+          link: externalUrl,
+          pubDate: new Date(data.created_utc * 1000).toISOString(),
+          guid: `reddit-${data.id}`,
+          media: media.length > 0 ? media : undefined,
+        };
+      });
+
+    return { items };
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn(`[Reddit] ${source.name} (r/${subreddit}): Request timeout (10s)`);
+    } else if (error instanceof Error) {
+      console.error(`[Reddit] ${source.name} (r/${subreddit}): ${error.message}`);
+    }
+    return { items: [] };
+  }
+}
+
+// Get count of cached invalid Reddit subreddits (for diagnostics)
+export function getInvalidRedditCacheSize(): number {
+  return invalidRedditCache.size;
+}
+
+// Clear invalid Reddit cache (for testing/maintenance)
+export function clearInvalidRedditCache(): void {
+  invalidRedditCache.clear();
+}
+
+// =============================================================================
+// YOUTUBE RSS HANDLING
+// =============================================================================
+// YouTube has native RSS feeds but needs special handling for thumbnails
+
+// Check if source is a YouTube source
+function isYouTubeSource(source: Source & { feedUrl: string }): boolean {
+  return source.platform === 'youtube' || source.feedUrl.includes('youtube.com/feeds/');
+}
+
+// Extract YouTube video ID from various URL formats
+function extractYouTubeVideoId(url: string): string | null {
+  // Format: yt:video:VIDEO_ID (from RSS guid)
+  const ytMatch = url.match(/yt:video:([a-zA-Z0-9_-]+)/);
+  if (ytMatch) return ytMatch[1];
+
+  // Format: youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/);
+  if (watchMatch) return watchMatch[1];
+
+  // Format: youtu.be/VIDEO_ID
+  const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+  if (shortMatch) return shortMatch[1];
+
+  return null;
+}
+
+// Get YouTube thumbnail URL from video ID
+function getYouTubeThumbnail(videoId: string): string {
+  // mqdefault is 320x180 (16:9 aspect ratio)
+  return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+}
+
+// Extract media:group content from YouTube RSS entry
+function extractYouTubeMedia(xml: string): { thumbnail?: string; duration?: number } {
+  const result: { thumbnail?: string; duration?: number } = {};
+
+  // Extract media:thumbnail
+  const thumbMatch = xml.match(/<media:thumbnail[^>]*url=["']([^"']+)["']/i);
+  if (thumbMatch) {
+    result.thumbnail = thumbMatch[1];
+  }
+
+  // Extract duration from media:content (in seconds)
+  const durationMatch = xml.match(/<media:content[^>]*duration=["'](\d+)["']/i);
+  if (durationMatch) {
+    result.duration = parseInt(durationMatch[1], 10);
+  }
+
+  return result;
+}
+
+// Format duration in seconds to MM:SS or HH:MM:SS
+function formatDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  if (hours > 0) {
+    return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// =============================================================================
 // BLUESKY API FETCHING
 // =============================================================================
 // Bluesky doesn't have native RSS - we use their public API instead
@@ -156,6 +795,11 @@ interface BlueskyPost {
     record: {
       text: string;
       createdAt: string;
+      // Reply reference (if this post is a reply)
+      reply?: {
+        parent: { uri: string; cid: string };
+        root: { uri: string; cid: string };
+      };
     };
     // Embed data is at the post level, not record level
     embed?: {
@@ -163,16 +807,49 @@ interface BlueskyPost {
       images?: Array<{
         alt?: string;
         thumb?: string;
+        fullsize?: string;
       }>;
       external?: {
         uri?: string;
         title?: string;
         description?: string;
+        thumb?: string;
       };
       // For video embeds
       playlist?: string;
       thumbnail?: string;
+      // For quote posts (record with media)
+      record?: {
+        author?: { handle: string; displayName?: string };
+        value?: { text?: string };
+      };
+      media?: {
+        images?: Array<{ alt?: string; thumb?: string; fullsize?: string }>;
+      };
     };
+  };
+  // Reply thread context (parent/root post details)
+  reply?: {
+    parent?: {
+      post?: {
+        author: { handle: string; displayName?: string };
+        record?: { text?: string };
+      };
+    };
+    root?: {
+      post?: {
+        author: { handle: string; displayName?: string };
+      };
+    };
+  };
+  // Reason for this feed item (e.g., repost)
+  reason?: {
+    $type: string;
+    by?: {
+      handle: string;
+      displayName?: string;
+    };
+    indexedAt?: string;
   };
 }
 
@@ -338,20 +1015,79 @@ async function fetchBlueskyFeed(source: Source & { feedUrl: string }): Promise<B
       const link = `https://bsky.app/profile/${item.post.author.handle}/post/${postId}`;
       const embed = item.post.embed;
 
+      // Extract media attachments
+      const media: MediaAttachment[] = [];
+
+      if (embed) {
+        const embedType = embed.$type || '';
+
+        // Handle images
+        const images = embed.images || embed.media?.images;
+        if (images?.length) {
+          for (const img of images) {
+            media.push({
+              type: 'image',
+              url: img.fullsize || img.thumb || '',
+              thumbnail: img.thumb,
+              alt: img.alt,
+            });
+          }
+        }
+
+        // Handle video
+        if (embedType.includes('video') && embed.thumbnail) {
+          media.push({
+            type: 'video',
+            url: embed.playlist || link, // Link to post if no direct video URL
+            thumbnail: embed.thumbnail,
+          });
+        }
+
+        // Handle external links (cards)
+        if (embed.external?.uri) {
+          media.push({
+            type: 'external',
+            url: embed.external.uri,
+            thumbnail: embed.external.thumb,
+            title: embed.external.title,
+            alt: embed.external.description,
+          });
+        }
+      }
+
+      // Extract reply context
+      let replyContext: ReplyContext | undefined;
+      if (item.reply?.parent?.post) {
+        const parentPost = item.reply.parent.post;
+        replyContext = {
+          parentAuthor: parentPost.author.displayName || parentPost.author.handle,
+          parentHandle: parentPost.author.handle,
+          parentText: parentPost.record?.text?.slice(0, 100), // Truncate parent text
+        };
+      }
+
+      // Extract repost context
+      let repostContext: RepostContext | undefined;
+      if (item.reason?.$type === 'app.bsky.feed.defs#reasonRepost' && item.reason.by) {
+        repostContext = {
+          originalAuthor: item.reason.by.displayName || item.reason.by.handle,
+          originalHandle: item.reason.by.handle,
+        };
+      }
+
       // Handle media-only posts (empty text but has embed)
       if (!text || text.trim() === '') {
         if (embed) {
           const embedType = embed.$type || '';
           if (embedType.includes('video')) {
-            text = '📹 [Video]';
+            text = '[Video]';
           } else if (embedType.includes('images') || embed.images?.length) {
-            // Try to use image alt text if available
             const altText = embed.images?.[0]?.alt;
-            text = altText ? `🖼 ${altText}` : '🖼 [Image]';
+            text = altText || '[Image]';
           } else if (embed.external?.title) {
             text = embed.external.title;
           } else {
-            text = '📎 [Media attachment]';
+            text = '[Media attachment]';
           }
         } else {
           text = '[No content]';
@@ -364,6 +1100,9 @@ async function fetchBlueskyFeed(source: Source & { feedUrl: string }): Promise<B
         link,
         pubDate: createdAt,
         guid: item.post.uri,
+        media: media.length > 0 ? media : undefined,
+        replyContext,
+        repostContext,
       };
     });
 
@@ -421,10 +1160,95 @@ function getFaviconUrl(domain: string): string {
   return `https://icon.horse/icon/${domain}`;
 }
 
-// Fetch and parse RSS feed (or Bluesky API for Bluesky sources)
+// Fetch and parse RSS feed (or platform-specific API for Bluesky/Telegram)
 export async function fetchRssFeed(
   source: Source & { feedUrl: string }
 ): Promise<NewsItem[]> {
+  // Use Telegram web scraping for Telegram sources
+  if (isTelegramSource(source)) {
+    const { items, channelAvatar } = await fetchTelegramFeed(source);
+
+    const sourceWithAvatar = {
+      ...source,
+      avatarUrl: channelAvatar,
+    };
+
+    return items.map((item) => {
+      const region = source.region !== 'all'
+        ? source.region
+        : classifyRegion(item.title, item.description);
+
+      return {
+        id: `${source.id}-${hashString(item.guid || item.link)}`,
+        title: item.title,
+        content: item.description || item.title,
+        source: sourceWithAvatar,
+        timestamp: new Date(item.pubDate),
+        region,
+        verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
+        url: item.link,
+        alertStatus: null,
+        isBreaking: isBreakingNews(item.title, item.description),
+      };
+    });
+  }
+
+  // Use Mastodon API for Mastodon sources
+  if (isMastodonSource(source)) {
+    const { items, authorAvatar } = await fetchMastodonFeed(source);
+
+    const sourceWithAvatar = {
+      ...source,
+      avatarUrl: authorAvatar,
+    };
+
+    return items.map((item) => {
+      const region = source.region !== 'all'
+        ? source.region
+        : classifyRegion(item.title, item.description);
+
+      return {
+        id: `${source.id}-${hashString(item.guid || item.link)}`,
+        title: item.title,
+        content: item.description || item.title,
+        source: sourceWithAvatar,
+        timestamp: new Date(item.pubDate),
+        region,
+        verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
+        url: item.link,
+        alertStatus: null,
+        isBreaking: isBreakingNews(item.title, item.description),
+        media: item.media,
+        repostContext: item.repostContext,
+      };
+    });
+  }
+
+  // Use Reddit JSON API for Reddit sources (megathreads only)
+  if (isRedditSource(source)) {
+    const { items } = await fetchRedditFeed(source);
+
+    return items.map((item) => {
+      const region = source.region !== 'all'
+        ? source.region
+        : classifyRegion(item.title, item.description);
+
+      return {
+        id: `${source.id}-${hashString(item.guid || item.link)}`,
+        title: item.title,
+        content: item.description || item.title,
+        source,
+        timestamp: new Date(item.pubDate),
+        region,
+        verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
+        url: item.link,
+        alertStatus: null,
+        isBreaking: isBreakingNews(item.title, item.description),
+        media: item.media,
+      };
+    });
+  }
+
   // Use Bluesky API for Bluesky sources (they don't have native RSS)
   if (isBlueskySource(source)) {
     const { items, authorAvatar } = await fetchBlueskyFeed(source);
@@ -451,8 +1275,109 @@ export async function fetchRssFeed(
         url: item.link,
         alertStatus: null,
         isBreaking: isBreakingNews(item.title, item.description),
+        // Pass through media and context for Bluesky posts
+        media: item.media,
+        replyContext: item.replyContext,
+        repostContext: item.repostContext,
       };
     });
+  }
+
+  // YouTube RSS with thumbnail post-processing
+  if (isYouTubeSource(source)) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s for YouTube
+
+    try {
+      const response = await fetch(source.feedUrl, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; PulseAlert/1.0)',
+          'Accept': 'application/atom+xml, application/rss+xml, application/xml',
+        },
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        console.error(`[YouTube] ${source.name}: HTTP ${response.status}`);
+        return [];
+      }
+
+      const xml = await response.text();
+
+      // YouTube uses Atom format with entries
+      const items: RssItem[] = [];
+      const entryRegex = /<entry>([\s\S]*?)<\/entry>/g;
+      let match;
+
+      while ((match = entryRegex.exec(xml)) !== null) {
+        const entryXml = match[1];
+
+        const title = extractTag(entryXml, 'title');
+        const link = extractAtomLink(entryXml);
+        const pubDate = extractTag(entryXml, 'published') || extractTag(entryXml, 'updated');
+        const videoId = extractTag(entryXml, 'yt:videoId');
+        const description = extractTag(entryXml, 'media:description') || extractTag(entryXml, 'summary');
+
+        // Extract media info
+        const mediaInfo = extractYouTubeMedia(entryXml);
+
+        if (link && title && videoId) {
+          // Build media attachment with thumbnail
+          const media: MediaAttachment[] = [{
+            type: 'video',
+            url: link,
+            thumbnail: mediaInfo.thumbnail || getYouTubeThumbnail(videoId),
+            title: title,
+            alt: mediaInfo.duration ? `Duration: ${formatDuration(mediaInfo.duration)}` : undefined,
+          }];
+
+          items.push({
+            title: decodeHtmlEntities(title),
+            description: decodeHtmlEntities(description || title),
+            link,
+            pubDate: pubDate || new Date().toISOString(),
+            guid: `youtube-${videoId}`,
+            media,
+          });
+        }
+      }
+
+      // Generate favicon for YouTube
+      const sourceWithAvatar = {
+        ...source,
+        avatarUrl: 'https://icon.horse/icon/youtube.com',
+      };
+
+      return items.map((item) => {
+        const region = source.region !== 'all'
+          ? source.region
+          : classifyRegion(item.title, item.description);
+
+        return {
+          id: `${source.id}-${hashString(item.guid || item.link)}`,
+          title: item.title,
+          content: item.description || item.title,
+          source: sourceWithAvatar,
+          timestamp: new Date(item.pubDate),
+          region,
+          verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
+          url: item.link,
+          alertStatus: null,
+          isBreaking: isBreakingNews(item.title, item.description),
+          media: item.media,
+        };
+      });
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.warn(`[YouTube] ${source.name}: Request timeout (8s)`);
+      } else if (error instanceof Error) {
+        console.error(`[YouTube] ${source.name}: ${error.message}`);
+      }
+      return [];
+    }
   }
 
   // Standard RSS/Atom fetch for other sources
@@ -464,7 +1389,7 @@ export async function fetchRssFeed(
       signal: controller.signal,
       next: { revalidate: 60 }, // Cache for 1 minute
       headers: {
-        'User-Agent': 'newsAlert/1.0 (+https://github.com/newsalert)',
+        'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)',
       },
     });
 

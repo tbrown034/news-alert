@@ -209,7 +209,7 @@ export async function GET() {
     const response = await fetch(STATE_DEPT_RSS, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'newsAlert/1.0 (OSINT Dashboard)',
+        'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)',
       },
     });
 

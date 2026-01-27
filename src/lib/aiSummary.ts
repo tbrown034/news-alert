@@ -182,12 +182,12 @@ ${postsJson}
 Post fields: source, tier (official>osint>reporter>ground), minutesAgo, title, contentType, verification, provenance.
 
 Respond with JSON only:
-{"summary":"3-4 sentence overview","tensionScore":<1-10>,"keyDevelopments":[{"headline":"<10 words","detail":"1-2 sentences","sources":[],"severity":"critical|high|moderate|routine","confidence":"high|medium|low"}],"watchIndicators":["max 3 escalation signals"]}
+{"summary":"2-3 sentence overview of current situation","tensionScore":<1-10>,"keyDevelopments":[{"headline":"<10 words","detail":"1 sentence max","sources":[],"severity":"critical|high|moderate|routine","confidence":"high|medium|low"}]}
 
 Severity: critical=mass casualty/nuclear, high=strikes/invasion, moderate=movements/tensions, routine=statements.
 Confidence: high=multiple official sources, medium=single credible, low=unverified/rumor.
 
-Rules: Max 5 developments. Cross-reference sources. Be factual. Score reflects situation severity, not volume.`;
+Rules: EXACTLY 3 key developments (most important only). Be concise. Cross-reference sources. Score reflects situation severity, not volume.`;
 }
 
 // =============================================================================

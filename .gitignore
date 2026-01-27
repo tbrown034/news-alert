@@ -51,3 +51,4 @@ telegram_code_hash.txt
 
 # Telegram data cache
 data/telegram.json
+.env*.local

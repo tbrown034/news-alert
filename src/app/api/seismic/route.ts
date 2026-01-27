@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       signal: controller.signal,
       next: { revalidate: 300 }, // Cache for 5 minutes
       headers: {
-        'User-Agent': 'newsAlert/1.0 OSINT Dashboard',
+        'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)',
       },
     });
 

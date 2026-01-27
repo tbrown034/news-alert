@@ -149,7 +149,7 @@ export async function GET() {
       try {
         const response = await fetch(`${instance}/netblocks/rss`, {
           signal: controller.signal,
-          headers: { 'User-Agent': 'newsAlert/1.0' },
+          headers: { 'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)' },
         });
 
         if (response.ok) {

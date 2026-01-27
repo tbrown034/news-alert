@@ -107,7 +107,7 @@ export async function GET() {
     const nwsResponse = await fetch(`${NWS_ALERTS_API}?status=actual&message_type=alert`, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'newsAlert/1.0 (OSINT Dashboard)',
+        'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)',
         'Accept': 'application/geo+json',
       },
     });
@@ -178,7 +178,7 @@ export async function GET() {
     const eonetResponse = await fetch(`${EONET_API}?status=open&limit=50`, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'newsAlert/1.0 (OSINT Dashboard)',
+        'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)',
       },
     });
 
@@ -222,7 +222,7 @@ export async function GET() {
     const gdacsResponse = await fetch(GDACS_RSS, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'newsAlert/1.0 (OSINT Dashboard)',
+        'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)',
       },
     });
 

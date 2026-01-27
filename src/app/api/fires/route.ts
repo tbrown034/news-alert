@@ -118,7 +118,7 @@ export async function GET() {
       const response = await fetch(FIRMS_API, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'newsAlert/1.0 (OSINT Dashboard)',
+        'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)',
       },
     });
 
@@ -199,7 +199,7 @@ export async function GET() {
     const response = await fetch(`${EONET_API}?category=wildfires&status=open&limit=50`, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'newsAlert/1.0 (OSINT Dashboard)',
+        'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)',
       },
     });
 
@@ -238,7 +238,7 @@ export async function GET() {
     const response = await fetch(GDACS_RSS, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'newsAlert/1.0 (OSINT Dashboard)',
+        'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)',
       },
     });
 

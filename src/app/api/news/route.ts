@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { fetchRssFeed } from '@/lib/rss';
-import { readTelegramPosts } from '@/lib/telegram-reader';
 import {
   tier1Sources,
   tier2Sources,
@@ -42,6 +41,26 @@ const inFlightFetches = new Map<string, Promise<NewsItem[]>>();
 // Check if source is Bluesky
 function isBlueskySource(source: TieredSource): boolean {
   return source.platform === 'bluesky' || source.feedUrl.includes('bsky.app');
+}
+
+// Check if source is Telegram
+function isTelegramSource(source: TieredSource): boolean {
+  return source.platform === 'telegram' || source.feedUrl.includes('t.me/');
+}
+
+// Check if source is Mastodon
+function isMastodonSource(source: TieredSource): boolean {
+  return source.platform === 'mastodon';
+}
+
+// Check if source is Reddit
+function isRedditSource(source: TieredSource): boolean {
+  return source.platform === 'reddit' || source.feedUrl.includes('reddit.com/r/');
+}
+
+// Check if source is YouTube
+function isYouTubeSource(source: TieredSource): boolean {
+  return source.platform === 'youtube' || source.feedUrl.includes('youtube.com/feeds/');
 }
 
 // Get sources by tier(s) and optionally filter by region
@@ -136,13 +155,26 @@ function balanceFeedBySourceType(items: NewsItem[], limit: number): NewsItem[] {
 }
 
 /**
- * Fetch sources - RSS first (fast), then Bluesky (batched)
+ * Fetch sources - grouped by platform with appropriate batching
  */
 async function fetchAllSources(
   sources: TieredSource[]
 ): Promise<NewsItem[]> {
-  const rssSources = sources.filter(s => !isBlueskySource(s));
+  // Separate sources by platform
   const blueskySources = sources.filter(isBlueskySource);
+  const telegramSources = sources.filter(isTelegramSource);
+  const mastodonSources = sources.filter(isMastodonSource);
+  const redditSources = sources.filter(isRedditSource);
+  const youtubeSources = sources.filter(isYouTubeSource);
+
+  // RSS = everything else
+  const rssSources = sources.filter(s =>
+    !isBlueskySource(s) &&
+    !isTelegramSource(s) &&
+    !isMastodonSource(s) &&
+    !isRedditSource(s) &&
+    !isYouTubeSource(s)
+  );
 
   const allItems: NewsItem[] = [];
 
@@ -200,15 +232,112 @@ async function fetchAllSources(
     }
   }
 
-  // Add Telegram posts from cached JSON
-  try {
-    const telegramPosts = readTelegramPosts();
-    if (telegramPosts.length > 0) {
-      console.log(`[News API] Adding ${telegramPosts.length} Telegram posts`);
-      allItems.push(...telegramPosts);
+  // Fetch Telegram in batches (web scraping can be slow)
+  const TG_BATCH_SIZE = 10;
+  const TG_BATCH_DELAY = 200;
+
+  for (let i = 0; i < telegramSources.length; i += TG_BATCH_SIZE) {
+    const batch = telegramSources.slice(i, i + TG_BATCH_SIZE);
+
+    const batchPromises = batch.map(async (source) => {
+      try {
+        return await fetchRssFeed(source);
+      } catch {
+        return [];
+      }
+    });
+
+    const batchResults = await Promise.allSettled(batchPromises);
+    for (const result of batchResults) {
+      if (result.status === 'fulfilled') {
+        allItems.push(...result.value);
+      }
     }
-  } catch (error) {
-    console.error('[News API] Error reading Telegram posts:', error);
+
+    if (i + TG_BATCH_SIZE < telegramSources.length) {
+      await new Promise(r => setTimeout(r, TG_BATCH_DELAY));
+    }
+  }
+
+  // Fetch Mastodon in batches (API is generous - 7,500 req/5min)
+  const MASTO_BATCH_SIZE = 20;
+  const MASTO_BATCH_DELAY = 100;
+
+  for (let i = 0; i < mastodonSources.length; i += MASTO_BATCH_SIZE) {
+    const batch = mastodonSources.slice(i, i + MASTO_BATCH_SIZE);
+
+    const batchPromises = batch.map(async (source) => {
+      try {
+        return await fetchRssFeed(source);
+      } catch {
+        return [];
+      }
+    });
+
+    const batchResults = await Promise.allSettled(batchPromises);
+    for (const result of batchResults) {
+      if (result.status === 'fulfilled') {
+        allItems.push(...result.value);
+      }
+    }
+
+    if (i + MASTO_BATCH_SIZE < mastodonSources.length) {
+      await new Promise(r => setTimeout(r, MASTO_BATCH_DELAY));
+    }
+  }
+
+  // Fetch Reddit in smaller batches (tight rate limit ~10 req/min)
+  const REDDIT_BATCH_SIZE = 5;
+  const REDDIT_BATCH_DELAY = 500;
+
+  for (let i = 0; i < redditSources.length; i += REDDIT_BATCH_SIZE) {
+    const batch = redditSources.slice(i, i + REDDIT_BATCH_SIZE);
+
+    const batchPromises = batch.map(async (source) => {
+      try {
+        return await fetchRssFeed(source);
+      } catch {
+        return [];
+      }
+    });
+
+    const batchResults = await Promise.allSettled(batchPromises);
+    for (const result of batchResults) {
+      if (result.status === 'fulfilled') {
+        allItems.push(...result.value);
+      }
+    }
+
+    if (i + REDDIT_BATCH_SIZE < redditSources.length) {
+      await new Promise(r => setTimeout(r, REDDIT_BATCH_DELAY));
+    }
+  }
+
+  // Fetch YouTube (standard RSS, moderate batching)
+  const YT_BATCH_SIZE = 10;
+  const YT_BATCH_DELAY = 100;
+
+  for (let i = 0; i < youtubeSources.length; i += YT_BATCH_SIZE) {
+    const batch = youtubeSources.slice(i, i + YT_BATCH_SIZE);
+
+    const batchPromises = batch.map(async (source) => {
+      try {
+        return await fetchRssFeed(source);
+      } catch {
+        return [];
+      }
+    });
+
+    const batchResults = await Promise.allSettled(batchPromises);
+    for (const result of batchResults) {
+      if (result.status === 'fulfilled') {
+        allItems.push(...result.value);
+      }
+    }
+
+    if (i + YT_BATCH_SIZE < youtubeSources.length) {
+      await new Promise(r => setTimeout(r, YT_BATCH_DELAY));
+    }
   }
 
   return allItems;
@@ -252,10 +381,64 @@ async function fetchNewsWithCache(
       const items = await fetchAllSources(sources);
 
       // Deduplicate by ID
-      const seen = new Set<string>();
-      const deduped = items.filter(item => {
-        if (seen.has(item.id)) return false;
-        seen.add(item.id);
+      const seenIds = new Set<string>();
+      const dedupedById = items.filter(item => {
+        if (seenIds.has(item.id)) return false;
+        seenIds.add(item.id);
+        return true;
+      });
+
+      // Cross-platform deduplication: remove duplicate content from different platforms
+      // Uses normalized title (first 80 chars, lowercase, alphanumeric only) as content key
+      const normalizeForDedupe = (title: string): string => {
+        return title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 80);
+      };
+
+      const seenContent = new Map<string, NewsItem>();
+      const crossPlatformDeduped = dedupedById.filter(item => {
+        const contentKey = normalizeForDedupe(item.title);
+        if (contentKey.length < 20) return true; // Too short to dedupe reliably
+
+        const existing = seenContent.get(contentKey);
+        if (existing) {
+          // Keep the one with higher confidence or from preferred platform
+          if (item.source.confidence > existing.source.confidence) {
+            seenContent.set(contentKey, item);
+            return true;
+          }
+          return false;
+        }
+        seenContent.set(contentKey, item);
+        return true;
+      });
+
+      // Filter out low-value travel advisories (only show Level 3-4 in feed)
+      // Level 1: Exercise Normal Precautions - not newsworthy
+      // Level 2: Exercise Increased Caution - not newsworthy
+      // Level 3: Reconsider Travel - show in feed
+      // Level 4: Do Not Travel - show in feed
+      const filtered = crossPlatformDeduped.filter(item => {
+        // Check if it's a travel advisory (has "Level X:" pattern)
+        if (item.source.id === 'state-travel-rss' || item.title.match(/Level [12]:/)) {
+          // Only show Level 3 or Level 4
+          if (item.title.includes('Level 3:') || item.title.includes('Level 4:')) {
+            return true;
+          }
+          // Filter out Level 1 and Level 2
+          if (item.title.includes('Level 1:') || item.title.includes('Level 2:')) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      // Limit items per source to prevent feed flooding (max 3 per source)
+      const MAX_PER_SOURCE = 3;
+      const sourceItemCounts = new Map<string, number>();
+      const deduped = filtered.filter(item => {
+        const count = sourceItemCounts.get(item.source.id) || 0;
+        if (count >= MAX_PER_SOURCE) return false;
+        sourceItemCounts.set(item.source.id, count + 1);
         return true;
       });
 

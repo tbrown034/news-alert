@@ -137,12 +137,15 @@ const allTabs: TabConfig[] = [
 ];
 
 // Platform filter options
-type PlatformFilter = 'all' | 'bluesky' | 'rss' | 'telegram';
+type PlatformFilter = 'all' | 'bluesky' | 'rss' | 'telegram' | 'mastodon' | 'youtube' | 'reddit';
 const platformFilters: { id: PlatformFilter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'bluesky', label: 'Bluesky' },
   { id: 'rss', label: 'RSS' },
   { id: 'telegram', label: 'Telegram' },
+  { id: 'mastodon', label: 'Mastodon' },
+  { id: 'youtube', label: 'YouTube' },
+  { id: 'reddit', label: 'Reddit' },
 ];
 
 // Format relative time for last updated
@@ -501,15 +504,20 @@ export function NewsFeed({
         )}
 
         {/* Platform filter + stats bar (combined) - show while loading or when there's data */}
-        {(isLoading || isLoadingMore || platformCounts.bluesky > 0 || platformCounts.rss > 0 || platformCounts.telegram > 0) && (
-          <div className="px-2 sm:px-3 py-1.5 sm:py-2 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 overflow-x-auto scrollbar-hide">
+        {(isLoading || isLoadingMore || Object.values(platformCounts).some(count => count > 0)) && (
+          <div className="px-2 sm:px-3 py-1.5 sm:py-2 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
             <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-500 flex-shrink-0">Source:</span>
-            <div className="flex items-center gap-1.5 flex-shrink-0">
+            <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
               {platformFilters.map((filter) => {
                 const isSelected = platformFilter === filter.id;
                 const count = filter.id === 'all'
-                  ? (platformCounts.bluesky || 0) + (platformCounts.rss || 0) + (platformCounts.telegram || 0)
+                  ? Object.values(platformCounts).reduce((sum, c) => sum + c, 0)
                   : (platformCounts[filter.id] || 0);
+
+                // Hide platforms with 0 items (except "All" and currently selected)
+                if (filter.id !== 'all' && count === 0 && !isSelected && !isLoading && !isLoadingMore) {
+                  return null;
+                }
 
                 // Show loading state if still loading initial data or loading more sources
                 const isLoadingPlatform = (isLoading || isLoadingMore) && filter.id !== 'all' && count === 0;
@@ -520,7 +528,7 @@ export function NewsFeed({
                     onClick={() => setPlatformFilter(filter.id)}
                     disabled={isLoadingPlatform}
                     className={`
-                      px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full transition-colors whitespace-nowrap
+                      px-1.5 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium rounded-full transition-colors whitespace-nowrap
                       ${isSelected
                         ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'

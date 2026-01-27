@@ -74,13 +74,15 @@ export interface Source {
   id: string;
   name: string;
   handle?: string;
-  platform: 'bluesky' | 'rss' | 'twitter' | 'telegram' | 'reddit';
+  platform: 'bluesky' | 'rss' | 'twitter' | 'telegram' | 'reddit' | 'mastodon' | 'youtube';
   sourceType: SourceType;
   confidence: number; // 1-100
   region: WatchpointId;
   url?: string;
   // Avatar/profile image URL
   avatarUrl?: string;
+  // State-sponsored media flag (RT, CGTN, Xinhua, etc.)
+  isStateSponsored?: boolean;
   // Expected posting frequency (posts per day, for anomaly detection)
   baselinePostsPerDay?: number;
   // Optional tags for subcategory filtering (currently used for US region)
@@ -93,6 +95,28 @@ export type AlertStatus = 'first' | 'developing' | 'confirmed' | null;
 // News item
 export type VerificationStatus = 'unverified' | 'multiple-sources' | 'confirmed';
 
+// Media attachment for posts (images, videos, external links)
+export interface MediaAttachment {
+  type: 'image' | 'video' | 'external';
+  url: string;
+  thumbnail?: string;
+  alt?: string;
+  title?: string; // For external links
+}
+
+// Context for replies
+export interface ReplyContext {
+  parentAuthor: string;
+  parentHandle?: string;
+  parentText?: string;
+}
+
+// Context for reposts/retweets
+export interface RepostContext {
+  originalAuthor: string;
+  originalHandle?: string;
+}
+
 export interface NewsItem {
   id: string;
   title: string;
@@ -102,6 +126,13 @@ export interface NewsItem {
   region: WatchpointId;
   verificationStatus: VerificationStatus;
   url?: string;
+
+  // Media attachments (images, videos, links)
+  media?: MediaAttachment[];
+
+  // Reply/repost context for social media posts
+  replyContext?: ReplyContext;
+  repostContext?: RepostContext;
 
   // DEPRECATED: Old cascade system
   alertStatus?: AlertStatus;

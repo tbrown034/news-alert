@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { ArrowTopRightOnSquareIcon, ShareIcon } from '@heroicons/react/24/outline';
+import { ArrowTopRightOnSquareIcon, ShareIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon as CheckBadgeSolid } from '@heroicons/react/24/solid';
-import { NewsItem, WatchpointId } from '@/types';
+import { NewsItem, WatchpointId, MediaAttachment } from '@/types';
 import { PlatformIcon, platformColors } from './PlatformIcon';
 
 interface NewsCardProps {
@@ -37,6 +37,93 @@ const sourceTypeLabels: Record<string, string> = {
   ground: 'Ground',
   bot: 'Bot',
 };
+
+// Media display component for images/videos/links
+function MediaDisplay({ media }: { media: MediaAttachment[] }) {
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
+
+  if (!media || media.length === 0) return null;
+
+  // Filter to images and videos only (external links shown as text)
+  const visualMedia = media.filter(m => m.type === 'image' || m.type === 'video');
+  if (visualMedia.length === 0) return null;
+
+  const handleImageError = (index: number) => {
+    setFailedImages(prev => new Set(prev).add(index));
+  };
+
+  // Single image: full width
+  if (visualMedia.length === 1) {
+    const item = visualMedia[0];
+    if (failedImages.has(0)) return null;
+
+    return (
+      <div className="mt-2 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+        <a
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block relative"
+        >
+          <Image
+            src={item.thumbnail || item.url}
+            alt={item.alt || 'Media attachment'}
+            width={400}
+            height={300}
+            className="w-full h-auto max-h-72 object-cover"
+            onError={() => handleImageError(0)}
+            unoptimized
+          />
+          {item.type === 'video' && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+              <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center">
+                <svg className="w-6 h-6 text-slate-800 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+              </div>
+            </div>
+          )}
+        </a>
+      </div>
+    );
+  }
+
+  // Multiple images: 2x2 grid
+  return (
+    <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+      {visualMedia.slice(0, 4).map((item, index) => {
+        if (failedImages.has(index)) return null;
+        return (
+          <a
+            key={index}
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative aspect-square"
+          >
+            <Image
+              src={item.thumbnail || item.url}
+              alt={item.alt || `Image ${index + 1}`}
+              fill
+              className="object-cover"
+              onError={() => handleImageError(index)}
+              unoptimized
+            />
+            {item.type === 'video' && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <div className="w-8 h-8 rounded-full bg-white/90 flex items-center justify-center">
+                  <svg className="w-4 h-4 text-slate-800 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </a>
+        );
+      })}
+    </div>
+  );
+}
 
 // Source avatar component - simple avatar or platform icon fallback
 function SourceAvatar({
@@ -185,6 +272,18 @@ export function NewsCard({ item }: NewsCardProps) {
       "
     >
       <div className="flex flex-col gap-2">
+        {/* Repost indicator */}
+        {item.repostContext && (
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 -mb-1">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>
+              <span className="font-medium">{item.source.name}</span> reposted
+            </span>
+          </div>
+        )}
+
         {/* Row 1: Avatar + Name + Time | Region */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -196,10 +295,24 @@ export function NewsCard({ item }: NewsCardProps) {
             />
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
-                {item.source.name}
+                {item.repostContext ? item.repostContext.originalAuthor : item.source.name}
               </span>
-              {isVerified && (
+              {isVerified && !item.repostContext && (
                 <CheckBadgeSolid className="w-4 h-4 text-blue-500 flex-shrink-0" />
+              )}
+              {item.source.isStateSponsored && (
+                <span
+                  className="flex items-center gap-0.5 px-1 py-0.5 text-2xs font-medium rounded bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 flex-shrink-0"
+                  title="State-sponsored media"
+                >
+                  <BuildingLibraryIcon className="w-3 h-3" />
+                  <span className="hidden sm:inline">State</span>
+                </span>
+              )}
+              {item.repostContext?.originalHandle && (
+                <span className="text-xs text-slate-400 dark:text-slate-500 truncate">
+                  @{item.repostContext.originalHandle}
+                </span>
               )}
               <span className="text-xs text-slate-400 dark:text-slate-500 flex-shrink-0" suppressHydrationWarning>
                 · {formatTimeAgo(item.timestamp)}
@@ -218,6 +331,16 @@ export function NewsCard({ item }: NewsCardProps) {
             {regionBadge.label}
           </span>
         </div>
+
+        {/* Reply indicator */}
+        {item.replyContext && (
+          <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 pl-10">
+            <span>Replying to</span>
+            <span className="text-blue-500 dark:text-blue-400">
+              @{item.replyContext.parentHandle || item.replyContext.parentAuthor}
+            </span>
+          </div>
+        )}
 
         {/* Row 2: Message text with truncation */}
         <div className="text-sm text-slate-800 dark:text-slate-100 leading-relaxed py-2">
@@ -244,6 +367,11 @@ export function NewsCard({ item }: NewsCardProps) {
             )}
           </p>
         </div>
+
+        {/* Media attachments */}
+        {item.media && item.media.length > 0 && (
+          <MediaDisplay media={item.media} />
+        )}
 
         {/* Row 3: Tags + Actions */}
         <div className="flex items-center justify-between pt-1">
