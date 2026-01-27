@@ -179,7 +179,17 @@ const regionBadges: Record<WatchpointId, { label: string; color: string }> = {
 
 function formatTimeAgo(date: Date): string {
   const now = new Date();
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  const diffMs = now.getTime() - date.getTime();
+  const seconds = Math.floor(diffMs / 1000);
+
+  // Handle future timestamps (clock drift, timezone issues)
+  // If post appears to be in the future, show "just now" -
+  // this is common with RSS feeds that have timezone parsing issues
+  if (seconds < 0) {
+    // If more than 5 minutes in the future, something is wrong - still show "just now"
+    // to avoid confusing negative time displays
+    return 'just now';
+  }
 
   if (seconds < 60) return 'just now';
 

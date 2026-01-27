@@ -2,6 +2,47 @@ import { NewsItem, Source, VerificationStatus, MediaAttachment, ReplyContext, Re
 import { classifyRegion, isBreakingNews } from './sourceUtils';
 import { createHash } from 'crypto';
 
+/**
+ * Parse a pubDate string into a Date object with timezone normalization.
+ *
+ * Problem: Many RSS feeds provide timestamps without timezone info, e.g.:
+ *   "Mon, 27 Jan 2025 15:32:00" (no timezone suffix)
+ *
+ * JavaScript's new Date() parses timezone-less strings as LOCAL time of the
+ * server running the code. On Vercel (UTC), this is fine. But if a Jerusalem
+ * Post article was published at 15:32 IST (UTC+2), it gets parsed as 15:32 UTC,
+ * making it appear 2 hours later than reality.
+ *
+ * Solution: If the parsed date is in the future (within 24h tolerance for
+ * timezone drift), clamp it to "now" to avoid confusing "just now" displays.
+ */
+function parsePubDate(pubDateStr: string): Date {
+  const parsed = new Date(pubDateStr);
+
+  // If parsing failed, return current time
+  if (isNaN(parsed.getTime())) {
+    return new Date();
+  }
+
+  const now = new Date();
+  const diffMs = parsed.getTime() - now.getTime();
+
+  // If the timestamp is in the future (up to 24 hours ahead due to timezone issues),
+  // clamp it to current time. This handles feeds with timezone problems gracefully.
+  // We allow up to 24h because that's the maximum timezone offset (+14 to -12 = 26h range)
+  if (diffMs > 0 && diffMs < 24 * 60 * 60 * 1000) {
+    return now;
+  }
+
+  // If it's more than 24h in the future, something is very wrong - use current time
+  if (diffMs > 24 * 60 * 60 * 1000) {
+    console.warn(`[RSS] Timestamp far in future (${pubDateStr}), using current time`);
+    return now;
+  }
+
+  return parsed;
+}
+
 interface RssItem {
   title: string;
   description: string;
@@ -1183,7 +1224,7 @@ export async function fetchRssFeed(
         title: item.title,
         content: item.description || item.title,
         source: sourceWithAvatar,
-        timestamp: new Date(item.pubDate),
+        timestamp: parsePubDate(item.pubDate),
         region,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
@@ -1212,7 +1253,7 @@ export async function fetchRssFeed(
         title: item.title,
         content: item.description || item.title,
         source: sourceWithAvatar,
-        timestamp: new Date(item.pubDate),
+        timestamp: parsePubDate(item.pubDate),
         region,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
@@ -1238,7 +1279,7 @@ export async function fetchRssFeed(
         title: item.title,
         content: item.description || item.title,
         source,
-        timestamp: new Date(item.pubDate),
+        timestamp: parsePubDate(item.pubDate),
         region,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
@@ -1269,7 +1310,7 @@ export async function fetchRssFeed(
         title: item.title,
         content: item.description || item.title,
         source: sourceWithAvatar,
-        timestamp: new Date(item.pubDate),
+        timestamp: parsePubDate(item.pubDate),
         region,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
@@ -1360,7 +1401,7 @@ export async function fetchRssFeed(
           title: item.title,
           content: item.description || item.title,
           source: sourceWithAvatar,
-          timestamp: new Date(item.pubDate),
+          timestamp: parsePubDate(item.pubDate),
           region,
           verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
           url: item.link,
@@ -1420,7 +1461,7 @@ export async function fetchRssFeed(
         title: item.title,
         content: item.description || item.title,
         source: sourceWithAvatar,
-        timestamp: new Date(item.pubDate),
+        timestamp: parsePubDate(item.pubDate),
         region,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
