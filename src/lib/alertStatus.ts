@@ -63,15 +63,7 @@ export function processAlertStatuses(items: NewsItem[]): NewsItem[] {
   }));
 }
 
-// Simple chronological sort (activity levels handle priority now)
+// Pure chronological sort by published timestamp (newest first)
 export function sortByCascadePriority(items: NewsItem[]): NewsItem[] {
-  return [...items].sort((a, b) => {
-    // Items with alert status float to top
-    const aHasAlert = a.alertStatus ? 1 : 0;
-    const bHasAlert = b.alertStatus ? 1 : 0;
-    if (aHasAlert !== bHasAlert) return bHasAlert - aHasAlert;
-
-    // Then by recency
-    return b.timestamp.getTime() - a.timestamp.getTime();
-  });
+  return [...items].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 }

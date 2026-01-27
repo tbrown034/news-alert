@@ -44,6 +44,11 @@ export function checkRateLimit(
   identifier: string,
   options: RateLimitOptions = {}
 ): RateLimitResult {
+  // Bypass rate limiting in development
+  if (process.env.NODE_ENV === 'development') {
+    return { allowed: true, remaining: 999, resetTime: Date.now() + 60000 };
+  }
+
   const { windowMs = 60000, maxRequests = 60 } = options;
   const now = Date.now();
   const key = identifier;

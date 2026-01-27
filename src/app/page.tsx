@@ -23,12 +23,12 @@ export default async function Home() {
       ? `https://${process.env.VERCEL_URL}`
       : 'http://localhost:3000';
 
-    // Abort if SSR fetch takes longer than 5s - client will fetch fresh
+    // Abort if SSR fetch takes longer than 15s - client will fetch fresh
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-    // Fetch T1 first for fast initial load, client will fetch T2 async
-    const response = await fetch(`${baseUrl}/api/news?region=all&tier=T1&hours=6&limit=100`, {
+    // Fetch all sources (no tier separation - simplified architecture)
+    const response = await fetch(`${baseUrl}/api/news?region=all&hours=6&limit=200`, {
       next: { revalidate: 300 }, // Cache for 5 min (matches server cache TTL)
       signal: controller.signal,
     });

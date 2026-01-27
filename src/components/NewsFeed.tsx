@@ -25,13 +25,17 @@ interface NewsFeedProps {
   selectedWatchpoint: WatchpointId;
   onSelectWatchpoint?: (id: WatchpointId) => void;
   isLoading?: boolean;
-  isLoadingMore?: boolean; // T2 async loading
   onRefresh?: () => void;
   activity?: Record<string, ActivityData>;
   error?: string | null;
   onRetry?: () => void;
   lastUpdated?: string | null;
   loadTimeMs?: number | null;
+  // Live update settings
+  pendingCount?: number;
+  onShowPending?: () => void;
+  autoUpdate?: boolean;
+  onToggleAutoUpdate?: () => void;
 }
 
 // Skeleton loader for news cards
@@ -100,17 +104,18 @@ function VolumeIndicator({ activity }: { activity: ActivityData }) {
   const volume = getVolumeText();
 
   return (
-    <div className="px-4 py-3 flex items-center justify-between text-xs border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-      <div className="flex items-center gap-2">
-        <span className="text-slate-600 font-medium">{activity.count} posts</span>
-        <span className="text-slate-400">in last hour</span>
+    <div className="px-4 py-2 flex items-center justify-between text-xs border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+      <div className="flex items-center gap-1.5">
+        <span className="text-slate-600 dark:text-slate-400 font-medium">{activity.count}/hr</span>
+        <span className={`font-medium ${volume.color}`}>
+          {volume.text === 'Normal volume' ? '(normal)' : `(${volume.text.replace(' volume', '').replace('normal ', '')})`}
+        </span>
       </div>
-      <div className="flex items-center gap-2">
-        <span className={`font-medium ${volume.color}`}>{volume.text}</span>
-        {activity.baseline && (
-          <span className="text-slate-400">(baseline: ~{activity.baseline}/hr)</span>
-        )}
-      </div>
+      {activity.baseline && (
+        <span className="text-slate-400 dark:text-slate-500 text-2xs" title={`Baseline: ~${activity.baseline} posts/hr for this region`}>
+          ⓘ ~{activity.baseline}/hr avg
+        </span>
+      )}
     </div>
   );
 }
@@ -168,13 +173,16 @@ export function NewsFeed({
   selectedWatchpoint,
   onSelectWatchpoint,
   isLoading,
-  isLoadingMore,
   onRefresh,
   activity,
   error,
   onRetry,
   lastUpdated,
   loadTimeMs,
+  pendingCount = 0,
+  onShowPending,
+  autoUpdate = true,
+  onToggleAutoUpdate,
 }: NewsFeedProps) {
   // Track previously seen item IDs to animate new ones
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
@@ -505,7 +513,7 @@ export function NewsFeed({
         )}
 
         {/* Platform filter bar - collapsible */}
-        {(isLoading || isLoadingMore || Object.values(platformCounts).some(count => count > 0)) && (
+        {(isLoading || Object.values(platformCounts).some(count => count > 0)) && (
           <div className="px-2 sm:px-3 py-1.5 sm:py-2 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
             {/* Collapsed state: just show toggle button */}
             {!sourceFilterExpanded ? (
@@ -557,12 +565,12 @@ export function NewsFeed({
                       : (platformCounts[filter.id] || 0);
 
                     // Hide platforms with 0 items (except "All" and currently selected)
-                    if (filter.id !== 'all' && count === 0 && !isSelected && !isLoading && !isLoadingMore) {
+                    if (filter.id !== 'all' && count === 0 && !isSelected && !isLoading) {
                       return null;
                     }
 
-                    // Show loading state if still loading initial data or loading more sources
-                    const isLoadingPlatform = (isLoading || isLoadingMore) && filter.id !== 'all' && count === 0;
+                    // Show loading state if still loading initial data
+                    const isLoadingPlatform = isLoading && filter.id !== 'all' && count === 0;
 
                     return (
                       <button
@@ -659,6 +667,41 @@ export function NewsFeed({
           </div>
         )}
 
+        {/* New posts banner - shown when auto-update is OFF and items are pending */}
+        {pendingCount > 0 && !autoUpdate && (
+          <button
+            onClick={onShowPending}
+            className="mx-3 sm:mx-4 mt-3 py-2.5 px-4 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+            </svg>
+            {pendingCount} new {pendingCount === 1 ? 'post' : 'posts'}
+          </button>
+        )}
+
+        {/* Auto-update toggle */}
+        {onToggleAutoUpdate && (
+          <div className="mx-3 sm:mx-4 mt-2 flex items-center justify-end gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span>Live updates</span>
+            <button
+              onClick={onToggleAutoUpdate}
+              className={`relative w-8 h-5 rounded-full transition-colors ${
+                autoUpdate
+                  ? 'bg-blue-500'
+                  : 'bg-slate-300 dark:bg-slate-600'
+              }`}
+              aria-label={autoUpdate ? 'Disable live updates' : 'Enable live updates'}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  autoUpdate ? 'translate-x-3' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col gap-4 px-3 sm:px-4 pb-3 sm:pb-4 pt-3 news-feed-list">
           {sortedItems.map((item, index) => (
             <div
@@ -670,11 +713,11 @@ export function NewsFeed({
           ))}
         </div>
 
-        {/* Loading more indicator (T2 async) */}
-        {isLoadingMore && sortedItems.length > 0 && (
-          <div className="py-3 flex items-center justify-center gap-2 text-xs text-slate-400 dark:text-slate-500">
-            <div className="w-3 h-3 border-2 border-blue-500/50 border-t-blue-500 rounded-full animate-spin" />
-            <span>Loading more sources...</span>
+        {/* Pending items indicator when auto-update is ON */}
+        {pendingCount > 0 && autoUpdate && (
+          <div className="py-2 flex items-center justify-center gap-2 text-xs text-slate-400 dark:text-slate-500">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+            <span>Live updating...</span>
           </div>
         )}
 

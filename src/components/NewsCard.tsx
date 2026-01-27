@@ -375,14 +375,12 @@ export function NewsCard({ item }: NewsCardProps) {
 
         {/* Row 3: Tags + Actions */}
         <div className="flex items-center justify-between pt-1">
-          {/* Source type badges */}
+          {/* Combined source badge: "Reporter · Bluesky" */}
           <div className="flex items-center gap-2.5">
-            <span className={`px-1.5 py-0.5 text-2xs font-medium rounded border ${sourceTypeStyle}`}>
+            <span className={`flex items-center gap-1.5 px-1.5 py-0.5 text-2xs font-medium rounded border ${sourceTypeStyle}`}>
               {sourceTypeLabel}
-            </span>
-            <span className={`flex items-center gap-1 px-1.5 py-0.5 text-2xs font-medium rounded border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 ${platformColor}`}>
+              <span className="text-slate-400 dark:text-slate-500">·</span>
               <PlatformIcon platform={item.source.platform} className="w-3 h-3" />
-              <span className="capitalize">{item.source.platform}</span>
             </span>
           </div>
           {/* Actions */}

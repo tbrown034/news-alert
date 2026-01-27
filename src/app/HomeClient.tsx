@@ -17,6 +17,7 @@ interface ApiResponse {
   tiers?: string[];
   hoursWindow?: number;
   sourcesCount?: number;
+  isIncremental?: boolean;
 }
 
 type HeroView = 'main' | 'hotspots' | 'seismic' | 'weather' | 'outages' | 'travel' | 'fires';
@@ -52,6 +53,10 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
   const [newsLoadTimeMs, setNewsLoadTimeMs] = useState<number | null>(null);
   const [hoursWindow, setHoursWindow] = useState<number>(initialData?.hoursWindow || 6);
 
+  // Live update settings
+  const [pendingItems, setPendingItems] = useState<NewsItem[]>([]); // Buffer for new items
+  const [autoUpdate, setAutoUpdate] = useState<boolean>(true); // Default to true, load from localStorage in useEffect
+
   // Hero view mode
   const [heroView, setHeroView] = useState<HeroView>('main');
   const [earthquakes, setEarthquakes] = useState<Earthquake[]>([]);
@@ -69,6 +74,14 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
     const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
     if (savedTheme) {
       setTheme(savedTheme);
+    }
+  }, []);
+
+  // Initialize autoUpdate preference from localStorage (after hydration)
+  useEffect(() => {
+    const saved = localStorage.getItem('news-auto-update');
+    if (saved !== null) {
+      setAutoUpdate(saved === 'true');
     }
   }, []);
 
@@ -95,48 +108,108 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
   const isFetchingRef = useRef(false);
   const hasInitialData = useRef(!!initialData);
 
-  // Track if T2 fetch is in progress
-  const isT2FetchingRef = useRef(false);
-  const [isLoadingT2, setIsLoadingT2] = useState(false);
+  // Save autoUpdate preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('news-auto-update', String(autoUpdate));
+  }, [autoUpdate]);
 
-  // Fetch T2 sources async and merge with existing items
-  const fetchT2Async = useCallback(async (region: WatchpointId) => {
-    if (isT2FetchingRef.current) return;
-    isT2FetchingRef.current = true;
-    setIsLoadingT2(true);
+  // Toggle auto-update preference
+  const toggleAutoUpdate = useCallback(() => {
+    setAutoUpdate(prev => !prev);
+  }, []);
+
+  // Show pending items (user clicked the "X new posts" banner)
+  const showPendingItems = useCallback(() => {
+    if (pendingItems.length === 0) return;
+
+    setNewsItems(prev => {
+      const existingIds = new Set(prev.map(i => i.id));
+      const unique = pendingItems.filter(i => !existingIds.has(i.id));
+
+      if (unique.length === 0) return prev;
+
+      // Sort new items by timestamp (newest first among new items)
+      const sortedNew = unique.sort(
+        (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+      );
+
+      // PREPEND only - never insert in middle of existing feed
+      return [...sortedNew, ...prev];
+    });
+
+    setPendingItems([]);
+  }, [pendingItems]);
+
+  // Fetch incremental updates (only items newer than lastFetched)
+  // Uses prepend-only logic - new items always appear at top, never mid-feed
+  const fetchIncremental = useCallback(async () => {
+    if (!lastFetched || isFetchingRef.current) return;
+    isFetchingRef.current = true;
 
     try {
-      const response = await fetch(`/api/news?region=${region}&tier=T2&hours=6&limit=200`);
+      const since = encodeURIComponent(lastFetched);
+      const response = await fetch(
+        `/api/news?region=${selectedWatchpoint}&hours=6&limit=100&since=${since}`
+      );
+
       if (!response.ok) return;
 
       const data: ApiResponse = await response.json();
-      const t2Items = data.items.map((item) => ({
-        ...item,
-        timestamp: new Date(item.timestamp),
-      }));
 
-      if (t2Items.length > 0) {
-        // Merge T2 items with existing items (avoiding duplicates)
-        setNewsItems((prev) => {
-          const existingIds = new Set(prev.map(item => item.id));
-          const newItems = t2Items.filter(item => !existingIds.has(item.id));
+      if (data.items.length > 0) {
+        const newItems = data.items.map((item) => ({
+          ...item,
+          timestamp: new Date(item.timestamp),
+        }));
 
-          if (newItems.length === 0) return prev;
+        // Get existing IDs from both feed and pending buffer
+        const existingIds = new Set([
+          ...newsItems.map(i => i.id),
+          ...pendingItems.map(i => i.id),
+        ]);
+        const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
 
-          // Merge and sort by timestamp
-          const merged = [...prev, ...newItems].sort(
-            (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-          );
-          return merged;
-        });
+        if (uniqueNewItems.length > 0) {
+          if (autoUpdate) {
+            // Auto-update ON: Prepend directly to feed (no mid-feed insertion)
+            setNewsItems(prev => {
+              const sortedNew = uniqueNewItems.sort(
+                (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+              );
+              // PREPEND only - preserves existing feed order
+              return [...sortedNew, ...prev];
+            });
+            console.log(`[HomeClient] Auto-updated: +${uniqueNewItems.length} items`);
+          } else {
+            // Auto-update OFF: Add to pending buffer, show banner
+            setPendingItems(prev => [...prev, ...uniqueNewItems]);
+            console.log(`[HomeClient] Buffered: +${uniqueNewItems.length} items (${pendingItems.length + uniqueNewItems.length} pending)`);
+          }
+        }
+      }
+
+      // Update lastFetched for next incremental fetch
+      setLastFetched(data.fetchedAt);
+
+      // Update activity data if provided
+      if (data.activity) {
+        setActivityData(data.activity);
+        setWatchpoints((prev) =>
+          prev.map((wp) => {
+            const activity = data.activity[wp.id];
+            if (activity) {
+              return { ...wp, activityLevel: activity.level as Watchpoint['activityLevel'] };
+            }
+            return wp;
+          })
+        );
       }
     } catch {
-      // T2 fetch is non-critical, fail silently
+      // Incremental fetch is non-critical, fail silently
     } finally {
-      isT2FetchingRef.current = false;
-      setIsLoadingT2(false);
+      isFetchingRef.current = false;
     }
-  }, []);
+  }, [lastFetched, selectedWatchpoint, autoUpdate, newsItems, pendingItems]);
 
   const fetchNews = useCallback(async () => {
     if (isFetchingRef.current) return;
@@ -150,8 +223,8 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
     const startTime = Date.now();
 
     try {
-      // First fetch T1 sources (critical, fast)
-      const response = await fetch(`/api/news?region=${selectedWatchpoint}&tier=T1&hours=6&limit=100`, {
+      // Fetch all sources (no tier separation)
+      const response = await fetch(`/api/news?region=${selectedWatchpoint}&hours=6&limit=200`, {
         signal: controller.signal,
       });
 
@@ -188,9 +261,6 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
         );
       }
 
-      // After T1 loads, async fetch T2 sources (will animate in)
-      fetchT2Async(selectedWatchpoint);
-
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
@@ -202,24 +272,26 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
       setIsRefreshing(false);
       isFetchingRef.current = false;
     }
-  }, [selectedWatchpoint, fetchT2Async]);
+  }, [selectedWatchpoint]);
 
   // Fetch when region changes (but not on initial mount if we have data)
   useEffect(() => {
     if (hasInitialData.current && selectedWatchpoint === initialRegion) {
       hasInitialData.current = false;
-      // We have T1 data from SSR, now async fetch T2
-      fetchT2Async(selectedWatchpoint);
+      // We have SSR data - fetch any items newer than fetchedAt (fills the gap)
+      fetchIncremental();
       return;
     }
+    // Region changed - do full refresh
     fetchNews();
-  }, [selectedWatchpoint, fetchNews, fetchT2Async, initialRegion]);
+  }, [selectedWatchpoint, fetchNews, fetchIncremental, initialRegion]);
 
-  // Auto-refresh every 2 minutes
+  // Auto-refresh every 60 seconds using incremental updates
+  // This only fetches items newer than lastFetched, not the full feed
   useEffect(() => {
-    const interval = setInterval(() => fetchNews(), 2 * 60 * 1000);
+    const interval = setInterval(() => fetchIncremental(), 60 * 1000);
     return () => clearInterval(interval);
-  }, [fetchNews]);
+  }, [fetchIncremental]);
 
   const fetchEarthquakes = useCallback(async () => {
     const controller = new AbortController();
@@ -722,22 +794,23 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
               const hiddenCount = elevatedRegions.length - 2;
 
               return (
-                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                <div className="flex items-center gap-2 sm:gap-3">
                   {visibleRegions.map(([regionId, data]) => {
                     const isCritical = data.level === 'critical';
                     const color = isCritical ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400';
                     const dotColor = isCritical ? 'bg-red-500' : 'bg-orange-500';
+                    const pctText = data.percentChange ? `+${data.percentChange}%` : '';
                     return (
-                      <div key={regionId} className="flex items-center gap-1.5 group relative">
-                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor} animate-pulse`} />
-                        <span className={`text-xs ${color}`}>
-                          {isCritical ? 'Surge in' : 'More'} posts about <span className="font-medium">{regionNames[regionId] || regionId}</span>{isCritical ? '' : ' than usual'}
+                      <div key={regionId} className="flex items-center gap-1 group relative">
+                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isCritical ? 'animate-pulse' : ''}`} />
+                        <span className={`text-xs ${color} font-medium`}>
+                          {regionNames[regionId] || regionId} {isCritical ? 'surge' : pctText}
                         </span>
                       </div>
                     );
                   })}
                   {hiddenCount > 0 && (
-                    <span className="text-xs text-slate-500 dark:text-slate-400">+{hiddenCount} more</span>
+                    <span className="text-2xs text-slate-500 dark:text-slate-400">+{hiddenCount}</span>
                   )}
                 </div>
               );
@@ -831,13 +904,16 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
             selectedWatchpoint={selectedWatchpoint}
             onSelectWatchpoint={setSelectedWatchpoint}
             isLoading={isRefreshing}
-            isLoadingMore={isLoadingT2}
             onRefresh={fetchNews}
             activity={activityData || undefined}
             lastUpdated={lastFetched}
             error={newsError}
             onRetry={fetchNews}
             loadTimeMs={newsLoadTimeMs}
+            pendingCount={pendingItems.length}
+            onShowPending={showPendingItems}
+            autoUpdate={autoUpdate}
+            onToggleAutoUpdate={toggleAutoUpdate}
           />
         </div>
       </main>
