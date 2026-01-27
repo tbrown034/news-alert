@@ -162,29 +162,26 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
           timestamp: new Date(item.timestamp),
         }));
 
-        // Get existing IDs from both feed and pending buffer
-        const existingIds = new Set([
-          ...newsItems.map(i => i.id),
-          ...pendingItems.map(i => i.id),
-        ]);
-        const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
-
-        if (uniqueNewItems.length > 0) {
-          if (autoUpdate) {
-            // Auto-update ON: Prepend directly to feed (no mid-feed insertion)
-            setNewsItems(prev => {
-              const sortedNew = uniqueNewItems.sort(
-                (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-              );
-              // PREPEND only - preserves existing feed order
-              return [...sortedNew, ...prev];
-            });
-            console.log(`[HomeClient] Auto-updated: +${uniqueNewItems.length} items`);
-          } else {
-            // Auto-update OFF: Add to pending buffer, show banner
-            setPendingItems(prev => [...prev, ...uniqueNewItems]);
-            console.log(`[HomeClient] Buffered: +${uniqueNewItems.length} items (${pendingItems.length + uniqueNewItems.length} pending)`);
-          }
+        // Use functional updates to avoid depending on newsItems/pendingItems state
+        if (autoUpdate) {
+          // Auto-update ON: Prepend directly to feed
+          setNewsItems(prev => {
+            const existingIds = new Set(prev.map(i => i.id));
+            const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
+            if (uniqueNewItems.length === 0) return prev;
+            const sortedNew = uniqueNewItems.sort(
+              (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+            );
+            return [...sortedNew, ...prev];
+          });
+        } else {
+          // Auto-update OFF: Add to pending buffer
+          setPendingItems(prev => {
+            const existingIds = new Set(prev.map(i => i.id));
+            const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
+            if (uniqueNewItems.length === 0) return prev;
+            return [...prev, ...uniqueNewItems];
+          });
         }
       }
 
@@ -209,7 +206,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
     } finally {
       isFetchingRef.current = false;
     }
-  }, [lastFetched, selectedWatchpoint, autoUpdate, newsItems, pendingItems]);
+  }, [lastFetched, selectedWatchpoint, autoUpdate]);
 
   const fetchNews = useCallback(async () => {
     if (isFetchingRef.current) return;
@@ -274,24 +271,30 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
     }
   }, [selectedWatchpoint]);
 
+  // Store latest callbacks in refs to avoid useEffect dependency issues
+  const fetchNewsRef = useRef(fetchNews);
+  const fetchIncrementalRef = useRef(fetchIncremental);
+  useEffect(() => { fetchNewsRef.current = fetchNews; }, [fetchNews]);
+  useEffect(() => { fetchIncrementalRef.current = fetchIncremental; }, [fetchIncremental]);
+
   // Fetch when region changes (but not on initial mount if we have data)
   useEffect(() => {
     if (hasInitialData.current && selectedWatchpoint === initialRegion) {
       hasInitialData.current = false;
       // We have SSR data - fetch any items newer than fetchedAt (fills the gap)
-      fetchIncremental();
+      fetchIncrementalRef.current();
       return;
     }
     // Region changed - do full refresh
-    fetchNews();
-  }, [selectedWatchpoint, fetchNews, fetchIncremental, initialRegion]);
+    fetchNewsRef.current();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedWatchpoint, initialRegion]);
 
   // Auto-refresh every 60 seconds using incremental updates
-  // This only fetches items newer than lastFetched, not the full feed
   useEffect(() => {
-    const interval = setInterval(() => fetchIncremental(), 60 * 1000);
+    const interval = setInterval(() => fetchIncrementalRef.current(), 60 * 1000);
     return () => clearInterval(interval);
-  }, [fetchIncremental]);
+  }, []);
 
   const fetchEarthquakes = useCallback(async () => {
     const controller = new AbortController();
