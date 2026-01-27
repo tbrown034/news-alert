@@ -108,14 +108,13 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
   const isFetchingRef = useRef(false);
   const hasInitialData = useRef(!!initialData);
 
-  // Save autoUpdate preference to localStorage
-  useEffect(() => {
-    localStorage.setItem('news-auto-update', String(autoUpdate));
-  }, [autoUpdate]);
-
-  // Toggle auto-update preference
+  // Toggle auto-update preference (saves to localStorage in handler, not useEffect)
   const toggleAutoUpdate = useCallback(() => {
-    setAutoUpdate(prev => !prev);
+    setAutoUpdate(prev => {
+      const newValue = !prev;
+      localStorage.setItem('news-auto-update', String(newValue));
+      return newValue;
+    });
   }, []);
 
   // Show pending items (user clicked the "X new posts" banner)
@@ -325,11 +324,14 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
     }
   }, []);
 
-  useEffect(() => {
-    if (heroView === 'seismic' && earthquakes.length === 0) {
+  // Handler for changing hero view - fetches data when needed (not in useEffect)
+  const handleHeroViewChange = useCallback((view: HeroView) => {
+    setHeroView(view);
+    // Fetch earthquake data when seismic tab is opened (if not already loaded)
+    if (view === 'seismic' && earthquakes.length === 0) {
       fetchEarthquakes();
     }
-  }, [heroView, earthquakes.length, fetchEarthquakes]);
+  }, [earthquakes.length, fetchEarthquakes]);
 
   // Fetch significant earthquakes (6.0+) for Main view on mount
   useEffect(() => {
@@ -593,7 +595,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
                   {allTabs.map((tab) => (
                     <button
                       key={tab.id}
-                      onClick={() => setHeroView(tab.id as HeroView)}
+                      onClick={() => handleHeroViewChange(tab.id as HeroView)}
                       aria-label={tab.label}
                       aria-pressed={heroView === tab.id}
                       className={`
@@ -640,7 +642,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
                   {mainTabs.map((tab) => (
                     <button
                       key={tab.id}
-                      onClick={() => setHeroView(tab.id)}
+                      onClick={() => handleHeroViewChange(tab.id)}
                       aria-label={tab.label}
                       aria-pressed={heroView === tab.id}
                       className={`
@@ -686,7 +688,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
                             key={tab.id}
                             role="menuitem"
                             onClick={() => {
-                              setHeroView(tab.id);
+                              handleHeroViewChange(tab.id);
                               setShowMoreTabs(false);
                             }}
                             className={`
@@ -820,7 +822,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
             })()}
             {significantQuakes.length > 0 && (
               <button
-                onClick={() => setHeroView('seismic')}
+                onClick={() => handleHeroViewChange('seismic')}
                 className="flex items-center gap-1.5 pl-2 border-l border-slate-300 dark:border-slate-700 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
@@ -851,7 +853,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setHeroView(tab.id as HeroView)}
+                      onClick={() => handleHeroViewChange(tab.id as HeroView)}
                       className={`flex items-center gap-1.5 px-2 py-1 text-xs rounded-md transition-colors ${
                         isActive
                           ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
