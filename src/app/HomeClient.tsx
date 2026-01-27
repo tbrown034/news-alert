@@ -705,7 +705,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
               const elevatedRegions = activityData
                 ? Object.entries(activityData)
                     .filter(([, data]) => data.level === 'elevated' || data.level === 'critical')
-                    .sort((a, b) => b[1].multiplier - a[1].multiplier) // Sort by multiplier desc
+                    .sort((a, b) => (b[1].multiplier || 0) - (a[1].multiplier || 0)) // Sort by multiplier desc
                 : [];
 
               if (elevatedRegions.length === 0) {
