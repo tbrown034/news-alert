@@ -69,53 +69,24 @@ interface StructuredPost {
 }
 
 /**
- * Post selection - simple recency-based approach
- * Takes the 25 most recent posts, deduplicating similar headlines
+ * Post selection - pure recency, no filtering
+ * Takes the N most recent posts and lets Claude determine importance
+ * Multiple sources covering the same story = importance signal
  */
 function selectAndStructurePosts(posts: NewsItem[], maxPosts: number = 25): StructuredPost[] {
   const now = Date.now();
 
-  // Sort by recency (newest first)
-  const sortedPosts = [...posts]
+  // Sort by recency (newest first) and take top N
+  const recentPosts = [...posts]
     .map(post => ({
       post,
       minutesAgo: Math.floor((now - post.timestamp.getTime()) / 60000)
     }))
-    .sort((a, b) => a.minutesAgo - b.minutesAgo);
+    .sort((a, b) => a.minutesAgo - b.minutesAgo)
+    .slice(0, maxPosts);
 
-  // Deduplicate by similar headlines (simple fuzzy match)
-  const selected: typeof sortedPosts = [];
-  const seenHeadlines = new Set<string>();
-
-  for (const item of sortedPosts) {
-    // Normalize headline for comparison
-    const normalized = item.post.title.toLowerCase()
-      .replace(/[^\w\s]/g, '')
-      .split(' ')
-      .filter(w => w.length > 3)
-      .slice(0, 5)
-      .join(' ');
-
-    // Skip if too similar to existing
-    let isDupe = false;
-    for (const seen of seenHeadlines) {
-      const overlap = normalized.split(' ').filter(w => seen.includes(w)).length;
-      if (overlap >= 3) {
-        isDupe = true;
-        break;
-      }
-    }
-
-    if (!isDupe) {
-      selected.push(item);
-      seenHeadlines.add(normalized);
-    }
-
-    if (selected.length >= maxPosts) break;
-  }
-
-  // Structure posts with analysis (optimized fields for token efficiency)
-  return selected.map((item, idx) => {
+  // Structure posts for Claude
+  return recentPosts.map((item, idx) => {
     const analysis = analyzeMessage(item.post.title + ' ' + (item.post.content || ''));
 
     // Calculate human-readable posted time
