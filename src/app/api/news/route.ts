@@ -33,6 +33,7 @@ const DEFAULT_LIMIT = 200;
 // Track in-flight fetches to prevent duplicate requests
 const inFlightFetches = new Map<string, Promise<NewsItem[]>>();
 
+
 // Check if source is Bluesky
 function isBlueskySource(source: TieredSource): boolean {
   return source.platform === 'bluesky' || source.feedUrl.includes('bsky.app');
@@ -322,25 +323,9 @@ async function fetchNewsWithCache(region: WatchpointId): Promise<NewsItem[]> {
         return true;
       });
 
-      // Filter out low-value travel advisories (only show Level 3-4 in feed)
-      // Level 1: Exercise Normal Precautions - not newsworthy
-      // Level 2: Exercise Increased Caution - not newsworthy
-      // Level 3: Reconsider Travel - show in feed
-      // Level 4: Do Not Travel - show in feed
-      const filtered = crossPlatformDeduped.filter(item => {
-        // Check if it's a travel advisory (has "Level X:" pattern)
-        if (item.source.id === 'state-travel-rss' || item.title.match(/Level [12]:/)) {
-          // Only show Level 3 or Level 4
-          if (item.title.includes('Level 3:') || item.title.includes('Level 4:')) {
-            return true;
-          }
-          // Filter out Level 1 and Level 2
-          if (item.title.includes('Level 1:') || item.title.includes('Level 2:')) {
-            return false;
-          }
-        }
-        return true;
-      });
+      // State Dept Travel Advisories source removed - was causing noise
+      // No travel advisory filtering needed anymore
+      const filtered = crossPlatformDeduped;
 
       // Limit items per source to prevent feed flooding (max 3 per source)
       const MAX_PER_SOURCE = 3;

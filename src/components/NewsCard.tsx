@@ -14,16 +14,26 @@ interface NewsCardProps {
 // Character limit for truncation
 const CHAR_LIMIT = 280;
 
-// Source type colors - Light/Dark theme
+// Source type colors - all neutral to avoid color overload
 const sourceTypeColors: Record<string, string> = {
-  official: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50',
-  'news-org': 'bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-400 border-sky-200 dark:border-sky-800/50',
-  osint: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/50',
-  reporter: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/50',
-  analyst: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 border-violet-200 dark:border-violet-800/50',
-  aggregator: 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 border-teal-200 dark:border-teal-800/50',
-  ground: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-800/50',
-  bot: 'bg-slate-100 dark:bg-slate-900/30 text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-800/50',
+  official: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+  'news-org': 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+  osint: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+  reporter: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+  analyst: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+  aggregator: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+  ground: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+  bot: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+};
+
+// Platform display names
+const platformNames: Record<string, string> = {
+  bluesky: 'Bluesky',
+  rss: 'RSS',
+  telegram: 'Telegram',
+  reddit: 'Reddit',
+  youtube: 'YouTube',
+  mastodon: 'Mastodon',
 };
 
 // Human-readable source type labels
@@ -38,7 +48,7 @@ const sourceTypeLabels: Record<string, string> = {
   bot: 'Bot',
 };
 
-// External link card component (for article links, embeds)
+// External link card component (for article links, embeds) - compact design
 function ExternalLinkCard({ link }: { link: MediaAttachment }) {
   const [imgError, setImgError] = useState(false);
 
@@ -56,14 +66,14 @@ function ExternalLinkCard({ link }: { link: MediaAttachment }) {
       href={link.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-2 flex overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors bg-slate-50 dark:bg-slate-800/50"
+      className="mt-2 flex items-center gap-2.5 p-2 rounded-md border border-slate-200/60 dark:border-slate-700/60 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group"
     >
-      {/* Thumbnail */}
+      {/* Small thumbnail */}
       {link.thumbnail && !imgError && (
-        <div className="relative w-24 sm:w-32 flex-shrink-0">
+        <div className="relative w-10 h-10 rounded flex-shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800">
           <Image
             src={link.thumbnail}
-            alt={link.title || 'Link preview'}
+            alt=""
             fill
             className="object-cover"
             onError={() => setImgError(true)}
@@ -71,21 +81,16 @@ function ExternalLinkCard({ link }: { link: MediaAttachment }) {
           />
         </div>
       )}
-      {/* Content */}
-      <div className="flex-1 p-2.5 sm:p-3 min-w-0 flex flex-col justify-center">
+      {/* Content - single line */}
+      <div className="flex-1 min-w-0">
         {link.title && (
-          <p className="text-sm font-medium text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug">
+          <p className="text-sm text-slate-700 dark:text-slate-200 truncate leading-tight">
             {link.title}
           </p>
         )}
-        {link.alt && !link.title && (
-          <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
-            {link.alt}
-          </p>
-        )}
         {domain && (
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
-            <ArrowTopRightOnSquareIcon className="w-3 h-3" />
+          <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
+            <ArrowTopRightOnSquareIcon className="w-3 h-3 opacity-60" />
             {domain}
           </p>
         )}
@@ -454,40 +459,37 @@ export function NewsCard({ item }: NewsCardProps) {
           <MediaDisplay media={item.media} />
         )}
 
-        {/* Article link card for RSS/news items (not social media) */}
+        {/* Article link for RSS/news items - minimalist inline style */}
         {item.url && item.source.platform === 'rss' && !item.media?.length && (
           <a
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 transition-colors group"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group w-fit"
           >
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Read full article
-              </p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
-                {(() => {
-                  try {
-                    return new URL(item.url).hostname.replace('www.', '');
-                  } catch {
-                    return item.url;
-                  }
-                })()}
-              </p>
-            </div>
-            <ArrowTopRightOnSquareIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 flex-shrink-0" />
+            <span className="border-b border-dotted border-current">
+              {(() => {
+                try {
+                  return new URL(item.url).hostname.replace('www.', '');
+                } catch {
+                  return 'Read article';
+                }
+              })()}
+            </span>
+            <ArrowTopRightOnSquareIcon className="w-3 h-3 opacity-60 group-hover:opacity-100" />
           </a>
         )}
 
         {/* Row 3: Tags + Actions */}
         <div className="flex items-center justify-between pt-1">
-          {/* Combined source badge: "Reporter · Bluesky" */}
+          {/* Source type (neutral) + Platform (icon + name with brand color) */}
           <div className="flex items-center gap-2.5">
-            <span className={`flex items-center gap-1.5 px-1.5 py-0.5 text-2xs font-medium rounded border ${sourceTypeStyle}`}>
+            <span className={`px-1.5 py-0.5 text-2xs font-medium rounded border ${sourceTypeStyle}`}>
               {sourceTypeLabel}
-              <span className="text-slate-400 dark:text-slate-500">·</span>
-              <PlatformIcon platform={item.source.platform} className="w-3 h-3" />
+            </span>
+            <span className={`flex items-center gap-1 text-2xs ${platformColor}`}>
+              <PlatformIcon platform={item.source.platform} className="w-3.5 h-3.5" />
+              <span>{platformNames[item.source.platform] || item.source.platform}</span>
             </span>
           </div>
           {/* Actions */}

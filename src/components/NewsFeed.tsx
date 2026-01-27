@@ -624,14 +624,6 @@ export function NewsFeed({
 
       <div id="feed-panel" role="tabpanel" aria-label={`News for ${selectedTab === 'all' ? 'all regions' : selectedTab}`}>
 
-        {/* AI Analysis Section - only show after news loads */}
-        {!isLoading && sortedItems.length > 0 && (
-          <>
-            <div className="mt-3" />
-            <InlineBriefing region={selectedTab} />
-          </>
-        )}
-
         {error && (
           <ErrorState message={error} onRetry={onRetry} />
         )}
@@ -700,6 +692,11 @@ export function NewsFeed({
               />
             </button>
           </div>
+        )}
+
+        {/* AI Summary Section - only show after news loads */}
+        {!isLoading && sortedItems.length > 0 && (
+          <InlineBriefing region={selectedTab} />
         )}
 
         <div className="flex flex-col gap-4 px-3 sm:px-4 pb-3 sm:pb-4 pt-3 news-feed-list">

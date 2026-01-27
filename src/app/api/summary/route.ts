@@ -3,9 +3,23 @@ import { getCachedNews, getAllCachedNews } from '@/lib/newsCache';
 import { generateSummary, getCachedSummary, cacheSummary, canRequestSummary } from '@/lib/aiSummary';
 import { regionDisplayNames } from '@/lib/regionDetection';
 import { WatchpointId } from '@/types';
+import { checkRateLimit, getClientIp, rateLimitHeaders } from '@/lib/rateLimit';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 
 // Valid regions for validation
 const VALID_REGIONS: WatchpointId[] = ['all', 'us', 'latam', 'middle-east', 'europe-russia', 'asia', 'seismic'];
+
+// Model tiers
+type ModelTier = 'quick' | 'advanced' | 'pro';
+const MODEL_MAP: Record<ModelTier, string> = {
+  quick: 'claude-3-5-haiku-20241022',
+  advanced: 'claude-sonnet-4-20250514',
+  pro: 'claude-opus-4-5-20251101',
+};
+
+// Admin emails that can use Pro tier
+const ADMIN_EMAILS = ['tbrown034@gmail.com', 'trevorbrown.web@gmail.com'];
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow up to 60 seconds for AI generation (requires Vercel Pro)
@@ -15,6 +29,7 @@ export async function GET(request: Request) {
   const regionParam = searchParams.get('region') || 'all';
   const hours = Math.min(Math.max(1, parseInt(searchParams.get('hours') || '6', 10)), 24);
   const forceRefresh = searchParams.get('refresh') === 'true';
+  const tierParam = (searchParams.get('tier') || 'quick') as ModelTier;
 
   // Validate region parameter
   if (!VALID_REGIONS.includes(regionParam as WatchpointId)) {
@@ -25,7 +40,50 @@ export async function GET(request: Request) {
   }
   const region = regionParam as WatchpointId;
 
-  // Rate limiting - prevent expensive API abuse
+  // Validate tier parameter
+  if (!['quick', 'advanced', 'pro'].includes(tierParam)) {
+    return NextResponse.json(
+      { error: 'Invalid tier parameter. Must be quick, advanced, or pro.' },
+      { status: 400 }
+    );
+  }
+
+  // Rate limiting per IP - different limits per tier
+  const clientIp = getClientIp(request);
+  const rateLimits: Record<ModelTier, { windowMs: number; maxRequests: number }> = {
+    quick: { windowMs: 60000, maxRequests: 30 },     // 30 per minute (auto-load friendly)
+    advanced: { windowMs: 60000, maxRequests: 10 },  // 10 per minute
+    pro: { windowMs: 60000, maxRequests: 5 },        // 5 per minute
+  };
+
+  const rateLimitResult = checkRateLimit(`summary:${tierParam}:${clientIp}`, rateLimits[tierParam]);
+  if (!rateLimitResult.allowed) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded. Please wait before requesting another summary.' },
+      { status: 429, headers: rateLimitHeaders(rateLimitResult) }
+    );
+  }
+
+  // Pro tier requires admin authentication
+  if (tierParam === 'pro') {
+    try {
+      const session = await auth.api.getSession({ headers: await headers() });
+      const userEmail = session?.user?.email?.toLowerCase();
+      if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+        return NextResponse.json(
+          { error: 'Pro tier requires admin access. Please sign in with an authorized account.' },
+          { status: 403 }
+        );
+      }
+    } catch {
+      return NextResponse.json(
+        { error: 'Authentication required for Pro tier.' },
+        { status: 401 }
+      );
+    }
+  }
+
+  // Legacy rate limiting - prevent expensive API abuse
   if (forceRefresh && !canRequestSummary(region)) {
     return NextResponse.json(
       { error: 'Rate limited. Please wait 60 seconds between refresh requests.' },
@@ -33,18 +91,25 @@ export async function GET(request: Request) {
     );
   }
 
+  // Get the model for this tier
+  const model = MODEL_MAP[tierParam];
+
   try {
     // Check summary cache first (unless force refresh)
+    // Cache is keyed by region+tier so each tier has its own cache
     if (!forceRefresh) {
-      const cached = getCachedSummary(region);
+      const cached = getCachedSummary(region, tierParam);
       if (cached) {
         return NextResponse.json({
           ...cached,
+          tier: tierParam,
           fromCache: true,
         }, {
           headers: {
-            // Edge cache for 5 minutes - other users get this cached response
-            'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
+            // Edge cache - shorter for quick tier (auto-loads), longer for premium tiers
+            'Cache-Control': tierParam === 'quick'
+              ? 'public, s-maxage=180, stale-while-revalidate=60'
+              : 'public, s-maxage=600, stale-while-revalidate=120',
           },
         });
       }
@@ -136,20 +201,22 @@ export async function GET(request: Request) {
       });
     }
 
-    // Generate summary
-    const briefing = await generateSummary(sortedPosts, region, hours);
+    // Generate summary with the selected model tier
+    const briefing = await generateSummary(sortedPosts, region, hours, model);
 
-    // Cache the result
-    cacheSummary(briefing);
+    // Cache the result - keyed by region+tier
+    cacheSummary(briefing, tierParam);
 
     return NextResponse.json({
       ...briefing,
+      tier: tierParam,
       fromCache: false,
     }, {
       headers: {
-        // Edge cache for 5 minutes - other users get this cached response instantly
-        // stale-while-revalidate allows serving stale content while refreshing in background
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60',
+        // Edge cache - shorter for quick tier (auto-loads), longer for premium tiers
+        'Cache-Control': tierParam === 'quick'
+          ? 'public, s-maxage=180, stale-while-revalidate=60'  // 3 min for quick
+          : 'public, s-maxage=600, stale-while-revalidate=120', // 10 min for advanced/pro
       },
     });
   } catch (error) {

@@ -5536,18 +5536,8 @@ export const tier2Sources: TieredSource[] = [
     url: 'https://www.europarl.europa.eu/',
     postsPerDay: 5,
   },
-  {
-    id: 'state-travel-rss',
-    name: 'State Dept Travel Advisories',
-    platform: 'rss',
-    sourceType: 'official',
-    fetchTier: 'T2',
-    confidence: 95,
-    region: 'us' as WatchpointId,
-    feedUrl: 'https://travel.state.gov/_res/rss/TAsTWs.xml',
-    url: 'https://travel.state.gov/',
-    postsPerDay: 3,
-  },
+  // State Dept Travel Advisories removed - republishes unchanged advisories
+  // causing noise in feed and misleading AI summaries
   {
     id: 'france-diplomacy-rss',
     name: 'France Diplomatie',

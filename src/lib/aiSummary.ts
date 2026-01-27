@@ -240,9 +240,9 @@ Rules:
 export async function generateSummary(
   posts: NewsItem[],
   region: WatchpointId,
-  timeWindowHours: number = 6
+  timeWindowHours: number = 6,
+  model: string = 'claude-3-5-haiku-20241022'
 ): Promise<SituationBriefing> {
-  const model = 'claude-sonnet-4-20250514';
   const startTime = Date.now();
 
   // Validate we have posts
@@ -387,21 +387,23 @@ const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes (increased from 5)
 const lastRequestTime = new Map<string, number>();
 const MIN_REQUEST_INTERVAL_MS = 60 * 1000; // 1 minute between requests per region
 
-export function getCachedSummary(region: WatchpointId): SituationBriefing | null {
-  const cached = summaryCache.get(region);
+export function getCachedSummary(region: WatchpointId, tier: string = 'quick'): SituationBriefing | null {
+  const cacheKey = `${region}:${tier}`;
+  const cached = summaryCache.get(cacheKey);
   if (!cached) return null;
 
   const age = Date.now() - cached.cachedAt.getTime();
   if (age > CACHE_TTL_MS) {
-    summaryCache.delete(region);
+    summaryCache.delete(cacheKey);
     return null;
   }
 
   return cached.briefing;
 }
 
-export function cacheSummary(briefing: SituationBriefing): void {
-  summaryCache.set(briefing.region, {
+export function cacheSummary(briefing: SituationBriefing, tier: string = 'quick'): void {
+  const cacheKey = `${briefing.region}:${tier}`;
+  summaryCache.set(cacheKey, {
     briefing,
     cachedAt: new Date(),
   });
