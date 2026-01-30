@@ -1526,8 +1526,13 @@ export async function fetchRssFeed(
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
       console.error(`RSS fetch timeout for ${source.name} (5s exceeded)`);
+    } else if (error instanceof Error && error.cause instanceof Error && error.cause.message?.includes('redirect')) {
+      // Log redirect errors with full URL for debugging
+      console.error(`RSS redirect error for ${source.name}: ${error.cause.message}`);
+      console.error(`  URL: ${source.feedUrl}`);
     } else {
       console.error(`RSS fetch error for ${source.name}:`, error);
+      console.error(`  URL: ${source.feedUrl}`);
     }
     return [];
   }
