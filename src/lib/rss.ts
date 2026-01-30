@@ -504,7 +504,11 @@ async function fetchMastodonFeed(source: Source & { feedUrl: string }): Promise<
       return { items: [] };
     }
 
-    const account = await lookupResponse.json();
+    const account = await lookupResponse.json().catch(() => {
+      console.error(`[Mastodon] ${source.name}: Failed to parse account JSON`);
+      return null;
+    });
+    if (!account) return { items: [] };
     const accountId = account.id;
     const authorAvatar = account.avatar;
 
@@ -522,7 +526,11 @@ async function fetchMastodonFeed(source: Source & { feedUrl: string }): Promise<
       return { items: [] };
     }
 
-    const statuses: MastodonStatus[] = await statusesResponse.json();
+    const statuses: MastodonStatus[] | null = await statusesResponse.json().catch(() => {
+      console.error(`[Mastodon] ${source.name}: Failed to parse statuses JSON`);
+      return null;
+    });
+    if (!statuses) return { items: [] };
 
     const items: RssItem[] = statuses
       .filter(status => status.visibility === 'public' || status.visibility === 'unlisted')
@@ -708,7 +716,11 @@ async function fetchRedditFeed(source: Source & { feedUrl: string }): Promise<Re
       return { items: [] };
     }
 
-    const listing: RedditListing = await response.json();
+    const listing: RedditListing | null = await response.json().catch(() => {
+      console.error(`[Reddit] ${source.name}: Failed to parse JSON`);
+      return null;
+    });
+    if (!listing) return { items: [] };
 
     // Check if post is a megathread (stickied or matches pattern)
     const isMegathread = (post: RedditPost): boolean => {
@@ -1478,12 +1490,25 @@ export async function fetchRssFeed(
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
+  // Some feeds are too large for Next.js cache (2MB limit) - skip caching for them
+  // Also skip for Substack in general (full post content = huge feeds)
+  const LARGE_FEEDS = [
+    'chinainarms.substack.com',
+    'justsecurity.org',
+    'substack.com', // All Substack feeds can be large
+  ];
+  const isLargeFeed = LARGE_FEEDS.some(domain => source.feedUrl.includes(domain));
+
   try {
     const response = await fetch(source.feedUrl, {
       signal: controller.signal,
-      next: { revalidate: 60 }, // Cache for 1 minute
+      // Skip Next.js cache for large feeds to avoid 2MB limit errors
+      ...(isLargeFeed ? { cache: 'no-store' as const } : { next: { revalidate: 60 } }),
       headers: {
-        'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)',
+        // Use browser-like User-Agent - some sites (Politico, Euractiv) block bot UAs
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
       },
     });
 

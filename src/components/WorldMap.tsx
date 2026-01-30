@@ -68,12 +68,11 @@ const activityColors: Record<string, { fill: string; glow: string; text: string 
 };
 
 // Region marker positions (longitude, latitude) - positioned for visual balance
+// Note: Asia and LatAm removed from UI due to low source coverage
 const regionMarkers: Record<string, { coordinates: [number, number]; label: string; city: string; zoom: number }> = {
   'us': { coordinates: [-77.04, 38.91], label: 'United States', city: 'DC', zoom: 2.2 },
-  'latam': { coordinates: [-66.90, 10.48], label: 'Latin America', city: 'Caracas', zoom: 1.8 },
   'middle-east': { coordinates: [51.39, 35.69], label: 'Middle East', city: 'Tehran', zoom: 2.5 },
   'europe-russia': { coordinates: [30.52, 50.45], label: 'Europe-Russia', city: 'Kyiv', zoom: 2.2 },
-  'asia': { coordinates: [116.41, 39.90], label: 'Asia', city: 'Beijing', zoom: 2 },
 };
 
 // Default zoom settings

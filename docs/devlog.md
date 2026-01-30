@@ -682,3 +682,62 @@ useEffect(() => { setTime(new Date()); ... }, []);
 - Pagination (`displayLimit=50`) is for render performance; stats should show true totals from props
 
 ---
+
+## 2026-01-30 - Dev Server Cleanup & Cloudflare Source Removal
+
+**Session Summary:**
+- Fixed multiple dev server warnings/errors that were cluttering logs
+- Removed 4 sources that are now behind Cloudflare bot protection (require JS challenge)
+- Updated ReliefWeb feed URL (they moved their RSS endpoint)
+- Added cache bypass for large feeds exceeding Next.js 2MB limit
+
+**Key Decisions:**
+- `allowedDevOrigins` uses hostname-only format (no protocol, no port): `'192.168.1.35'`
+- Browser-like User-Agent for RSS fetches - some sites block bot UAs
+- Large feeds (Substack, JustSecurity) skip Next.js cache to avoid 2MB limit errors
+- Cloudflare-protected sources removed rather than left to fail silently (cleaner logs)
+
+**Notable Changes:**
+
+*next.config.ts*
+- Fixed `allowedDevOrigins` format from `['http://192.168.1.35:3000']` to `['192.168.1.35']`
+- Next.js 16 requires hostname-only, no protocol/port
+
+*src/lib/db.ts*
+- Auto-upgrade `sslmode=require` → `sslmode=verify-full` in connection string
+- Silences pg v9 deprecation warning about SSL mode semantics
+
+*src/lib/rss.ts*
+- Changed User-Agent from bot-like (`PulseAlert/1.0`) to browser-like (Chrome UA)
+- Added proper Accept header for RSS content types
+- Added `LARGE_FEEDS` list: chinainarms.substack.com, justsecurity.org, substack.com
+- Large feeds use `cache: 'no-store'` instead of `next: { revalidate: 60 }`
+
+*src/lib/sources-clean.ts*
+- Updated ReliefWeb URL: `/headlines/rss.xml` → `/updates/rss.xml?view=headlines` (301 redirect fix)
+- Removed GIJN, Politico US, Politico EU, Euractiv (Cloudflare bot protection)
+- Left comments at removal points explaining why
+
+*src/lib/blocklist.ts*
+- Added 4 new entries with reason "Cloudflare bot protection - requires JS challenge to access RSS":
+  - gijn-rss
+  - politico-us-rss
+  - politico-eu-rss
+  - euractiv-rss
+
+**Technical Notes:**
+- Cloudflare's `cf-mitigated: challenge` header = JS challenge required, not bypassable with headers alone
+- ReliefWeb returned 406 (Not Acceptable) because old URL redirects, and Node fetch doesn't follow cross-protocol redirects
+- Next.js fetch cache has hard 2MB limit - Substack feeds can be 5MB+ due to full post content in RSS
+- Source count: 479 → 475 after removals
+
+**Errors Fixed:**
+| Error | Root Cause | Fix |
+|-------|-----------|-----|
+| Cross-origin blocked | Wrong allowedDevOrigins format | Hostname only |
+| Politico/Euractiv 403 | Cloudflare bot protection | Removed sources |
+| ReliefWeb 406 | Feed URL moved | Updated URL |
+| SSL mode warning | Deprecated pg sslmode | Auto-upgrade to verify-full |
+| Cache 2MB exceeded | Large Substack feeds | Skip cache for large feeds |
+
+---

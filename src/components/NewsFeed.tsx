@@ -89,42 +89,6 @@ function ErrorState({ message, onRetry }: { message: string; onRetry?: () => voi
   );
 }
 
-// Volume indicator - Light theme
-function VolumeIndicator({ activity }: { activity: ActivityData }) {
-  const getVolumeText = () => {
-    if (!activity.vsNormal || !activity.multiplier) {
-      return { text: 'Normal volume', color: 'text-slate-500' };
-    }
-    if (activity.vsNormal === 'above') {
-      const pct = activity.percentChange || 0;
-      if (pct >= 200) return { text: `${activity.multiplier}× normal volume`, color: 'text-red-600' };
-      if (pct >= 100) return { text: `${activity.multiplier}× normal volume`, color: 'text-orange-600' };
-      return { text: `+${pct}% vs normal`, color: 'text-amber-600' };
-    } else if (activity.vsNormal === 'below') {
-      return { text: `${Math.abs(activity.percentChange || 0)}% below normal`, color: 'text-emerald-600' };
-    }
-    return { text: 'Normal volume', color: 'text-slate-500' };
-  };
-
-  const volume = getVolumeText();
-
-  return (
-    <div className="px-4 py-2 flex items-center justify-between text-xs border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-      <div className="flex items-center gap-1.5">
-        <span className="text-slate-600 dark:text-slate-400 font-medium">{activity.count}/hr</span>
-        <span className={`font-medium ${volume.color}`}>
-          {volume.text === 'Normal volume' ? '(normal)' : `(${volume.text.replace(' volume', '').replace('normal ', '')})`}
-        </span>
-      </div>
-      {activity.baseline && (
-        <span className="text-slate-400 dark:text-slate-500 text-2xs" title={`Baseline: ~${activity.baseline} posts/hr for this region`}>
-          ⓘ ~{activity.baseline}/hr avg
-        </span>
-      )}
-    </div>
-  );
-}
-
 // Tab configuration
 type TabId = WatchpointId;
 
@@ -136,14 +100,13 @@ interface TabConfig {
 }
 
 // All tabs in order - All always visible, regions in More dropdown
+// Note: Asia and LatAm removed due to low source coverage (39 and 11 sources respectively)
 const allTabs: TabConfig[] = [
   { id: 'all', label: 'All', alwaysVisible: true },
   // Regional tabs - all go in More dropdown
   { id: 'us', label: 'US' },
   { id: 'middle-east', label: 'Middle East' },
   { id: 'europe-russia', label: 'Europe-Russia' },
-  { id: 'asia', label: 'Asia' },
-  { id: 'latam', label: 'Americas' },
 ];
 
 // Platform filter options
@@ -383,11 +346,11 @@ export function NewsFeed({
   const totalFilteredPosts = Object.values(platformCounts).reduce((sum, c) => sum + c, 0);
 
   // Calculate display stats based on filtered view
-  // When "All" is selected, show total stats from props (not paginated slice)
-  // When filtered, calculate from the filtered items
-  const isFiltered = selectedTab !== 'all' || platformFilter !== 'all';
-  const displayPosts = isFiltered ? filteredItems.length : (totalPosts ?? filteredItems.length);
-  const displaySources = isFiltered
+  // Region selection = still show "Fetched X in {region}"
+  // Platform filter = show "(filtered)"
+  const isPlatformFiltered = platformFilter !== 'all';
+  const displayPosts = (selectedTab !== 'all' || isPlatformFiltered) ? filteredItems.length : (totalPosts ?? filteredItems.length);
+  const displaySources = (selectedTab !== 'all' || isPlatformFiltered)
     ? new Set(filteredItems.map(i => i.source.id)).size
     : (uniqueSources ?? new Set(filteredItems.map(i => i.source.id)).size);
 
@@ -424,30 +387,34 @@ export function NewsFeed({
             )}
           </div>
 
-          {/* Row 2: Stats */}
+          {/* Row 2: Stats - consistent format for all views */}
           <div className="text-xs text-slate-500 dark:text-slate-400 mb-2.5">
             <div>
-              {isFiltered ? 'Showing ' : 'Fetched '}
+              {isPlatformFiltered ? 'Showing ' : 'Fetched '}
               <span className="font-semibold text-slate-700 dark:text-slate-300">{displayPosts.toLocaleString()} posts</span>
               {' from '}
               <span className="font-semibold text-slate-700 dark:text-slate-300">{displaySources.toLocaleString()} sources</span>
-              {isFiltered ? ' (filtered)' : <> in last <span className="font-semibold text-slate-700 dark:text-slate-300">six hours</span> {selectedWatchpoint === 'all' ? 'globally' : `in ${regionDisplayNames[selectedWatchpoint]}`}</>}
+              {isPlatformFiltered
+                ? ' (filtered by platform)'
+                : <> in last <span className="font-semibold text-slate-700 dark:text-slate-300">six hours</span> {selectedTab === 'all' ? 'globally' : `in ${regionDisplayNames[selectedTab] || selectedTab}`}</>
+              }
             </div>
-            {!isFiltered && activity && activity[selectedWatchpoint] && (
+            {/* Activity indicator - show for both global and regional views */}
+            {!isPlatformFiltered && activity && activity[selectedTab] && (
               <div className="italic mt-0.5">
                 {(() => {
-                  const a = activity[selectedWatchpoint];
-                  if (!a.vsNormal || a.vsNormal === 'normal') return 'About average activity';
+                  const a = activity[selectedTab];
+                  if (!a.vsNormal || a.vsNormal === 'normal') return 'Typical activity';
                   if (a.vsNormal === 'above') {
-                    if (a.multiplier && a.multiplier >= 2) return `That's ${a.multiplier}× more than usual`;
-                    if (a.percentChange && a.percentChange >= 50) return `That's ${a.percentChange}% more than usual`;
-                    return 'Slightly more than average activity';
+                    if (a.multiplier && a.multiplier >= 2) return `More than usual (${a.multiplier}× normal)`;
+                    if (a.percentChange && a.percentChange >= 50) return `More than usual (+${a.percentChange}%)`;
+                    return 'Slightly more than usual';
                   }
                   if (a.vsNormal === 'below') {
-                    if (a.percentChange) return `That's ${Math.abs(a.percentChange)}% less than usual`;
-                    return 'Less than average activity';
+                    if (a.percentChange) return `Less than usual (${Math.abs(a.percentChange)}% below)`;
+                    return 'Less than usual';
                   }
-                  return 'About average activity';
+                  return 'Typical activity';
                 })()}
               </div>
             )}
@@ -551,11 +518,6 @@ export function NewsFeed({
             </div>
           </div>
         </div>
-
-      {/* Volume indicator (only for region tabs) */}
-      {selectedTab !== 'all' && activity?.[selectedTab] && (
-        <VolumeIndicator activity={activity[selectedTab]} />
-      )}
 
       <div id="feed-panel" role="tabpanel" aria-label={`News for ${selectedTab === 'all' ? 'all regions' : selectedTab}`}>
 

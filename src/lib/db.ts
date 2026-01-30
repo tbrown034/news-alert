@@ -8,8 +8,17 @@ let pool: Pool | null = null;
 
 export function getPool(): Pool {
   if (!pool) {
+    // Parse connection string and ensure proper SSL config
+    let connectionString = process.env.DATABASE_URL || '';
+
+    // Fix SSL mode warning: upgrade deprecated modes to verify-full
+    // This silences the pg v9 deprecation warning while maintaining security
+    if (connectionString.includes('sslmode=require') && !connectionString.includes('uselibpqcompat')) {
+      connectionString = connectionString.replace('sslmode=require', 'sslmode=verify-full');
+    }
+
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       max: 5, // Max connections in pool
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,

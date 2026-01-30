@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { NewsFeed, Legend, WorldMap, SeismicMap, WeatherMap, OutagesMap, TravelMap, FiresMap, AuthButton } from '@/components';
 import { EditorialFAB } from '@/components/EditorialFAB';
+import { ErrorBoundary, FeedSkeleton, MapSkeleton } from '@/components/ErrorBoundary';
 import { watchpoints as defaultWatchpoints } from '@/lib/mockData';
 import { NewsItem, WatchpointId, Watchpoint, Earthquake } from '@/types';
 import { useClock } from '@/hooks/useClock';
@@ -182,9 +183,10 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
     isFetchingRef.current = true;
 
     try {
+      // Always fetch ALL regions for incremental - filtering is client-side
       const since = encodeURIComponent(lastFetched);
       const response = await fetch(
-        `/api/news?region=${selectedWatchpoint}&hours=6&limit=100&since=${since}`
+        `/api/news?region=all&hours=6&limit=100&since=${since}`
       );
 
       if (!response.ok) return;
@@ -242,7 +244,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
     } finally {
       isFetchingRef.current = false;
     }
-  }, [lastFetched, selectedWatchpoint, autoUpdate]);
+  }, [lastFetched, autoUpdate]); // Removed selectedWatchpoint - always fetches 'all'
 
   const fetchNews = useCallback(async () => {
     if (isFetchingRef.current) return;
@@ -256,8 +258,9 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
     const startTime = Date.now();
 
     try {
-      // Fetch all sources (no tier separation) - high limit to get full 6h window
-      const response = await fetch(`/api/news?region=${selectedWatchpoint}&hours=6&limit=2000`, {
+      // Always fetch ALL regions - client-side filtering handles display
+      // This prevents refetching when switching tabs
+      const response = await fetch(`/api/news?region=all&hours=6&limit=2000`, {
         signal: controller.signal,
       });
 
@@ -307,7 +310,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
       setIsRefreshing(false);
       isFetchingRef.current = false;
     }
-  }, [selectedWatchpoint]);
+  }, []); // No dependencies - always fetches 'all'
 
   // Store latest callbacks in refs to avoid useEffect dependency issues
   const fetchNewsRef = useRef(fetchNews);
@@ -315,22 +318,20 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
   useEffect(() => { fetchNewsRef.current = fetchNews; }, [fetchNews]);
   useEffect(() => { fetchIncrementalRef.current = fetchIncremental; }, [fetchIncremental]);
 
-  // Fetch when region changes (but not on initial mount if we have data)
+  // Initial data fetch (once on mount)
+  // Region changes are handled client-side via filtering - no refetch needed
   useEffect(() => {
-    if (hasInitialData.current && selectedWatchpoint === initialRegion) {
+    if (hasInitialData.current) {
       hasInitialData.current = false;
       // We have SSR data - fetch any items newer than fetchedAt (fills the gap)
       fetchIncrementalRef.current();
-      return;
     }
-    // Region changed - do full refresh
-    fetchNewsRef.current();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedWatchpoint, initialRegion]);
+  }, []);
 
-  // Auto-refresh every 60 seconds using incremental updates
+  // Auto-refresh every 5 minutes using incremental updates
   useEffect(() => {
-    const interval = setInterval(() => fetchIncrementalRef.current(), 60 * 1000);
+    const interval = setInterval(() => fetchIncrementalRef.current(), 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -748,6 +749,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
 
             {/* Map content area - overflow-hidden to clip maps while allowing header dropdowns */}
             <div className="overflow-hidden">
+              <ErrorBoundary section="Map" fallback={<MapSkeleton />}>
               {heroView === 'main' && (
                 <WorldMap
                   watchpoints={watchpoints}
@@ -774,6 +776,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
               {heroView === 'outages' && <OutagesMap />}
               {heroView === 'travel' && <TravelMap />}
               {heroView === 'fires' && <FiresMap />}
+              </ErrorBoundary>
             </div>
           </div>
 
@@ -1183,6 +1186,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
 
       {/* Main Content */}
       <main id="feed" className="max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-4 pb-20 pt-4">
+        <ErrorBoundary section="News Feed" fallback={<FeedSkeleton count={5} />}>
         <div className="rounded-2xl border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-900 shadow-lg shadow-black/5 dark:shadow-black/30">
           <NewsFeed
             items={newsItems.slice(0, displayLimit)}
@@ -1217,6 +1221,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
             </div>
           )}
         </div>
+        </ErrorBoundary>
       </main>
 
       <Legend />

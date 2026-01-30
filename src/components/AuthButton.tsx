@@ -13,7 +13,13 @@ interface AuthButtonProps {
 export function AuthButton({ variant = 'default', onNavigate }: AuthButtonProps) {
   const { data: session, isPending } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Track hydration to prevent mismatch (server renders skeleton, client renders button)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -33,7 +39,8 @@ export function AuthButton({ variant = 'default', onNavigate }: AuthButtonProps)
     onNavigate?.();
   };
 
-  if (isPending) {
+  // Show skeleton during SSR, hydration, or while auth state is loading
+  if (!mounted || isPending) {
     if (variant === 'mobile') {
       return (
         <div className="flex items-center gap-3 px-4 py-3">

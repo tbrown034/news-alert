@@ -1,5 +1,7 @@
 import { Watchpoint, NewsItem, Source } from '@/types';
 
+// Note: Asia and LatAm removed due to low source coverage (39 and 11 sources respectively)
+// Those regions still show in "All" view, just no dedicated tabs
 export const watchpoints: Watchpoint[] = [
   {
     id: 'us',
@@ -10,18 +12,10 @@ export const watchpoints: Watchpoint[] = [
     color: '#8b5cf6',
   },
   {
-    id: 'latam',
-    name: 'Latin America',
-    shortName: 'LatAm',
-    priority: 2,
-    activityLevel: 'normal',
-    color: '#10b981',
-  },
-  {
     id: 'middle-east',
     name: 'Middle East',
     shortName: 'M. East',
-    priority: 3,
+    priority: 2,
     activityLevel: 'elevated',
     color: '#ef4444',
   },
@@ -29,17 +23,9 @@ export const watchpoints: Watchpoint[] = [
     id: 'europe-russia',
     name: 'Europe & Russia',
     shortName: 'Europe',
-    priority: 4,
+    priority: 3,
     activityLevel: 'elevated',
     color: '#f59e0b',
-  },
-  {
-    id: 'asia',
-    name: 'Asia-Pacific',
-    shortName: 'Asia',
-    priority: 5,
-    activityLevel: 'normal',
-    color: '#3b82f6',
   },
 ];
 

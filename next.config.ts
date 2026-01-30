@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Allow dev requests from local network IP (hostname only, no protocol/port)
+  allowedDevOrigins: ['192.168.1.35'],
   // Security headers
   async headers() {
     return [

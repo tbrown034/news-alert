@@ -1719,18 +1719,7 @@ export const tier1Sources: TieredSource[] = [
     url: 'https://www.icij.org',
     postsPerDay: 3,
   },
-  {
-    id: 'gijn-rss',
-    name: 'GIJN',
-    platform: 'rss',
-    sourceType: 'osint',
-    fetchTier: 'T1',
-    confidence: 88,
-    region: 'all' as WatchpointId,
-    feedUrl: 'https://gijn.org/feed/',
-    url: 'https://gijn.org',
-    postsPerDay: 5,
-  },
+  // GIJN removed - Cloudflare bot protection (403)
   // -- Wire Services/Major News --
   {
     id: 'aljazeera-rss',
@@ -1842,18 +1831,7 @@ export const tier1Sources: TieredSource[] = [
     url: 'https://www.themoscowtimes.com',
     postsPerDay: 20,
   },
-  {
-    id: 'politico-eu-rss',
-    name: 'Politico EU',
-    platform: 'rss',
-    sourceType: 'news-org',
-    fetchTier: 'T1',
-    confidence: 88,
-    region: 'europe-russia' as WatchpointId,
-    feedUrl: 'https://www.politico.eu/feed/',
-    url: 'https://www.politico.eu',
-    postsPerDay: 30,
-  },
+  // Politico EU removed - Cloudflare bot protection (403)
   {
     id: 'balkan-insight-rss',
     name: 'Balkan Insight',
@@ -2296,7 +2274,7 @@ export const tier1Sources: TieredSource[] = [
     fetchTier: 'T1',
     confidence: 90,
     region: 'all' as WatchpointId,
-    feedUrl: 'https://reliefweb.int/headlines/rss.xml',
+    feedUrl: 'https://reliefweb.int/updates/rss.xml?view=headlines',
     url: 'https://reliefweb.int',
     postsPerDay: 50,
   },
@@ -2313,19 +2291,7 @@ export const tier1Sources: TieredSource[] = [
     postsPerDay: 5,
   },
   // -- US Politics --
-  {
-    id: 'politico-us-rss',
-    name: 'Politico',
-    platform: 'rss',
-    sourceType: 'news-org',
-    fetchTier: 'T1',
-    confidence: 88,
-    region: 'us' as WatchpointId,
-    feedUrl: 'https://www.politico.com/rss/politicopicks.xml',
-    url: 'https://www.politico.com',
-    postsPerDay: 40,
-    tags: ['politics'] as USTag[],
-  },
+  // Politico US removed - Cloudflare bot protection (403)
   {
     id: 'tpm-rss',
     name: 'Talking Points Memo',
@@ -2846,18 +2812,7 @@ export const tier1Sources: TieredSource[] = [
     url: 'https://www.rferl.org',
     postsPerDay: 50,
   },
-  {
-    id: 'euractiv-rss',
-    name: 'Euractiv',
-    platform: 'rss',
-    sourceType: 'news-org',
-    fetchTier: 'T1',
-    confidence: 85,
-    region: 'europe-russia' as WatchpointId,
-    feedUrl: 'https://www.euractiv.com/feed/',
-    url: 'https://www.euractiv.com',
-    postsPerDay: 30,
-  },
+  // Euractiv removed - Cloudflare bot protection (403)
   {
     id: 'emerging-europe-rss',
     name: 'Emerging Europe',

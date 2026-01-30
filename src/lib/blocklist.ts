@@ -61,6 +61,30 @@ export const blockedSources = [
     reason: 'Account/channel no longer accessible',
     dateBlocked: '2026-01-30',
   },
+  {
+    id: 'gijn-rss',
+    name: 'GIJN',
+    reason: 'Cloudflare bot protection - requires JS challenge to access RSS',
+    dateBlocked: '2026-01-30',
+  },
+  {
+    id: 'politico-us-rss',
+    name: 'Politico (US)',
+    reason: 'Cloudflare bot protection - requires JS challenge to access RSS',
+    dateBlocked: '2026-01-30',
+  },
+  {
+    id: 'politico-eu-rss',
+    name: 'Politico EU',
+    reason: 'Cloudflare bot protection - requires JS challenge to access RSS',
+    dateBlocked: '2026-01-30',
+  },
+  {
+    id: 'euractiv-rss',
+    name: 'Euractiv',
+    reason: 'Cloudflare bot protection - requires JS challenge to access RSS',
+    dateBlocked: '2026-01-30',
+  },
 ];
 
 // Quick lookup
