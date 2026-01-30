@@ -427,7 +427,7 @@ export function NewsFeed({
             <span className="font-semibold text-slate-700 dark:text-slate-300">{displayPosts} posts</span>
             {' from '}
             <span className="font-semibold text-slate-700 dark:text-slate-300">{displaySources} sources</span>
-            {isFiltered ? ' (filtered)' : ' in last six hours'}
+            {isFiltered ? ' (filtered)' : <> in last <span className="font-semibold text-slate-700 dark:text-slate-300">six hours</span></>}
           </div>
 
           {/* Row 2: Filter dropdowns */}

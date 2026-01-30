@@ -53,6 +53,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
   });
   const [lastFetched, setLastFetched] = useState<string | null>(initialData?.fetchedAt || null);
   const [activityData, setActivityData] = useState<ApiResponse['activity'] | null>(initialData?.activity || null);
+  const [activityConfirmed, setActivityConfirmed] = useState(false); // True after client-side fetch confirms fresh data
   const [newsError, setNewsError] = useState<string | null>(null);
   const [newsLoadTimeMs, setNewsLoadTimeMs] = useState<number | null>(null);
   const [hoursWindow, setHoursWindow] = useState<number>(initialData?.hoursWindow || 6);
@@ -225,6 +226,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
       // Update activity data if provided
       if (data.activity) {
         setActivityData(data.activity);
+        setActivityConfirmed(true); // Mark as confirmed from client fetch
         setWatchpoints((prev) =>
           prev.map((wp) => {
             const activity = data.activity[wp.id];
@@ -282,6 +284,7 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
 
       if (data.activity) {
         setActivityData(data.activity);
+        setActivityConfirmed(true); // Mark as confirmed from client fetch
         setWatchpoints((prev) =>
           prev.map((wp) => {
             const activity = data.activity[wp.id];
@@ -886,6 +889,19 @@ export default function HomeClient({ initialData, initialRegion }: HomeClientPro
                 'asia': 'Asia',
                 'latam': 'LatAm',
               };
+
+              // Show loading state until activity is confirmed from client fetch
+              // This prevents stale cached data from showing false elevated/critical
+              if (!activityConfirmed) {
+                return (
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" />
+                    <span className="font-medium text-slate-500 dark:text-slate-400">
+                      Checking feed activity...
+                    </span>
+                  </div>
+                );
+              }
 
               // Get all regions with elevated or critical activity
               const elevatedRegions = activityData
