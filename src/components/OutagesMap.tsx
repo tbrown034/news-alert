@@ -9,6 +9,7 @@ import {
   ZoomableGroup,
 } from 'react-simple-maps';
 import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
+import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
 
 // Default zoom settings
 const DEFAULT_CENTER: [number, number] = [0, 15];
@@ -31,6 +32,7 @@ interface CountryOutage {
 
 interface OutagesMapProps {
   onOutageSelect?: (outage: CountryOutage | null) => void;
+  focusOnId?: string;
 }
 
 const severityStyles = {
@@ -50,13 +52,23 @@ function formatTimeAgo(date: Date): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
-function OutagesMapComponent({ onOutageSelect }: OutagesMapProps) {
+// Severity priority for sorting
+const severityPriority: Record<string, number> = {
+  critical: 4,
+  severe: 3,
+  moderate: 2,
+  minor: 1,
+};
+
+function OutagesMapComponent({ onOutageSelect, focusOnId }: OutagesMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [outages, setOutages] = useState<CountryOutage[]>([]);
   const [selected, setSelected] = useState<CountryOutage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
+  const { theme } = useMapTheme();
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
+  const [hasAutoFocused, setHasAutoFocused] = useState(false);
 
   const handleZoomIn = () => {
     if (position.zoom >= 4) return;
@@ -106,6 +118,37 @@ function OutagesMapComponent({ onOutageSelect }: OutagesMapProps) {
     return () => clearInterval(timer);
   }, [fetchOutages]);
 
+  // Auto-focus on most severe outage (or specific one if focusOnId provided)
+  useEffect(() => {
+    if (hasAutoFocused || outages.length === 0 || isLoading) return;
+
+    let targetOutage: CountryOutage | undefined;
+
+    if (focusOnId) {
+      targetOutage = outages.find(o => o.id === focusOnId);
+    } else {
+      // Focus on most severe outage
+      targetOutage = [...outages].sort((a, b) =>
+        (severityPriority[b.severity] || 0) - (severityPriority[a.severity] || 0)
+      )[0];
+    }
+
+    if (targetOutage) {
+      setPosition({
+        coordinates: [targetOutage.coordinates[0], targetOutage.coordinates[1]],
+        zoom: 2.5,
+      });
+      setSelected(targetOutage);
+      onOutageSelect?.(targetOutage);
+      setHasAutoFocused(true);
+    }
+  }, [outages, focusOnId, hasAutoFocused, isLoading, onOutageSelect]);
+
+  // Reset auto-focus when focusOnId changes
+  useEffect(() => {
+    setHasAutoFocused(false);
+  }, [focusOnId]);
+
   const handleSelect = (outage: CountryOutage | null) => {
     setSelected(outage);
     onOutageSelect?.(outage);
@@ -113,9 +156,9 @@ function OutagesMapComponent({ onOutageSelect }: OutagesMapProps) {
 
   if (!isMounted) {
     return (
-      <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-        <div className="relative h-[280px] sm:h-[340px] flex items-center justify-center">
-          <div className="text-gray-600 text-sm">Loading outages map...</div>
+      <div className={`relative w-full ${theme.water} overflow-hidden`}>
+        <div className={`relative ${mapDimensions.height} flex items-center justify-center`}>
+          <div className="text-gray-500 dark:text-gray-600 text-sm">Loading outages map...</div>
         </div>
       </div>
     );
@@ -124,8 +167,8 @@ function OutagesMapComponent({ onOutageSelect }: OutagesMapProps) {
   const hasOutages = outages.length > 0;
 
   return (
-    <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-      <div className="relative h-[280px] sm:h-[340px]">
+    <div className={`relative w-full ${theme.water} overflow-hidden`}>
+      <div className={`relative ${mapDimensions.height}`}>
         <ComposableMap
           projection="geoEqualEarth"
           projectionConfig={{
@@ -150,12 +193,12 @@ function OutagesMapComponent({ onOutageSelect }: OutagesMapProps) {
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
-                  fill="#1a1f2e"
-                  stroke="#2d3748"
-                  strokeWidth={0.4}
+                  fill={theme.land}
+                  stroke={theme.stroke}
+                  strokeWidth={theme.strokeWidth}
                   style={{
                     default: { outline: 'none' },
-                    hover: { outline: 'none', fill: '#252d3d' },
+                    hover: { outline: 'none', fill: theme.landHover },
                     pressed: { outline: 'none' },
                   }}
                 />
@@ -266,22 +309,6 @@ function OutagesMapComponent({ onOutageSelect }: OutagesMapProps) {
             <div className="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
-
-        {/* Legend */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-4 text-xs text-gray-400 z-10 bg-black/60 px-3 py-2 rounded-lg">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-red-500" />
-            <span>Critical</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-amber-500" />
-            <span>Severe</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-blue-500" />
-            <span>Moderate</span>
-          </div>
-        </div>
 
         {/* Stats badge */}
         <div className="absolute top-4 left-4 z-10 bg-black/60 px-3 py-2 rounded-lg">

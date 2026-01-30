@@ -228,12 +228,27 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
   const [currentTier, setCurrentTier] = useState<ModelTier>('quick');
   const [loadingElapsed, setLoadingElapsed] = useState(0);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
   const loadingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const autoLoadedRef = useRef(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Check if user is admin
   const isAdmin = session?.user?.email && ADMIN_EMAILS.includes(session.user.email.toLowerCase());
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setModelDropdownOpen(false);
+      }
+    }
+    if (modelDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [modelDropdownOpen]);
 
   // Load collapsed preference from localStorage
   useEffect(() => {
@@ -464,60 +479,72 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
           </ul>
         )}
 
-        {/* Footer with model info and upgrade options */}
+        {/* Footer with model info */}
         <div className="pt-2 border-t border-[var(--border-light)]">
-          {/* Model attribution + About link on same row */}
-          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-[var(--foreground-light)] mb-2">
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-[var(--foreground-light)]">
             <span>Generated with</span>
-            <a
-              href={ANTHROPIC_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-orange-600 dark:text-orange-400 hover:underline"
-            >
-              {tierInfo.model}
-            </a>
+            {/* Model selector dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
+                disabled={loading}
+                className="flex items-center gap-0.5 font-medium text-orange-600 dark:text-orange-400 hover:text-orange-500 dark:hover:text-orange-300 transition-colors disabled:opacity-50"
+              >
+                {tierInfo.model}
+                <ChevronDownIcon className={`w-3 h-3 transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {modelDropdownOpen && (
+                <div className="absolute left-0 top-full mt-1 w-48 bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg z-50 overflow-hidden">
+                  <button
+                    onClick={() => {
+                      fetchBriefing('quick', true);
+                      setModelDropdownOpen(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left hover:bg-[var(--background-secondary)] transition-colors ${
+                      briefing.tier === 'quick' ? 'bg-[var(--background-secondary)]' : ''
+                    }`}
+                  >
+                    <div className="font-medium text-[var(--foreground)]">Claude Haiku</div>
+                    <div className="text-[10px] text-[var(--foreground-light)]">Faster · economical</div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      fetchBriefing('advanced', true);
+                      setModelDropdownOpen(false);
+                    }}
+                    className={`w-full px-3 py-2 text-left hover:bg-[var(--background-secondary)] transition-colors border-t border-[var(--border-light)] ${
+                      briefing.tier === 'advanced' ? 'bg-[var(--background-secondary)]' : ''
+                    }`}
+                  >
+                    <div className="font-medium text-[var(--foreground)]">Claude Sonnet</div>
+                    <div className="text-[10px] text-[var(--foreground-light)]">Balanced · recommended</div>
+                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        fetchBriefing('pro', true);
+                        setModelDropdownOpen(false);
+                      }}
+                      className={`w-full px-3 py-2 text-left hover:bg-[var(--background-secondary)] transition-colors border-t border-[var(--border-light)] ${
+                        briefing.tier === 'pro' ? 'bg-[var(--background-secondary)]' : ''
+                      }`}
+                    >
+                      <div className="font-medium text-[var(--foreground)]">Claude Opus</div>
+                      <div className="text-[10px] text-[var(--foreground-light)]">Smarter · deeper analysis</div>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
             <span>·</span>
-            <span>{briefing.sourcesAnalyzed} sources analyzed</span>
+            <span>{briefing.sourcesAnalyzed} sources</span>
             {briefing.usage?.latencyMs && (
               <>
                 <span>·</span>
                 <span>{(briefing.usage.latencyMs / 1000).toFixed(1)}s</span>
               </>
             )}
-            <span>·</span>
-            <a
-              href="/about#ai"
-              className="hover:underline"
-            >
-              About Our AI Use
-            </a>
           </div>
-
-          {/* Model options */}
-          {(briefing.tier === 'quick' || (briefing.tier === 'advanced' && isAdmin)) && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-[var(--foreground-light)]">Try:</span>
-              {briefing.tier === 'quick' && (
-                <button
-                  onClick={() => fetchBriefing('advanced', true)}
-                  disabled={loading}
-                  className="text-xs px-2 py-1 rounded border border-[var(--border-light)] text-[var(--foreground-muted)] hover:bg-[var(--background)] hover:border-[var(--foreground-light)] transition-colors disabled:opacity-50"
-                >
-                  Claude Sonnet 4 (Fast)
-                </button>
-              )}
-              {isAdmin && (
-                <button
-                  onClick={() => fetchBriefing('pro', true)}
-                  disabled={loading}
-                  className="text-xs px-2 py-1 rounded border border-[var(--border-light)] text-[var(--foreground-muted)] hover:bg-[var(--background)] hover:border-[var(--foreground-light)] transition-colors disabled:opacity-50"
-                >
-                  Claude Opus 4.5 (Deeper)
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </div>

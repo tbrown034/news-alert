@@ -16,6 +16,7 @@ import { WatchpointId, NewsItem, Source } from '@/types';
 import { checkRateLimit, getClientIp, rateLimitHeaders } from '@/lib/rateLimit';
 import { getActiveEditorialPosts } from '@/lib/editorial';
 import { EditorialPost } from '@/types/editorial';
+import { logActivitySnapshot } from '@/lib/activityLogging';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -316,6 +317,7 @@ async function fetchNewsWithCache(region: WatchpointId): Promise<NewsItem[]> {
   const sources = getSourcesForRegion(region);
 
   const fetchPromise = (async () => {
+    const fetchStart = Date.now();
     try {
       console.log(`[News API] Fetching ${region} (${sources.length} sources)`);
       const items = await fetchAllSources(sources);
@@ -331,6 +333,10 @@ async function fetchNewsWithCache(region: WatchpointId): Promise<NewsItem[]> {
       // Sort by timestamp (newest first) — no content dedup, no per-source limits
       // We want to see EVERYTHING in chronological order
       dedupedById.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+      // Log activity for rolling averages (await to ensure it completes on Vercel)
+      const fetchEnd = Date.now();
+      await logActivitySnapshot(region, dedupedById, sources.length, fetchEnd - fetchStart);
 
       // Update cache
       setCachedNews(cacheKey, dedupedById, true);

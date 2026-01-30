@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSession } from '@/lib/auth-client';
 import { tier1Sources, tier2Sources, tier3Sources, TieredSource } from '@/lib/sources-clean';
-import { ArrowLeftIcon, MagnifyingGlassIcon, FunnelIcon, ChevronUpDownIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, MagnifyingGlassIcon, FunnelIcon, ChevronUpDownIcon, ChartBarIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -141,6 +141,24 @@ export default function AdminPage() {
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        {/* Quick Nav */}
+        <div className="flex gap-3 mb-6">
+          <Link
+            href="/admin/activity"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+          >
+            <ChartBarIcon className="w-4 h-4" />
+            <span className="text-sm font-medium">Activity Monitor</span>
+          </Link>
+          <Link
+            href="/admin/editorial"
+            className="flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors"
+          >
+            <PencilSquareIcon className="w-4 h-4" />
+            <span className="text-sm font-medium">Editorial Posts</span>
+          </Link>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">

@@ -9,6 +9,7 @@ import {
   ZoomableGroup,
 } from 'react-simple-maps';
 import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
+import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
 
 // Default zoom settings
 const DEFAULT_CENTER: [number, number] = [0, 15];
@@ -32,6 +33,7 @@ interface WeatherEvent {
 
 interface WeatherMapProps {
   onEventSelect?: (event: WeatherEvent | null) => void;
+  focusOnId?: string;
 }
 
 // Event type icons and colors
@@ -101,14 +103,24 @@ function isNewsworthy(event: WeatherEvent): boolean {
   return false;
 }
 
-function WeatherMapComponent({ onEventSelect }: WeatherMapProps) {
+// Severity priority for sorting
+const severityPriority: Record<string, number> = {
+  extreme: 4,
+  severe: 3,
+  moderate: 2,
+  minor: 1,
+};
+
+function WeatherMapComponent({ onEventSelect, focusOnId }: WeatherMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [events, setEvents] = useState<WeatherEvent[]>([]);
   const [selected, setSelected] = useState<WeatherEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
+  const { theme } = useMapTheme();
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
   const [filterMode, setFilterMode] = useState<FilterMode>('major'); // Default to major only
+  const [hasAutoFocused, setHasAutoFocused] = useState(false);
 
   // Smart filter: "major" = newsworthy events only, "all" = everything
   const filteredEvents = filterMode === 'major'
@@ -164,6 +176,43 @@ function WeatherMapComponent({ onEventSelect }: WeatherMapProps) {
     return () => clearInterval(timer);
   }, [fetchEvents]);
 
+  // Auto-focus on most severe event (or specific one if focusOnId provided)
+  useEffect(() => {
+    if (hasAutoFocused || events.length === 0 || isLoading) return;
+
+    let targetEvent: WeatherEvent | undefined;
+
+    if (focusOnId) {
+      targetEvent = events.find(e => e.id === focusOnId);
+    } else {
+      // Focus on most severe event (hurricanes/typhoons first, then by severity)
+      targetEvent = [...events].sort((a, b) => {
+        // Hurricanes/typhoons always top priority
+        const aIsHurricane = a.type === 'hurricane' || a.type === 'typhoon';
+        const bIsHurricane = b.type === 'hurricane' || b.type === 'typhoon';
+        if (aIsHurricane && !bIsHurricane) return -1;
+        if (bIsHurricane && !aIsHurricane) return 1;
+        // Then by severity
+        return (severityPriority[b.severity] || 0) - (severityPriority[a.severity] || 0);
+      })[0];
+    }
+
+    if (targetEvent) {
+      setPosition({
+        coordinates: [targetEvent.coordinates[0], targetEvent.coordinates[1]],
+        zoom: 2.5,
+      });
+      setSelected(targetEvent);
+      onEventSelect?.(targetEvent);
+      setHasAutoFocused(true);
+    }
+  }, [events, focusOnId, hasAutoFocused, isLoading, onEventSelect]);
+
+  // Reset auto-focus when focusOnId changes
+  useEffect(() => {
+    setHasAutoFocused(false);
+  }, [focusOnId]);
+
   const handleSelect = (event: WeatherEvent | null) => {
     setSelected(event);
     onEventSelect?.(event);
@@ -171,17 +220,17 @@ function WeatherMapComponent({ onEventSelect }: WeatherMapProps) {
 
   if (!isMounted) {
     return (
-      <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-        <div className="relative h-[280px] sm:h-[340px] flex items-center justify-center">
-          <div className="text-gray-600 text-sm">Loading weather map...</div>
+      <div className={`relative w-full ${theme.water} overflow-hidden`}>
+        <div className={`relative ${mapDimensions.height} flex items-center justify-center`}>
+          <div className="text-gray-500 dark:text-gray-600 text-sm">Loading weather map...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-      <div className="relative h-[280px] sm:h-[340px]">
+    <div className={`relative w-full ${theme.water} overflow-hidden`}>
+      <div className={`relative ${mapDimensions.height}`}>
         <ComposableMap
           projection="geoEqualEarth"
           projectionConfig={{
@@ -206,12 +255,12 @@ function WeatherMapComponent({ onEventSelect }: WeatherMapProps) {
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
-                  fill="#1a1f2e"
-                  stroke="#2d3748"
-                  strokeWidth={0.4}
+                  fill={theme.land}
+                  stroke={theme.stroke}
+                  strokeWidth={theme.strokeWidth}
                   style={{
                     default: { outline: 'none' },
-                    hover: { outline: 'none', fill: '#252d3d' },
+                    hover: { outline: 'none', fill: theme.landHover },
                     pressed: { outline: 'none' },
                   }}
                 />
@@ -296,26 +345,6 @@ function WeatherMapComponent({ onEventSelect }: WeatherMapProps) {
             <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
-
-        {/* Legend */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-3 text-xs text-gray-300 z-10 bg-slate-900/80 backdrop-blur-sm px-3 py-2 rounded-lg border border-slate-700/50">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-red-500" />
-            <span>Hurricane</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-orange-500" />
-            <span>Fire</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            <span>Storm</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-500" />
-            <span>Flood</span>
-          </div>
-        </div>
 
         {/* Stats badge with filter toggle */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2">

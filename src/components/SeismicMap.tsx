@@ -10,6 +10,7 @@ import {
 } from 'react-simple-maps';
 import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
 import type { Earthquake } from '@/types';
+import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
 
 // Default zoom settings
 const DEFAULT_CENTER: [number, number] = [0, 15];
@@ -22,6 +23,9 @@ interface SeismicMapProps {
   selected: Earthquake | null;
   onSelect: (eq: Earthquake | null) => void;
   isLoading?: boolean;
+  focusOnId?: string; // If provided, center on this specific earthquake
+  lastFetched?: Date | null;
+  onRefresh?: () => void;
 }
 
 // Get circle radius based on magnitude (exponential scaling)
@@ -62,15 +66,50 @@ function formatTimeAgo(date: Date): string {
 
 type FilterMode = 'all' | 'major';
 
-function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: SeismicMapProps) {
+function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focusOnId, lastFetched, onRefresh }: SeismicMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
   const [filterMode, setFilterMode] = useState<FilterMode>('major'); // Default to major only
+  const [hasAutoFocused, setHasAutoFocused] = useState(false);
+  const { theme } = useMapTheme();
+
+  // Auto-focus on largest earthquake (or specific one if focusOnId provided) when data loads
+  useEffect(() => {
+    if (hasAutoFocused || earthquakes.length === 0) return;
+
+    let targetQuake: Earthquake | undefined;
+
+    if (focusOnId) {
+      // Focus on specific earthquake
+      targetQuake = earthquakes.find(eq => eq.id === focusOnId);
+    } else {
+      // Focus on largest magnitude earthquake
+      targetQuake = [...earthquakes].sort((a, b) => b.magnitude - a.magnitude)[0];
+    }
+
+    if (targetQuake) {
+      // Center on the earthquake with appropriate zoom
+      const zoom = targetQuake.magnitude >= 6 ? 1.8 : 1.5;
+      setPosition({
+        coordinates: [targetQuake.coordinates[0], targetQuake.coordinates[1]],
+        zoom,
+      });
+      // Auto-select it to show the info panel
+      onSelect(targetQuake);
+      setHasAutoFocused(true);
+    }
+  }, [earthquakes, focusOnId, hasAutoFocused, onSelect]);
+
+  // Reset auto-focus when focusOnId changes (allows re-focusing on new target)
+  useEffect(() => {
+    setHasAutoFocused(false);
+  }, [focusOnId]);
 
   // Filter earthquakes based on mode
+  // Filter: 'major' = M5+, 'all' = M4+ (USGS data is typically M4+ anyway)
   const filteredEarthquakes = filterMode === 'major'
     ? earthquakes.filter(eq => eq.magnitude >= 5.0)
-    : earthquakes;
+    : earthquakes.filter(eq => eq.magnitude >= 4.0);
 
   const handleZoomIn = () => {
     if (position.zoom >= 4) return;
@@ -96,17 +135,17 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
 
   if (!isMounted) {
     return (
-      <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-        <div className="relative h-[280px] sm:h-[340px] flex items-center justify-center">
-          <div className="text-gray-600 text-sm">Loading seismic map...</div>
+      <div className={`relative w-full ${theme.water} overflow-hidden`}>
+        <div className={`relative ${mapDimensions.height} flex items-center justify-center`}>
+          <div className="text-gray-500 dark:text-gray-600 text-sm">Loading seismic map...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-      <div className="relative h-[280px] sm:h-[340px]">
+    <div className={`relative w-full ${theme.water} overflow-hidden`}>
+      <div className={`relative ${mapDimensions.height}`}>
         <ComposableMap
           projection="geoEqualEarth"
           projectionConfig={{
@@ -131,12 +170,12 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
-                  fill="#1a1f2e"
-                  stroke="#2d3748"
-                  strokeWidth={0.4}
+                  fill={theme.land}
+                  stroke={theme.stroke}
+                  strokeWidth={theme.strokeWidth}
                   style={{
                     default: { outline: 'none' },
-                    hover: { outline: 'none', fill: '#252d3d' },
+                    hover: { outline: 'none', fill: theme.landHover },
                     pressed: { outline: 'none' },
                   }}
                 />
@@ -228,26 +267,6 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
           </div>
         )}
 
-        {/* Legend */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-4 text-xs text-gray-400 z-10 bg-black/60 px-3 py-2 rounded-lg">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-red-500" />
-            <span>7+</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-orange-500" />
-            <span>6+</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-amber-500" />
-            <span>5+</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-green-500" />
-            <span>&lt;5</span>
-          </div>
-        </div>
-
         {/* Stats badge with filter toggle */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
           <div className="text-sm text-gray-300 bg-black/60 px-3 py-2 rounded-lg font-medium">
@@ -272,9 +291,23 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading }: Sei
                   : 'text-gray-400 hover:text-white hover:bg-white/10'
               }`}
             >
-              All
+              M4+
             </button>
           </div>
+          {/* Refresh with last updated time */}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-1.5 bg-black/60 hover:bg-black/80 px-2.5 py-2 rounded-lg text-xs text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+              title="Refresh earthquake data"
+            >
+              <ArrowPathIcon className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+              {lastFetched && !isLoading && (
+                <span>{formatTimeAgo(lastFetched)}</span>
+              )}
+            </button>
+          )}
         </div>
       </div>
 

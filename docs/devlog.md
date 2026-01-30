@@ -341,6 +341,206 @@ A chronological record of development sessions and significant changes.
 
 ---
 
+## 2026-01-29 - 6-Hour Window Fix & Activity Detection Overhaul
+
+**Session Summary:**
+- Discovered and fixed critical bug where API was capping posts at 200 instead of fetching full 6-hour window
+- Raised API limits from 200→2000 to capture true post volume (now getting ~870 posts vs 200)
+- Updated Live Wire header to show meaningful stats: "871 posts · 164 sources · last 6h"
+- Removed over-engineered message-level deduplication that was conflicting with activity detection goals
+- Cleaned up duplicate sources (Bellingcat, NOELREPORTS, OSINTtechnical had both Bluesky and Mastodon)
+- Fixed activity detection baselines to use 6-hour window instead of 1-hour
+
+**Key Decisions:**
+- Server-side render (page.tsx) and client-side fetch (HomeClient.tsx) must use same limit
+- Removed 3 layers of message deduplication - kept only ID-based dedup per user's explicit request
+- Source-level dedup preferred over message-level dedup (if org has Bluesky + Mastodon, keep Bluesky only)
+- Activity detection should compare 6h actual vs 6h baseline (simple mental model)
+
+**Notable Changes:**
+
+*src/app/page.tsx*
+- Line 31: Changed `limit=200` to `limit=2000` for SSR fetch
+
+*src/app/HomeClient.tsx*
+- Redesigned Live Wire header subtitle
+- Old: `"50 of 200 posts · 6h window"` (pagination-focused)
+- New: `"871 posts · 164 sources · last 6h"` (volume + diversity focused)
+- Source count calculated via `new Set(newsItems.map(i => i.source.id)).size`
+
+*src/app/api/news/route.ts*
+- Raised DEFAULT_LIMIT from 200 to 2000
+- Raised MAX_LIMIT from 1000 to 5000
+- Removed cross-platform content deduplication (was comparing normalized titles)
+- Removed per-source limit of 3 posts
+- Kept only ID-based deduplication
+
+*src/lib/activityDetection.ts*
+- Changed from 1-hour to 6-hour activity window
+- Updated baselines from hourly to 6-hour values:
+  - US: 10/hr → 60/6h
+  - LATAM: 6/hr → 36/6h
+  - Middle East: 15/hr → 90/6h
+  - Europe-Russia: 18/hr → 108/6h
+  - Asia: 10/hr → 60/6h
+  - All: 50/hr → 300/6h
+
+*src/lib/sources-clean.ts*
+- Removed Bellingcat Mastodon (already have Bluesky)
+- Removed NOELREPORTS Mastodon (already have Bluesky)
+- Removed OSINTtechnical Mastodon duplicate
+
+*src/lib/rss.ts*
+- Reduced Bluesky fetch from 20→10 posts per source (still captures full activity)
+
+**Technical Notes:**
+- The "1 sources" bug was caused by accessing `item.sourceId` instead of `item.source.id`
+- NewsItem has nested `source: Source` object, not flat `sourceId` field
+- SSR provides initial data, so users see capped data on first load even if client fetch uses higher limit
+- Dual-fetch architecture means both page.tsx (SSR) and HomeClient.tsx (client) need matching limits
+
+**User Requirements Clarified:**
+- Activity detection goal: "Show me everything from last 6 hours, compare to usual 6-hour baseline"
+- Not: "Compare last hour vs hourly average" (previous implementation)
+- Simple math: 871 posts vs 300 baseline = 2.9x activity (elevated)
+
+---
+
+## 2026-01-29 - Feed UI Cleanup & Filter Consolidation
+
+**Session Summary:**
+- Removed green left border "very recent" indicator from news cards (was showing for posts <5 min old)
+- User preferred the existing "new since you arrived" divider as the sole new-content indicator
+- Consolidated filter bar from 2 rows to 1 row by removing post count and Live updates toggle
+- Explored ghost button styling for filters, user rejected it, reverted to original pill style
+- Discussed `useMemo` with real codebase examples for educational purposes
+- Currently exploring alternatives to dropdown filters (horizontal tabs)
+
+**Key Decisions:**
+- Removed `isVeryRecent()` function and green border styling - redundant with divider
+- Live updates now always ON (no toggle) - can add to settings page later if needed
+- Removed "x posts" count from filter bar - users care about content, not count
+- Filter bar is now single row: [Region ▾] [Sources ▾] ... last updated 🔄
+- Refresh button is icon-only (no text label) to save space
+
+**Notable Changes:**
+
+*src/components/NewsCard.tsx*
+- Removed `isVeryRecent()` helper function (lines 275-279)
+- Removed `veryRecent` variable and conditional `border-l-4 border-l-emerald-500` styling
+- Cards no longer have visual indicator for <5 minute old posts
+
+*src/components/NewsFeed.tsx*
+- Consolidated filter bar from `space-y-2` (two rows) to single flex row
+- Removed "x posts" count display
+- Removed Live updates toggle button and "Live updating..." indicator
+- Removed `pendingCount`, `onShowPending`, `autoUpdate`, `onToggleAutoUpdate` from destructuring (props kept in interface for backwards compatibility)
+- Removed `SignalIcon` import (no longer used)
+- Refresh button: changed from `[🔄 Refresh]` pill to just `🔄` icon button
+- Last updated timestamp moved to right side, hidden on mobile (`hidden sm:inline`)
+
+**Technical Notes:**
+- The "new since you arrived" divider (using `initialSessionIds` and `dividerIndex`) remains the sole new-content indicator
+- Props still exist in `NewsFeedProps` interface so parent components don't break
+- Ghost button experiment (removed backgrounds/borders) was reverted after user feedback
+
+**UX Discussion:**
+- Explored useMemo through 5 real examples: `filteredItems`, `sortedItems`, `regionCounts`, `displayText`, `dividerIndex`
+- User asked about replacing dropdowns with horizontal scrollable tabs for regions - decision pending
+
+---
+
+## 2026-01-30 - AI Briefing Card Styling & Feed Header Fix
+
+**Session Summary:**
+- Restyled AI Briefing Card to match regular NewsCard appearance (same structure, distinct border)
+- Attempted to reorganize Live Wire header - caused layout chaos due to hidden CSS issue
+- Discovered root cause: `overflow-hidden` on parent container was breaking sticky positioning
+- Used parallel agents to investigate - found the issue in 30 seconds
+- Fixed by removing `overflow-hidden` and restructuring header to match Global Monitor pattern
+
+**Key Decisions:**
+- AI Briefing Card uses same `bg-[var(--background-card)]` as NewsCard, but with `border-2 border-slate-400 dark:border-slate-500` for subtle distinction
+- Removed sticky positioning from NewsFeed header - it was fighting with the parent container
+- Adopted Global Monitor's header pattern: inside bordered container with `border-b` separator
+- Consolidated Live Wire title into NewsFeed component (was duplicated in HomeClient)
+
+**Notable Changes:**
+
+*src/components/BriefingCard.tsx*
+- Changed from cyan gradient background to neutral `bg-[var(--background-card)]`
+- Added thicker, more visible border (`border-2 border-slate-400 dark:border-slate-500`)
+- Moved sources count, timestamp, and refresh button to header row
+- Added `ArrowPathIcon` import for refresh functionality
+
+*src/components/NewsFeed.tsx*
+- Removed sticky `top-14 sm:top-16 z-30` wrapper - was breaking due to parent `overflow-hidden`
+- Changed header to match Global Monitor: `relative z-10` with `border-b border-slate-200/50 dark:border-slate-700/50 rounded-t-2xl`
+- Added `SignalIcon` for Live Wire title
+- Added `totalPosts`, `uniqueSources`, `hoursWindow` props for stats display
+- Consolidated title + stats + filters into single header section
+
+*src/app/HomeClient.tsx*
+- Removed `overflow-hidden` from NewsFeed container (line 1170) - **this was the root cause**
+- Removed duplicate "Live Wire" header (now handled by NewsFeed)
+- Added new props to NewsFeed: `totalPosts`, `uniqueSources`, `hoursWindow`
+
+**Technical Notes:**
+- `overflow: hidden` creates a containing block that traps sticky elements - sticky children cannot escape parent bounds
+- Lesson learned: always check parent overflow properties when sticky positioning fails
+- Used parallel Task agents (Explore type) to investigate - much faster than blind iteration
+- Global Monitor works because its header is INSIDE the bordered container, not fighting overflow
+
+**Debugging Approach:**
+1. Spawned 3 parallel agents to investigate:
+   - Agent 1: NewsFeed structure analysis
+   - Agent 2: Global Monitor vs Live Wire comparison
+   - Agent 3: CSS/layout issue scan
+2. Agent 3 found `overflow-hidden` on parent container immediately
+3. Agent 2 explained WHY Global Monitor works (header inside container)
+4. Applied both fixes: remove overflow-hidden + restructure header
+
+---
+
+## 2026-01-30 - Editorial Tag Styling Redesign
+
+**Session Summary:**
+- Redesigned source type tags in NewsCard.tsx from faded uniform gray to distinct color-coded editorial styling
+- Applied matching editorial styling to AI tag in BriefingCard.tsx
+- Tags now use solid backgrounds for better contrast and visual hierarchy
+
+**Key Decisions:**
+- Replaced opacity-based backgrounds (`dark:bg-slate-800/60`) with solid colors for legibility
+- Each source type gets semantically meaningful color: OSINT amber/gold, Official slate, News Org zinc, Reporter stone, Ground emerald
+- All tags share consistent typography: `text-[10px] tracking-wide uppercase rounded-sm`
+- AI tag updated to match: solid cyan background instead of bordered light/dark variant
+
+**Notable Changes:**
+
+*src/components/NewsCard.tsx*
+- Completely rewrote `sourceTypeColors` mapping with distinct editorial palette:
+  - `official`: Authoritative blue-gray (slate-800/slate-200)
+  - `news-org`: Classic newspaper charcoal (zinc-700/zinc-300)
+  - `osint`: Intelligence amber/gold accent (amber-600/amber-500)
+  - `reporter`: Subtle warm gray (stone-500/stone-400)
+  - `analyst`: Refined slate (slate-600/slate-400)
+  - `aggregator`: Muted neutral (neutral-500)
+  - `ground`: Earthy emerald (emerald-700/emerald-600)
+  - `bot`: Subtle italic gray (gray-400/gray-600)
+- Updated tag rendering: `px-2 py-0.5 text-[10px] tracking-wide uppercase rounded-sm`
+
+*src/components/BriefingCard.tsx*
+- AI tag restyled from `bg-cyan-100 dark:bg-cyan-900/40` to `bg-cyan-600 dark:bg-cyan-500`
+- Text changed from `text-cyan-700 dark:text-cyan-300` to `text-white dark:text-cyan-950`
+- Removed border, added `tracking-wide uppercase font-semibold`
+
+**Technical Notes:**
+- Solid backgrounds perform better than opacity-based in both light and dark modes
+- `tracking-wide` adds 0.025em letter-spacing, improving readability of uppercase labels
+- `rounded-sm` (2px) gives sharper editorial look vs `rounded` (4px)
+
+---
+
 ## 2026-01-29 - Hydration Mismatch Fix & useClock Hook
 
 **Session Summary:**

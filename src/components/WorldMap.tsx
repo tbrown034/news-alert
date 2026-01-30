@@ -11,6 +11,7 @@ import {
 import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
 import { Watchpoint, WatchpointId, Earthquake } from '@/types';
 import { RegionActivity } from '@/lib/activityDetection';
+import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
 
 // World map TopoJSON - using a CDN for the geography data
 const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
@@ -79,63 +80,13 @@ const regionMarkers: Record<string, { coordinates: [number, number]; label: stri
 const DEFAULT_CENTER: [number, number] = [40, 25];
 const DEFAULT_ZOOM = 1;
 
-// Map theme colors
-const mapThemes = {
-  dark: {
-    water: 'bg-[#1e3a5f]',
-    land: '#4a6274',
-    landHover: '#5d7486',
-    stroke: '#5d7486',
-    labelDefault: '#d1d5db',
-    labelActive: '#fff',
-    timeLabel: '#9ca3af',
-    textShadow: '0 2px 4px rgba(0,0,0,0.9)',
-    markerStroke: '#fff',
-    markerStrokeHover: 'rgba(255,255,255,0.6)',
-    markerStrokeDefault: 'rgba(255,255,255,0.3)',
-    glowOpacity: 0.6,
-    glowOpacityHover: 0.8,
-  },
-  light: {
-    water: 'bg-[#6ba3bd]',
-    land: '#d4cfc2',
-    landHover: '#c9c4b6',
-    stroke: '#b8b3a5',
-    labelDefault: '#1f2937',
-    labelActive: '#000',
-    timeLabel: '#374151',
-    textShadow: '0 1px 2px rgba(255,255,255,0.8)',
-    markerStroke: '#1f2937',
-    markerStrokeHover: 'rgba(0,0,0,0.5)',
-    markerStrokeDefault: 'rgba(0,0,0,0.3)',
-    glowOpacity: 0.7,
-    glowOpacityHover: 0.9,
-  },
-};
-
 function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {}, activity = {}, significantQuakes = [], hoursWindow = 6, hotspotsOnly = false, useUTC = false }: WorldMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
   const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
   const [hoveredQuake, setHoveredQuake] = useState<string | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(true);
-
-  // Detect theme changes
-  useEffect(() => {
-    const checkTheme = () => {
-      setIsDarkMode(document.documentElement.classList.contains('dark'));
-    };
-    checkTheme();
-
-    // Watch for theme changes
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-
-    return () => observer.disconnect();
-  }, []);
-
-  const theme = isDarkMode ? mapThemes.dark : mapThemes.light;
+  const { theme } = useMapTheme();
 
   const handleMoveEnd = (position: { coordinates: [number, number]; zoom: number }) => {
     setPosition(position);
@@ -220,7 +171,7 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
   if (!isMounted) {
     return (
       <div className={`relative w-full ${theme.water} overflow-hidden`}>
-        <div className="relative h-[140px] sm:h-[180px] flex items-center justify-center">
+        <div className={`relative ${mapDimensions.height} flex items-center justify-center`}>
           <div className="text-gray-500 dark:text-gray-600 text-sm">Loading map...</div>
         </div>
       </div>
@@ -230,7 +181,7 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
   return (
     <div className={`relative w-full ${theme.water} overflow-hidden`}>
       {/* Map Container */}
-      <div className="relative h-[140px] sm:h-[180px]">
+      <div className={`relative ${mapDimensions.height}`}>
         <ComposableMap
           projection="geoEqualEarth"
           projectionConfig={{

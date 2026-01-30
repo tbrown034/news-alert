@@ -10,6 +10,7 @@ import {
 } from 'react-simple-maps';
 import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
 import { FireIcon } from '@heroicons/react/24/solid';
+import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
 
 // Default zoom settings
 const DEFAULT_CENTER: [number, number] = [0, 20];
@@ -32,6 +33,7 @@ interface FireEvent {
 
 interface FiresMapProps {
   onFireSelect?: (fire: FireEvent | null) => void;
+  focusOnId?: string; // If provided, center on this specific fire
 }
 
 const severityStyles = {
@@ -51,13 +53,23 @@ function formatTimeAgo(date: Date): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
-function FiresMapComponent({ onFireSelect }: FiresMapProps) {
+// Severity priority for sorting (critical > severe > moderate > minor)
+const severityPriority: Record<string, number> = {
+  critical: 4,
+  severe: 3,
+  moderate: 2,
+  minor: 1,
+};
+
+function FiresMapComponent({ onFireSelect, focusOnId }: FiresMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [fires, setFires] = useState<FireEvent[]>([]);
   const [selected, setSelected] = useState<FireEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
+  const { theme } = useMapTheme();
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
+  const [hasAutoFocused, setHasAutoFocused] = useState(false);
 
   const handleZoomIn = () => {
     if (position.zoom >= 4) return;
@@ -107,6 +119,37 @@ function FiresMapComponent({ onFireSelect }: FiresMapProps) {
     return () => clearInterval(timer);
   }, [fetchFires]);
 
+  // Auto-focus on most severe fire (or specific one if focusOnId provided)
+  useEffect(() => {
+    if (hasAutoFocused || fires.length === 0 || isLoading) return;
+
+    let targetFire: FireEvent | undefined;
+
+    if (focusOnId) {
+      targetFire = fires.find(f => f.id === focusOnId);
+    } else {
+      // Focus on most severe fire
+      targetFire = [...fires].sort((a, b) =>
+        (severityPriority[b.severity] || 0) - (severityPriority[a.severity] || 0)
+      )[0];
+    }
+
+    if (targetFire) {
+      setPosition({
+        coordinates: [targetFire.coordinates[0], targetFire.coordinates[1]],
+        zoom: 2.5,
+      });
+      setSelected(targetFire);
+      onFireSelect?.(targetFire);
+      setHasAutoFocused(true);
+    }
+  }, [fires, focusOnId, hasAutoFocused, isLoading, onFireSelect]);
+
+  // Reset auto-focus when focusOnId changes
+  useEffect(() => {
+    setHasAutoFocused(false);
+  }, [focusOnId]);
+
   const handleSelect = (fire: FireEvent | null) => {
     setSelected(fire);
     onFireSelect?.(fire);
@@ -114,9 +157,9 @@ function FiresMapComponent({ onFireSelect }: FiresMapProps) {
 
   if (!isMounted) {
     return (
-      <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-        <div className="relative h-[280px] sm:h-[340px] flex items-center justify-center">
-          <div className="text-gray-600 text-sm">Loading fire data...</div>
+      <div className={`relative w-full ${theme.water} overflow-hidden`}>
+        <div className={`relative ${mapDimensions.height} flex items-center justify-center`}>
+          <div className="text-gray-500 dark:text-gray-600 text-sm">Loading fire data...</div>
         </div>
       </div>
     );
@@ -125,8 +168,8 @@ function FiresMapComponent({ onFireSelect }: FiresMapProps) {
   const hasFires = fires.length > 0;
 
   return (
-    <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-      <div className="relative h-[280px] sm:h-[340px]">
+    <div className={`relative w-full ${theme.water} overflow-hidden`}>
+      <div className={`relative ${mapDimensions.height}`}>
         <ComposableMap
           projection="geoEqualEarth"
           projectionConfig={{
@@ -151,12 +194,12 @@ function FiresMapComponent({ onFireSelect }: FiresMapProps) {
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
-                  fill="#1a1f2e"
-                  stroke="#2d3748"
-                  strokeWidth={0.4}
+                  fill={theme.land}
+                  stroke={theme.stroke}
+                  strokeWidth={theme.strokeWidth}
                   style={{
                     default: { outline: 'none' },
-                    hover: { outline: 'none', fill: '#252d3d' },
+                    hover: { outline: 'none', fill: theme.landHover },
                     pressed: { outline: 'none' },
                   }}
                 />
@@ -251,22 +294,6 @@ function FiresMapComponent({ onFireSelect }: FiresMapProps) {
             <div className="w-8 h-8 border-3 border-orange-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
-
-        {/* Legend */}
-        <div className="absolute bottom-4 right-4 flex items-center gap-4 text-xs text-gray-400 z-10 bg-black/60 px-3 py-2 rounded-lg">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-red-500" />
-            <span>Critical</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-orange-500" />
-            <span>Severe</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-yellow-500" />
-            <span>Moderate</span>
-          </div>
-        </div>
 
         {/* Stats badge */}
         <div className="absolute top-4 left-4 z-10 bg-black/60 px-3 py-2 rounded-lg flex items-center gap-2">

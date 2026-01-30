@@ -1,23 +1,65 @@
 import { WatchpointId } from '@/types';
+import { tier1Sources, tier2Sources, tier3Sources, TieredSource } from './sources-clean';
 
 // =============================================================================
-// SIMPLIFIED ACTIVITY DETECTION
+// DYNAMIC ACTIVITY DETECTION
 // =============================================================================
-// Count total posts per region in the 6h window, compare to 6h baseline.
-// If we usually see 100 posts and we're seeing 232, that's a surge.
+// Baselines are calculated from source postsPerDay values.
+//
+// TRUST LEVELS:
+// - Decimal values (37.9, 16.6) = measured from actual data → trust these
+// - Round numbers (50, 30, 15) = guessed/estimated → use conservative default
+//
+// This prevents inflated guesses from skewing the baseline.
 // =============================================================================
 
-// Expected posts per 6-HOUR WINDOW under "normal" conditions
-// These should reflect a typical 6-hour period, not a quiet one
-const REGION_BASELINES_6H: Record<WatchpointId, number> = {
-  'us': 60,           // ~10/hour × 6
-  'latam': 36,        // ~6/hour × 6
-  'middle-east': 90,  // ~15/hour × 6
-  'europe-russia': 108, // ~18/hour × 6
-  'asia': 60,         // ~10/hour × 6
-  'seismic': 0,
-  'all': 300,         // ~50/hour × 6
-};
+const CONSERVATIVE_DEFAULT = 3; // posts/day for guessed sources
+
+// Check if a number was likely measured (has decimals) vs guessed (round)
+function isMeasuredValue(n: number): boolean {
+  return n !== Math.floor(n);
+}
+
+// Calculate 6-hour baseline per region from source postsPerDay
+function calculateDynamicBaselines(): Record<WatchpointId, number> {
+  const allSources = [...tier1Sources, ...tier2Sources, ...tier3Sources];
+
+  const regionTotals: Record<string, number> = {
+    'us': 0,
+    'latam': 0,
+    'middle-east': 0,
+    'europe-russia': 0,
+    'asia': 0,
+    'all': 0,
+    'seismic': 0,
+  };
+
+  for (const source of allSources) {
+    const rawValue = source.postsPerDay || 0;
+    // Trust measured decimals, use conservative default for round guesses
+    const postsPerDay = isMeasuredValue(rawValue) ? rawValue : CONSERVATIVE_DEFAULT;
+    const region = source.region;
+
+    // Add to specific region
+    if (region in regionTotals) {
+      regionTotals[region] += postsPerDay;
+    }
+
+    // All sources contribute to 'all' total
+    regionTotals['all'] += postsPerDay;
+  }
+
+  // Convert postsPerDay to posts per 6 hours (divide by 4)
+  const baselines: Record<WatchpointId, number> = {} as Record<WatchpointId, number>;
+  for (const [region, total] of Object.entries(regionTotals)) {
+    baselines[region as WatchpointId] = Math.round(total / 4);
+  }
+
+  return baselines;
+}
+
+// Calculate once at module load
+const REGION_BASELINES_6H = calculateDynamicBaselines();
 
 export interface RegionActivity {
   level: 'critical' | 'elevated' | 'normal';

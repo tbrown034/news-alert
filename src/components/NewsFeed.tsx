@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { NewsItem, WatchpointId } from '@/types';
 import { NewsCard } from './NewsCard';
 import { EditorialCard, isEditorialItem } from './EditorialCard';
-import { InlineBriefing } from './InlineBriefing';
-import { ArrowPathIcon, ExclamationTriangleIcon, GlobeAltIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { BriefingCard } from './BriefingCard';
+import { ArrowPathIcon, ExclamationTriangleIcon, GlobeAltIcon, ChevronDownIcon, SignalIcon } from '@heroicons/react/24/outline';
 import { regionDisplayNames } from '@/lib/regionDetection';
 
 interface ActivityData {
@@ -37,6 +37,10 @@ interface NewsFeedProps {
   onShowPending?: () => void;
   autoUpdate?: boolean;
   onToggleAutoUpdate?: () => void;
+  // Stats for header
+  totalPosts?: number;
+  uniqueSources?: number;
+  hoursWindow?: number;
 }
 
 // Skeleton loader for news cards
@@ -180,6 +184,9 @@ export function NewsFeed({
   onRetry,
   lastUpdated,
   loadTimeMs,
+  totalPosts,
+  uniqueSources,
+  hoursWindow = 6,
 }: NewsFeedProps) {
   // Track previously seen item IDs to animate new ones
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
@@ -202,6 +209,13 @@ export function NewsFeed({
       onSelectWatchpoint(tabId);
     }
   }, [onSelectWatchpoint]);
+
+  // Sync local tab state with parent's selectedWatchpoint (e.g., when map region is clicked)
+  useEffect(() => {
+    if (selectedWatchpoint !== selectedTab) {
+      setSelectedTab(selectedWatchpoint);
+    }
+  }, [selectedWatchpoint]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -370,144 +384,158 @@ export function NewsFeed({
     ? 'All Sources'
     : platformFilters.find(f => f.id === platformFilter)?.label || 'All Sources';
 
-  const totalPosts = Object.values(platformCounts).reduce((sum, c) => sum + c, 0);
+  const totalFilteredPosts = Object.values(platformCounts).reduce((sum, c) => sum + c, 0);
+
+  // Calculate display stats
+  const displayPosts = totalPosts ?? items.length;
+  const displaySources = uniqueSources ?? new Set(items.map(i => i.source.id)).size;
 
   return (
-    <div className="flex flex-col bg-[var(--background)]">
-      {/* Unified Filter Bar (sticky header) */}
-      <div className="sticky top-14 sm:top-16 z-30 bg-[var(--background)]">
-        <div className="px-3 sm:px-4 py-2 sm:py-2.5 border-b border-[var(--border-light)] bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-sm">
-          {/* Single row: Filters left, Last updated + Refresh right */}
-          <div className="flex items-center justify-between">
-            {/* Left: Filter dropdowns */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Region Dropdown */}
-              <div className="relative" ref={moreDropdownRef}>
-                <button
-                  onClick={() => {
-                    setRegionalExpanded(!regionalExpanded);
-                    setSourceFilterExpanded(false);
-                  }}
-                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-                >
-                  <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">{currentRegionLabel}</span>
-                  <ChevronDownIcon className={`w-3.5 h-3.5 text-slate-400 transition-transform ${regionalExpanded ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Region dropdown menu */}
-                {regionalExpanded && (
-                  <div className="absolute top-full left-0 mt-1 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[160px]">
-                    {allTabs.map((tab) => {
-                      const isSelected = selectedTab === tab.id;
-                      return (
-                        <button
-                          key={tab.id}
-                          onClick={() => {
-                            handleTabSelect(tab.id);
-                            setRegionalExpanded(false);
-                          }}
-                          className={`
-                            w-full px-3 py-2 text-sm font-medium transition-colors text-left flex items-center gap-2
-                            ${isSelected
-                              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                            }
-                          `}
-                        >
-                          {tab.id === 'all' ? 'All Regions' : tab.label}
-                          {isSelected && <span className="ml-auto text-blue-500">✓</span>}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
+    <div className="flex flex-col">
+      {/* Header - matches Global Monitor pattern */}
+      <div className="relative z-10 px-3 sm:px-4 py-2.5 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-700/50 rounded-t-2xl">
+          {/* Row 1: Title + Stats + Refresh */}
+          <div className="flex items-center justify-between mb-2.5">
+            <div className="flex items-center gap-3">
+              {/* Title */}
+              <div className="flex items-center gap-2">
+                <SignalIcon className="w-4 h-4 text-emerald-500" />
+                <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Live Wire</h2>
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               </div>
-
-              {/* Source Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setSourceFilterExpanded(!sourceFilterExpanded);
-                    setRegionalExpanded(false);
-                  }}
-                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-                >
-                  <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">{currentSourceLabel}</span>
-                  <ChevronDownIcon className={`w-3.5 h-3.5 text-slate-400 transition-transform ${sourceFilterExpanded ? 'rotate-180' : ''}`} />
-                </button>
-
-                {/* Source dropdown menu */}
-                {sourceFilterExpanded && (
-                  <div className="absolute top-full left-0 mt-1 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[160px]">
-                    {platformFilters.map((filter) => {
-                      const isSelected = platformFilter === filter.id;
-                      const count = filter.id === 'all'
-                        ? totalPosts
-                        : (platformCounts[filter.id] || 0);
-
-                      // Hide platforms with 0 items (except "All" and currently selected)
-                      if (filter.id !== 'all' && count === 0 && !isSelected && !isLoading) {
-                        return null;
-                      }
-
-                      return (
-                        <button
-                          key={filter.id}
-                          onClick={() => {
-                            setPlatformFilter(filter.id);
-                            setSourceFilterExpanded(false);
-                          }}
-                          className={`
-                            w-full px-3 py-2 text-sm font-medium transition-colors text-left flex items-center justify-between
-                            ${isSelected
-                              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                            }
-                          `}
-                        >
-                          <span>{filter.id === 'all' ? 'All Sources' : filter.label}</span>
-                          <span className={`text-xs ${isSelected ? 'text-blue-500' : 'text-slate-400'}`}>
-                            {isLoading && filter.id !== 'all' && count === 0 ? '...' : count}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+              {/* Stats */}
+              <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <span className="text-slate-300 dark:text-slate-600">|</span>
+                <span className="font-mono font-medium text-slate-700 dark:text-slate-300">{displayPosts}</span>
+                <span>posts</span>
+                <span className="text-slate-300 dark:text-slate-600">·</span>
+                <span className="font-mono font-medium text-slate-700 dark:text-slate-300">{displaySources}</span>
+                <span>sources</span>
+                <span className="text-slate-300 dark:text-slate-600">·</span>
+                <span>{hoursWindow}h</span>
+                {lastUpdated && (
+                  <>
+                    <span className="text-slate-300 dark:text-slate-600">·</span>
+                    <span suppressHydrationWarning>{formatLastUpdated(lastUpdated)}</span>
+                  </>
                 )}
               </div>
             </div>
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                disabled={isLoading}
+                aria-label={isLoading ? 'Refreshing feed' : 'Refresh feed'}
+                className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+              >
+                <ArrowPathIcon className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              </button>
+            )}
+          </div>
 
-            {/* Right: Last updated + Refresh */}
-            <div className="flex items-center gap-2 sm:gap-3 text-xs">
-              {lastUpdated && (
-                <span className="text-slate-400 dark:text-slate-500 hidden sm:inline" suppressHydrationWarning>
-                  {formatLastUpdated(lastUpdated)}
-                </span>
+          {/* Row 2: Filter dropdowns */}
+          <div className="flex items-center gap-2 sm:gap-3 pb-2">
+            {/* Region Dropdown */}
+            <div className="relative" ref={moreDropdownRef}>
+              <button
+                onClick={() => {
+                  setRegionalExpanded(!regionalExpanded);
+                  setSourceFilterExpanded(false);
+                }}
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+              >
+                <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">{currentRegionLabel}</span>
+                <ChevronDownIcon className={`w-3.5 h-3.5 text-slate-400 transition-transform ${regionalExpanded ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Region dropdown menu */}
+              {regionalExpanded && (
+                <div className="absolute top-full left-0 mt-1 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[160px]">
+                  {allTabs.map((tab) => {
+                    const isSelected = selectedTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          handleTabSelect(tab.id);
+                          setRegionalExpanded(false);
+                        }}
+                        className={`
+                          w-full px-3 py-2 text-sm font-medium transition-colors text-left flex items-center gap-2
+                          ${isSelected
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          }
+                        `}
+                      >
+                        {tab.id === 'all' ? 'All Regions' : tab.label}
+                        {isSelected && <span className="ml-auto text-blue-500">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-              {onRefresh && (
-                <button
-                  onClick={onRefresh}
-                  disabled={isLoading}
-                  aria-label={isLoading ? 'Refreshing feed' : 'Refresh feed'}
-                  className="p-1.5 sm:p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
-                >
-                  <ArrowPathIcon className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-                </button>
+            </div>
+
+            {/* Source Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setSourceFilterExpanded(!sourceFilterExpanded);
+                  setRegionalExpanded(false);
+                }}
+                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+              >
+                <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">{currentSourceLabel}</span>
+                <ChevronDownIcon className={`w-3.5 h-3.5 text-slate-400 transition-transform ${sourceFilterExpanded ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Source dropdown menu */}
+              {sourceFilterExpanded && (
+                <div className="absolute top-full left-0 mt-1 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[160px]">
+                  {platformFilters.map((filter) => {
+                    const isSelected = platformFilter === filter.id;
+                    const count = filter.id === 'all'
+                      ? totalFilteredPosts
+                      : (platformCounts[filter.id] || 0);
+
+                    // Hide platforms with 0 items (except "All" and currently selected)
+                    if (filter.id !== 'all' && count === 0 && !isSelected && !isLoading) {
+                      return null;
+                    }
+
+                    return (
+                      <button
+                        key={filter.id}
+                        onClick={() => {
+                          setPlatformFilter(filter.id);
+                          setSourceFilterExpanded(false);
+                        }}
+                        className={`
+                          w-full px-3 py-2 text-sm font-medium transition-colors text-left flex items-center justify-between
+                          ${isSelected
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          }
+                        `}
+                      >
+                        <span>{filter.id === 'all' ? 'All Sources' : filter.label}</span>
+                        <span className={`text-xs ${isSelected ? 'text-blue-500' : 'text-slate-400'}`}>
+                          {isLoading && filter.id !== 'all' && count === 0 ? '...' : count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Volume indicator - part of sticky header (only for region tabs) */}
-        {selectedTab !== 'all' && activity?.[selectedTab] && (
-          <VolumeIndicator activity={activity[selectedTab]} />
-        )}
-
-        {/* AI Summary Section - part of sticky header */}
-        {!isLoading && sortedItems.length > 0 && (
-          <InlineBriefing region={selectedTab} />
-        )}
-      </div>
+      {/* Volume indicator (only for region tabs) */}
+      {selectedTab !== 'all' && activity?.[selectedTab] && (
+        <VolumeIndicator activity={activity[selectedTab]} />
+      )}
 
       <div id="feed-panel" role="tabpanel" aria-label={`News for ${selectedTab === 'all' ? 'all regions' : selectedTab}`}>
 
@@ -546,7 +574,12 @@ export function NewsFeed({
           </div>
         )}
 
-        <div className="flex flex-col gap-4 px-3 sm:px-4 pb-3 sm:pb-4 pt-3 news-feed-list">
+        <div className="flex flex-col gap-4 px-3 sm:px-4 pt-4 pb-3 sm:pb-4 news-feed-list">
+          {/* AI Briefing Card - appears at top of feed */}
+          {!isLoading && sortedItems.length > 0 && (
+            <BriefingCard region={selectedTab} />
+          )}
+
           {sortedItems.map((item, index) => (
             <div key={item.id}>
               {/* New since arrival divider - appears before first "old" item */}

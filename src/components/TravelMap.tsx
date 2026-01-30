@@ -9,6 +9,7 @@ import {
   ZoomableGroup,
 } from 'react-simple-maps';
 import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
+import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
 
 // Default zoom settings
 const DEFAULT_CENTER: [number, number] = [0, 20];
@@ -32,6 +33,7 @@ interface TravelAdvisory {
 
 interface TravelMapProps {
   onAdvisorySelect?: (advisory: TravelAdvisory | null) => void;
+  focusOnId?: string;
 }
 
 // Level colors and labels
@@ -46,14 +48,16 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function TravelMapComponent({ onAdvisorySelect }: TravelMapProps) {
+function TravelMapComponent({ onAdvisorySelect, focusOnId }: TravelMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [advisories, setAdvisories] = useState<TravelAdvisory[]>([]);
   const [selected, setSelected] = useState<TravelAdvisory | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<any>(null);
+  const { theme } = useMapTheme();
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
   const [filterLevel, setFilterLevel] = useState<number | null>(null);
+  const [hasAutoFocused, setHasAutoFocused] = useState(false);
 
   const handleZoomIn = () => {
     if (position.zoom >= 4) return;
@@ -102,6 +106,35 @@ function TravelMapComponent({ onAdvisorySelect }: TravelMapProps) {
     onAdvisorySelect?.(advisory);
   };
 
+  // Auto-focus on highest level advisory (or specific one if focusOnId provided)
+  useEffect(() => {
+    if (hasAutoFocused || advisories.length === 0 || isLoading) return;
+
+    let targetAdvisory: TravelAdvisory | undefined;
+
+    if (focusOnId) {
+      targetAdvisory = advisories.find(a => a.id === focusOnId);
+    } else {
+      // Focus on highest level (4 = Do Not Travel, 3 = Reconsider, etc.)
+      targetAdvisory = [...advisories].sort((a, b) => b.level - a.level)[0];
+    }
+
+    if (targetAdvisory) {
+      setPosition({
+        coordinates: [targetAdvisory.coordinates[0], targetAdvisory.coordinates[1]],
+        zoom: 2.5,
+      });
+      setSelected(targetAdvisory);
+      onAdvisorySelect?.(targetAdvisory);
+      setHasAutoFocused(true);
+    }
+  }, [advisories, focusOnId, hasAutoFocused, isLoading, onAdvisorySelect]);
+
+  // Reset auto-focus when focusOnId changes
+  useEffect(() => {
+    setHasAutoFocused(false);
+  }, [focusOnId]);
+
   // Filter advisories based on selected level
   const filteredAdvisories = filterLevel
     ? advisories.filter(a => a.level === filterLevel)
@@ -109,17 +142,17 @@ function TravelMapComponent({ onAdvisorySelect }: TravelMapProps) {
 
   if (!isMounted) {
     return (
-      <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-        <div className="relative h-[280px] sm:h-[340px] flex items-center justify-center">
-          <div className="text-gray-600 text-sm">Loading travel advisories...</div>
+      <div className={`relative w-full ${theme.water} overflow-hidden`}>
+        <div className={`relative ${mapDimensions.height} flex items-center justify-center`}>
+          <div className="text-gray-500 dark:text-gray-600 text-sm">Loading travel advisories...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full bg-[#0a0d12] border-b border-gray-800/60 overflow-hidden">
-      <div className="relative h-[280px] sm:h-[340px]">
+    <div className={`relative w-full ${theme.water} overflow-hidden`}>
+      <div className={`relative ${mapDimensions.height}`}>
         <ComposableMap
           projection="geoEqualEarth"
           projectionConfig={{
@@ -144,12 +177,12 @@ function TravelMapComponent({ onAdvisorySelect }: TravelMapProps) {
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
-                  fill="#1a1f2e"
-                  stroke="#2d3748"
-                  strokeWidth={0.4}
+                  fill={theme.land}
+                  stroke={theme.stroke}
+                  strokeWidth={theme.strokeWidth}
                   style={{
                     default: { outline: 'none' },
-                    hover: { outline: 'none', fill: '#252d3d' },
+                    hover: { outline: 'none', fill: theme.landHover },
                     pressed: { outline: 'none' },
                   }}
                 />

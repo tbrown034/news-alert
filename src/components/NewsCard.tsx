@@ -14,16 +14,25 @@ interface NewsCardProps {
 // Character limit for truncation
 const CHAR_LIMIT = 280;
 
-// Source type colors - all neutral to avoid color overload
+// Source type colors - distinct, editorial styling
+// Each type has a subtle but intentional color identity
 const sourceTypeColors: Record<string, string> = {
-  official: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-  'news-org': 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-  osint: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-  reporter: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-  analyst: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-  aggregator: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-  ground: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
-  bot: 'bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+  // Official sources (government, military) - authoritative blue-gray
+  official: 'bg-slate-800 dark:bg-slate-200 text-slate-100 dark:text-slate-900 border-transparent font-semibold',
+  // News organizations - classic newspaper charcoal
+  'news-org': 'bg-zinc-700 dark:bg-zinc-300 text-zinc-100 dark:text-zinc-900 border-transparent',
+  // OSINT - intelligence amber/gold accent
+  osint: 'bg-amber-600 dark:bg-amber-500 text-white dark:text-amber-950 border-transparent font-semibold',
+  // Individual reporters - subtle warm gray
+  reporter: 'bg-stone-500 dark:bg-stone-400 text-white dark:text-stone-950 border-transparent',
+  // Analysts/experts - refined slate
+  analyst: 'bg-slate-600 dark:bg-slate-400 text-white dark:text-slate-950 border-transparent',
+  // Aggregators - muted, secondary
+  aggregator: 'bg-neutral-500 dark:bg-neutral-500 text-white dark:text-neutral-100 border-transparent',
+  // Ground reporters - earthy tone
+  ground: 'bg-emerald-700 dark:bg-emerald-600 text-white dark:text-emerald-50 border-transparent font-semibold',
+  // Bots - subtle, clearly automated
+  bot: 'bg-gray-400 dark:bg-gray-600 text-gray-700 dark:text-gray-300 border-transparent italic',
 };
 
 // Platform display names
@@ -483,15 +492,15 @@ export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
         )}
 
         {/* Row 3: Tags + Actions */}
-        <div className="flex items-center justify-between pt-1">
-          {/* Source type (neutral) + Platform (icon + name) */}
-          <div className="flex items-center gap-2.5">
-            <span className={`px-1.5 py-0.5 text-micro font-medium rounded border ${sourceTypeStyle}`}>
+        <div className="flex items-center justify-between pt-1.5">
+          {/* Source type (styled) + Platform (icon + name) */}
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-0.5 text-[10px] tracking-wide uppercase rounded-sm ${sourceTypeStyle}`}>
               {sourceTypeLabel}
             </span>
-            <span className={`flex items-center gap-1 text-xs font-medium ${platformColors[item.source.platform] || platformColors.rss}`}>
+            <span className={`flex items-center gap-1.5 text-xs ${platformColors[item.source.platform] || platformColors.rss}`}>
               <PlatformIcon platform={item.source.platform} className="w-3.5 h-3.5" />
-              <span>{platformNames[item.source.platform] || item.source.platform}</span>
+              <span className="font-medium">{platformNames[item.source.platform] || item.source.platform}</span>
             </span>
           </div>
           {/* Actions - neutral colors */}
