@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, useTransition } from 'react';
 import { NewsItem, WatchpointId } from '@/types';
 import { NewsCard } from './NewsCard';
 import { EditorialCard, isEditorialItem } from './EditorialCard';
 import { BriefingCard } from './BriefingCard';
 import { ArrowPathIcon, ExclamationTriangleIcon, GlobeAltIcon, ChevronDownIcon, SignalIcon } from '@heroicons/react/24/outline';
 import { regionDisplayNames } from '@/lib/regionDetection';
+import { TrendingKeywords } from './TrendingKeywords';
+import { PlatformIcon, platformColors, platformBadgeStyles } from './PlatformIcon';
 
 interface ActivityData {
   level: string;
@@ -41,6 +43,10 @@ interface NewsFeedProps {
   totalPosts?: number;
   uniqueSources?: number;
   hoursWindow?: number;
+  // All items for trending analysis (not paginated)
+  allItemsForTrending?: NewsItem[];
+  // All items for accurate tab counts (items prop may be paginated for rendering)
+  allItems?: NewsItem[];
 }
 
 // Skeleton loader for news cards
@@ -99,20 +105,24 @@ interface TabConfig {
   minScreen?: 'sm' | 'md' | 'lg'; // Minimum screen size to show inline
 }
 
-// All tabs in order - All always visible, regions in More dropdown
-// Note: Asia and LatAm removed due to low source coverage (39 and 11 sources respectively)
-const allTabs: TabConfig[] = [
+// Primary tabs shown inline, secondary tabs in "More" dropdown
+const primaryTabs: TabConfig[] = [
   { id: 'all', label: 'All', alwaysVisible: true },
-  // Regional tabs - all go in More dropdown
-  { id: 'us', label: 'US' },
-  { id: 'middle-east', label: 'Middle East' },
-  { id: 'europe-russia', label: 'Europe-Russia' },
+  { id: 'us', label: 'US', alwaysVisible: true },
+  { id: 'middle-east', label: 'Middle East', alwaysVisible: true },
+  { id: 'europe-russia', label: 'Europe', alwaysVisible: true },
 ];
 
-// Platform filter options
-type PlatformFilter = 'all' | 'bluesky' | 'rss' | 'telegram' | 'mastodon' | 'youtube' | 'reddit';
-const platformFilters: { id: PlatformFilter; label: string }[] = [
-  { id: 'all', label: 'All' },
+const secondaryTabs: TabConfig[] = [
+  { id: 'latam', label: 'Latin America' },
+  { id: 'asia', label: 'Asia-Pacific' },
+];
+
+const allTabs: TabConfig[] = [...primaryTabs, ...secondaryTabs];
+
+// Platform filter options (multi-select)
+type PlatformId = 'bluesky' | 'rss' | 'telegram' | 'mastodon' | 'youtube' | 'reddit';
+const platformOptions: { id: PlatformId; label: string }[] = [
   { id: 'bluesky', label: 'Bluesky' },
   { id: 'rss', label: 'RSS' },
   { id: 'telegram', label: 'Telegram' },
@@ -120,6 +130,7 @@ const platformFilters: { id: PlatformFilter; label: string }[] = [
   { id: 'youtube', label: 'YouTube' },
   { id: 'reddit', label: 'Reddit' },
 ];
+const ALL_PLATFORMS = new Set<PlatformId>(['bluesky', 'rss', 'telegram', 'mastodon', 'youtube', 'reddit']);
 
 // Format actual time for last updated (e.g., "3:45 PM")
 function formatActualTime(isoString: string | null | undefined): string {
@@ -146,11 +157,13 @@ export function NewsFeed({
   totalPosts,
   uniqueSources,
   hoursWindow = 6,
+  allItemsForTrending,
+  allItems,
 }: NewsFeedProps) {
   // Track previously seen item IDs to animate new ones
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
-  const [platformFilter, setPlatformFilter] = useState<PlatformFilter>('all');
+  const [enabledPlatforms, setEnabledPlatforms] = useState<Set<PlatformId>>(new Set(ALL_PLATFORMS));
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [regionalExpanded, setRegionalExpanded] = useState(false);
   const [sourceFilterExpanded, setSourceFilterExpanded] = useState(false);
@@ -158,15 +171,22 @@ export function NewsFeed({
   const moreDropdownRef = useRef<HTMLDivElement>(null);
   const isInitialLoadRef = useRef(true);
 
+  // useTransition for smooth region switching - keeps UI responsive during filtering
+  const [isPending, startTransition] = useTransition();
+
   // Track items that existed when user first loaded the page (for "new since arrival" divider)
   const [initialSessionIds, setInitialSessionIds] = useState<Set<string> | null>(null);
 
-  // Handle tab selection - update local and parent state
+  // Handle tab selection - update local and parent state with transition for smooth UX
   const handleTabSelect = useCallback((tabId: TabId) => {
+    // Update visual selection immediately
     setSelectedTab(tabId);
-    if (onSelectWatchpoint) {
-      onSelectWatchpoint(tabId);
-    }
+    // Defer the expensive filtering to keep UI responsive
+    startTransition(() => {
+      if (onSelectWatchpoint) {
+        onSelectWatchpoint(tabId);
+      }
+    });
   }, [onSelectWatchpoint]);
 
   // Sync local tab state with parent's selectedWatchpoint (e.g., when map region is clicked)
@@ -191,17 +211,20 @@ export function NewsFeed({
     let filtered = items;
 
     // Apply region filter
+    // Server-side detection now assigns regions based on content keywords
+    // Just filter by the assigned region (which may have been detected from content)
     if (selectedTab !== 'all') {
       filtered = items.filter((item) => item.region === selectedTab);
     }
 
-    // Apply platform filter
-    if (platformFilter !== 'all') {
-      filtered = filtered.filter((item) => item.source.platform === platformFilter);
+    // Apply platform filter (multi-select)
+    const allEnabled = enabledPlatforms.size === ALL_PLATFORMS.size;
+    if (!allEnabled) {
+      filtered = filtered.filter((item) => enabledPlatforms.has(item.source.platform as PlatformId));
     }
 
     return filtered;
-  }, [items, selectedTab, platformFilter]);
+  }, [items, selectedTab, enabledPlatforms]);
 
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort(
@@ -258,13 +281,14 @@ export function NewsFeed({
     setInitialSessionIds(null); // Reset so new tab gets its own "initial" set
   }, [selectedTab]);
 
-  // Count items by region
+  // Count items by region (use allItems for accurate counts, fall back to items)
+  const itemsForCounts = allItems || items;
   const regionCounts = useMemo(() => {
-    return items.reduce((acc, item) => {
+    return itemsForCounts.reduce((acc, item) => {
       acc[item.region] = (acc[item.region] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-  }, [items]);
+  }, [itemsForCounts]);
 
   // Count items by platform (from region-filtered items, NOT platform-filtered)
   const platformCounts = useMemo(() => {
@@ -280,9 +304,9 @@ export function NewsFeed({
     }, {} as Record<string, number>);
   }, [items, selectedTab]);
 
-  // Get count for a tab
+  // Get count for a tab (use full item counts, not paginated)
   const getTabCount = (tabId: TabId): number => {
-    if (tabId === 'all') return items.length;
+    if (tabId === 'all') return itemsForCounts.length;
     return regionCounts[tabId] || 0;
   };
 
@@ -338,17 +362,22 @@ export function NewsFeed({
     ? 'All Regions'
     : allTabs.find(t => t.id === selectedTab)?.label || 'All Regions';
 
-  // Get the current source label
-  const currentSourceLabel = platformFilter === 'all'
+  // Get the current source label for multi-select
+  const allPlatformsEnabled = enabledPlatforms.size === ALL_PLATFORMS.size;
+  const currentSourceLabel = allPlatformsEnabled
     ? 'All Sources'
-    : platformFilters.find(f => f.id === platformFilter)?.label || 'All Sources';
+    : enabledPlatforms.size === 0
+      ? 'None'
+      : enabledPlatforms.size === 1
+        ? platformOptions.find(p => enabledPlatforms.has(p.id))?.label || 'Sources'
+        : `${enabledPlatforms.size} Sources`;
 
   const totalFilteredPosts = Object.values(platformCounts).reduce((sum, c) => sum + c, 0);
 
   // Calculate display stats based on filtered view
   // Region selection = still show "Fetched X in {region}"
   // Platform filter = show "(filtered)"
-  const isPlatformFiltered = platformFilter !== 'all';
+  const isPlatformFiltered = !allPlatformsEnabled;
   const displayPosts = (selectedTab !== 'all' || isPlatformFiltered) ? filteredItems.length : (totalPosts ?? filteredItems.length);
   const displaySources = (selectedTab !== 'all' || isPlatformFiltered)
     ? new Set(filteredItems.map(i => i.source.id)).size
@@ -420,51 +449,130 @@ export function NewsFeed({
             )}
           </div>
 
-          {/* Row 2: Filter dropdowns */}
-          <div className="flex items-center gap-2 sm:gap-3 pb-2">
-            {/* Region Dropdown */}
-            <div className="relative" ref={moreDropdownRef}>
-              <button
-                onClick={() => {
-                  setRegionalExpanded(!regionalExpanded);
-                  setSourceFilterExpanded(false);
-                }}
-                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-              >
-                <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">{currentRegionLabel}</span>
-                <ChevronDownIcon className={`w-3.5 h-3.5 text-slate-400 transition-transform ${regionalExpanded ? 'rotate-180' : ''}`} />
-              </button>
+          {/* Row 2: Region Selector - elevated segmented control with activity indicators */}
+          <div className="pb-3 border-b border-slate-200/50 dark:border-slate-700/40 mb-3" ref={moreDropdownRef}>
+            <div className={`
+              inline-flex flex-wrap items-center gap-0.5 p-1 rounded-xl
+              bg-gradient-to-b from-slate-100 to-slate-50 dark:from-slate-800/80 dark:to-slate-900/60
+              border border-slate-200/80 dark:border-slate-700/60
+              shadow-sm dark:shadow-lg dark:shadow-black/20
+              ${isPending ? 'opacity-70' : ''}
+              transition-all duration-200
+            `}>
+              {primaryTabs.map((tab, index) => {
+                const isSelected = selectedTab === tab.id;
+                const count = getTabCount(tab.id);
+                const isLast = index === primaryTabs.length - 1;
 
-              {/* Region dropdown menu */}
-              {regionalExpanded && (
-                <div className="absolute top-full left-0 mt-1 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[160px]">
-                  {allTabs.map((tab) => {
-                    const isSelected = selectedTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => {
-                          handleTabSelect(tab.id);
-                          setRegionalExpanded(false);
-                        }}
-                        className={`
-                          w-full px-3 py-2 text-sm font-medium transition-colors text-left flex items-center gap-2
+                return (
+                  <div key={tab.id} className="flex items-center">
+                    <button
+                      onClick={() => handleTabSelect(tab.id)}
+                      className={`
+                        group relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap
+                        transition-all duration-200 ease-out
+                        ${isSelected
+                          ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-md dark:shadow-lg dark:shadow-black/30 ring-1 ring-slate-200 dark:ring-slate-600/50 scale-[1.02]'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-700/40'
+                        }
+                      `}
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        {tab.id === 'all' && (
+                          <GlobeAltIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                        )}
+                        <span>{tab.label}</span>
+                        {/* Post count badge - only show on hover or when selected */}
+                        <span className={`
+                          text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
                           ${isSelected
-                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                            ? 'bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300'
+                            : 'bg-transparent text-slate-400 dark:text-slate-500 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50'
                           }
-                        `}
-                      >
-                        {tab.id === 'all' ? 'All Regions' : tab.label}
-                        {isSelected && <span className="ml-auto text-blue-500">✓</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                        `}>
+                          {count}
+                        </span>
+                      </span>
+                    </button>
+                    {/* Subtle separator between tabs */}
+                    {!isLast && (
+                      <div className="w-px h-5 bg-slate-200/60 dark:bg-slate-600/40 mx-0.5" />
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Divider */}
+              <div className="w-px h-6 bg-slate-200 dark:bg-slate-700/60 mx-1" />
+
+              {/* More dropdown for secondary regions */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setRegionalExpanded(!regionalExpanded);
+                    setSourceFilterExpanded(false);
+                  }}
+                  className={`
+                    group relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap
+                    transition-all duration-200 ease-out flex items-center gap-2
+                    ${secondaryTabs.some(t => t.id === selectedTab)
+                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-md dark:shadow-lg dark:shadow-black/30 ring-1 ring-slate-200 dark:ring-slate-600/50 scale-[1.02]'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-700/40'
+                    }
+                  `}
+                >
+                  <span>{secondaryTabs.some(t => t.id === selectedTab)
+                    ? secondaryTabs.find(t => t.id === selectedTab)?.label
+                    : 'More'
+                  }</span>
+                  <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${regionalExpanded ? 'rotate-180' : ''}`} />
+                </button>
+
+                {regionalExpanded && (
+                  <div className="absolute top-full left-0 mt-2 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl shadow-xl dark:shadow-2xl dark:shadow-black/40 z-50 min-w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
+                    {secondaryTabs.map((tab) => {
+                      const isSelected = selectedTab === tab.id;
+                      const count = regionCounts[tab.id] || 0;
+
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => {
+                            handleTabSelect(tab.id);
+                            setRegionalExpanded(false);
+                          }}
+                          className={`
+                            w-full px-4 py-2.5 text-sm font-medium transition-all text-left flex items-center gap-3
+                            ${isSelected
+                              ? 'bg-slate-100 dark:bg-slate-700/60 text-slate-900 dark:text-white'
+                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-900 dark:hover:text-white'
+                            }
+                          `}
+                        >
+                          <span className="flex-1">{tab.label}</span>
+                          <span className="text-2xs font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Source Dropdown */}
+            {/* Loading indicator with better styling */}
+            {isPending && (
+              <span className="ml-3 inline-flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
+                <span className="w-3 h-3 border-2 border-slate-300 dark:border-slate-600 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin" />
+                <span>Filtering...</span>
+              </span>
+            )}
+          </div>
+
+          {/* Row 3: Source filter */}
+          <div className="flex items-center gap-2 sm:gap-3 pb-2">
+            {/* Source Dropdown - Multi-select with checkboxes */}
             <div className="relative">
               <button
                 onClick={() => {
@@ -473,49 +581,110 @@ export function NewsFeed({
                 }}
                 className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
               >
+                {/* Show mini platform icons when filtered */}
+                {!allPlatformsEnabled && enabledPlatforms.size > 0 && enabledPlatforms.size <= 3 && (
+                  <div className="flex items-center -space-x-1">
+                    {Array.from(enabledPlatforms).slice(0, 3).map((p) => (
+                      <span key={p} className={platformColors[p]}>
+                        <PlatformIcon platform={p} className="w-3.5 h-3.5" />
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">{currentSourceLabel}</span>
                 <ChevronDownIcon className={`w-3.5 h-3.5 text-slate-400 transition-transform ${sourceFilterExpanded ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Source dropdown menu */}
+              {/* Source dropdown menu - multi-select with checkboxes */}
               {sourceFilterExpanded && (
-                <div className="absolute top-full left-0 mt-1 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-[160px]">
-                  {platformFilters.map((filter) => {
-                    const isSelected = platformFilter === filter.id;
-                    const count = filter.id === 'all'
-                      ? totalFilteredPosts
-                      : (platformCounts[filter.id] || 0);
+                <div className="absolute top-full left-0 mt-1 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 min-w-[200px]">
+                  {/* Select All / None header */}
+                  <div className="px-3 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Platforms</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setEnabledPlatforms(new Set(ALL_PLATFORMS))}
+                        className="text-2xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                      >
+                        All
+                      </button>
+                      <span className="text-slate-300 dark:text-slate-600">|</span>
+                      <button
+                        onClick={() => setEnabledPlatforms(new Set())}
+                        className="text-2xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                      >
+                        None
+                      </button>
+                    </div>
+                  </div>
 
-                    // Hide platforms with 0 items (except "All" and currently selected)
-                    if (filter.id !== 'all' && count === 0 && !isSelected && !isLoading) {
-                      return null;
-                    }
+                  {/* Platform checkboxes */}
+                  {platformOptions.map((platform) => {
+                    const isEnabled = enabledPlatforms.has(platform.id);
+                    const count = platformCounts[platform.id] || 0;
+                    const badgeStyle = platformBadgeStyles[platform.id] || '';
 
                     return (
                       <button
-                        key={filter.id}
+                        key={platform.id}
                         onClick={() => {
-                          setPlatformFilter(filter.id);
-                          setSourceFilterExpanded(false);
-                        }}
-                        className={`
-                          w-full px-3 py-2 text-sm font-medium transition-colors text-left flex items-center justify-between
-                          ${isSelected
-                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                            : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          const newSet = new Set(enabledPlatforms);
+                          if (isEnabled) {
+                            newSet.delete(platform.id);
+                          } else {
+                            newSet.add(platform.id);
                           }
-                        `}
+                          setEnabledPlatforms(newSet);
+                        }}
+                        className="w-full px-3 py-2 text-sm transition-colors text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50"
                       >
-                        <span>{filter.id === 'all' ? 'All Sources' : filter.label}</span>
-                        <span className={`text-xs ${isSelected ? 'text-blue-500' : 'text-slate-400'}`}>
-                          {isLoading && filter.id !== 'all' && count === 0 ? '...' : count}
+                        {/* Custom checkbox */}
+                        <div className={`
+                          w-4 h-4 rounded border-2 flex items-center justify-center transition-all
+                          ${isEnabled
+                            ? 'bg-blue-500 border-blue-500'
+                            : 'border-slate-300 dark:border-slate-600'
+                          }
+                        `}>
+                          {isEnabled && (
+                            <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+
+                        {/* Platform icon and name */}
+                        <div className={`flex items-center gap-2 flex-1 ${isEnabled ? '' : 'opacity-50'}`}>
+                          <span className={platformColors[platform.id]}>
+                            <PlatformIcon platform={platform.id} className="w-4 h-4" />
+                          </span>
+                          <span className="font-medium text-slate-700 dark:text-slate-200">{platform.label}</span>
+                        </div>
+
+                        {/* Count badge */}
+                        <span className={`
+                          px-1.5 py-0.5 text-2xs font-semibold rounded-md border
+                          ${isEnabled ? badgeStyle : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'}
+                        `}>
+                          {isLoading && count === 0 ? '...' : count}
                         </span>
                       </button>
                     );
                   })}
+
+                  {/* Total footer */}
+                  <div className="px-3 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Total</span>
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                      {filteredItems.length} posts
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
+
+            {/* Trending Keywords - uses all items, not paginated subset */}
+            <TrendingKeywords items={allItemsForTrending || items} isLoading={isLoading} />
           </div>
         </div>
 

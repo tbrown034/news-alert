@@ -6,69 +6,49 @@
  */
 
 import type { WatchpointId } from '@/types';
+import { detectRegion } from './regionDetection';
 
-// Region keywords for classification - used for quick region detection
-// Note: Order matters - first match wins, so more specific regions first
-export const regionKeywords: Record<WatchpointId, string[]> = {
-  'middle-east': [
-    'iran', 'israel', 'gaza', 'palestinian', 'hamas', 'hezbollah',
-    'lebanon', 'syria', 'iraq', 'saudi', 'yemen', 'houthi',
-    'tehran', 'jerusalem', 'tel aviv', 'idf', 'irgc', 'strait of hormuz',
-    'rafah', 'west bank', 'netanyahu', 'beirut', 'damascus', 'baghdad',
-    'red sea', 'qatar', 'doha', 'dubai', 'emirates', 'jordan', 'amman',
-  ],
-  'europe-russia': [
-    'ukraine', 'russia', 'kyiv', 'moscow', 'crimea', 'donbas',
-    'zelensky', 'putin', 'nato', 'kherson', 'bakhmut', 'avdiivka',
-    'wagner', 'kursk', 'frontline', 'brussels', 'european union',
-    'kharkiv', 'odesa', 'mariupol', 'belarus', 'lukashenko', 'minsk',
-    'germany', 'berlin', 'france', 'paris', 'macron', 'poland', 'warsaw',
-    'britain', 'london', 'latvia', 'lithuania', 'estonia', 'finland',
-  ],
-  'asia': [
-    'taiwan', 'china', 'beijing', 'taipei', 'xi jinping',
-    'south china sea', 'pla', 'tsmc', 'semiconductors',
-    'japan', 'korea', 'india', 'tokyo', 'seoul', 'pyongyang',
-    'kim jong', 'hong kong', 'xinjiang', 'tibet', 'shanghai',
-    'vietnam', 'hanoi', 'thailand', 'bangkok', 'indonesia', 'jakarta',
-    'philippines', 'manila', 'singapore', 'malaysia', 'pakistan',
-    'modi', 'new delhi', 'islamabad', 'myanmar', 'cambodia',
-  ],
-  'latam': [
-    'venezuela', 'maduro', 'caracas', 'guaido', 'pdvsa',
-    'brazil', 'lula', 'bolsonaro', 'sao paulo', 'rio de janeiro',
-    'mexico', 'mexico city', 'cartel', 'argentina', 'buenos aires', 'milei',
-    'colombia', 'bogota', 'peru', 'lima', 'chile', 'santiago',
-    'ecuador', 'quito', 'bolivia', 'paraguay', 'uruguay',
-    'cuba', 'havana', 'haiti', 'dominican', 'puerto rico',
-    'central america', 'caribbean', 'latin america', 'latam',
-    'panama', 'costa rica', 'nicaragua', 'honduras', 'el salvador', 'guatemala',
-  ],
-  'us': [
-    'washington', 'pentagon', 'white house', 'congress', 'senate',
-    'biden', 'trump', 'harris', 'state department', 'cia', 'fbi', 'doj',
-    'supreme court', 'capitol', 'republican', 'democrat', 'gop',
-    'new york', 'los angeles', 'chicago', 'texas', 'florida', 'california',
-  ],
-  'seismic': [], // Seismic data comes from USGS API, not keyword classification
-  all: [],
-};
+/**
+ * Region classification result with both source and detected regions
+ */
+export interface RegionClassification {
+  region: WatchpointId;           // Effective region to use
+  sourceRegion?: WatchpointId;    // Original source region (only set if different from detected)
+}
 
 /**
  * Classify news item by region based on content.
- * Simple keyword matching - first match wins.
+ * Uses the comprehensive regex patterns in regionDetection.ts
+ *
+ * @param title - Post title
+ * @param content - Post content
+ * @param sourceRegion - The source's default region
+ * @returns Object with effective region and sourceRegion (if overridden)
  */
-export function classifyRegion(title: string, content: string): WatchpointId {
-  const text = `${title} ${content}`.toLowerCase();
+export function classifyRegion(
+  title: string,
+  content: string,
+  sourceRegion: WatchpointId = 'all'
+): RegionClassification {
+  const text = `${title} ${content}`;
+  const result = detectRegion(text, sourceRegion);
 
-  for (const [region, keywords] of Object.entries(regionKeywords)) {
-    if (region === 'all') continue;
-    if (keywords.some((kw) => text.includes(kw))) {
-      return region as WatchpointId;
+  // If we detected a region with confidence
+  if (result.detectedRegion && result.detectedRegion !== 'all') {
+    // If source has a specific region and detected is different, track the override
+    // This lets UI show "MIDEAST → ASIA" when Jerusalem Post posts about Tokyo
+    if (sourceRegion !== 'all' && result.detectedRegion !== sourceRegion) {
+      return {
+        region: result.detectedRegion,
+        sourceRegion: sourceRegion,
+      };
     }
+    // Detected matches source or source is global - just return detected
+    return { region: result.detectedRegion };
   }
 
-  return 'all';
+  // No strong detection - use source default
+  return { region: sourceRegion };
 }
 
 // Breaking news keywords - focused on geopolitical events

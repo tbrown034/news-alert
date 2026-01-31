@@ -548,103 +548,77 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             </button>
           </div>
 
-{/* Mobile Menu - Slide-out Panel */}
+{/* Mobile Menu - Compact Dropdown */}
           {mobileMenuOpen && (
             <>
-              {/* Backdrop */}
+              {/* Backdrop - invisible but catches clicks */}
               <div
-                className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                className="fixed inset-0 z-40 md:hidden"
                 onClick={() => setMobileMenuOpen(false)}
                 aria-hidden="true"
               />
 
-              {/* Panel */}
-              <div className="fixed top-0 right-0 bottom-0 w-72 bg-white dark:bg-slate-900 z-50 md:hidden shadow-2xl transform transition-transform duration-300 ease-out">
-                {/* Panel Header */}
-                <div className="flex items-center justify-between px-4 h-14 border-b border-slate-200 dark:border-slate-800">
-                  <span className="text-sm font-semibold text-slate-900 dark:text-white">Menu</span>
-                  <button
+              {/* Dropdown */}
+              <div className="absolute top-full right-4 mt-2 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 md:hidden overflow-hidden">
+                {/* Navigation */}
+                <div className="py-1">
+                  <a
+                    href="#map"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="p-2 -mr-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                    aria-label="Close menu"
+                    className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
-                    <XMarkIcon className="w-5 h-5" />
-                  </button>
+                    Map
+                  </a>
+                  <a
+                    href="#feed"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Feed
+                  </a>
+                  <a
+                    href="/about"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    About
+                  </a>
+                  {session && (
+                    <a
+                      href="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    >
+                      Admin
+                    </a>
+                  )}
                 </div>
 
-                {/* Panel Content */}
-                <div className="flex flex-col h-[calc(100%-3.5rem)] overflow-y-auto">
-                  {/* Navigation Section */}
-                  <div className="p-2">
-                    <p className="px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                      Navigation
-                    </p>
-                    <a
-                      href="#map"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                    >
-                      <MapPinIcon className="w-5 h-5 text-slate-400" />
-                      Map View
-                    </a>
-                    <a
-                      href="#feed"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                    >
-                      <GlobeAltIcon className="w-5 h-5 text-slate-400" />
-                      Live Feed
-                    </a>
-                    <a
-                      href="/about"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                    >
-                      <InformationCircleIcon className="w-5 h-5 text-slate-400" />
-                      About
-                    </a>
-                    {session && (
-                      <a
-                        href="/admin"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                      >
-                        <Cog6ToothIcon className="w-5 h-5 text-slate-400" />
-                        Admin
-                      </a>
-                    )}
-                  </div>
+                {/* Divider */}
+                <div className="border-t border-slate-200 dark:border-slate-700" />
 
-                  {/* Preferences Section */}
-                  <div className="p-2 border-t border-slate-200 dark:border-slate-800">
-                    <p className="px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                      Preferences
-                    </p>
-                    <button
-                      onClick={toggleTheme}
-                      className="flex items-center justify-between w-full px-3 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        {theme === 'dark' ? (
-                          <SunIcon className="w-5 h-5 text-slate-400" />
-                        ) : (
-                          <MoonIcon className="w-5 h-5 text-slate-400" />
-                        )}
-                        <span>Appearance</span>
-                      </div>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">
-                        {theme === 'dark' ? 'Dark' : 'Light'}
-                      </span>
-                    </button>
-                  </div>
+                {/* Theme Toggle */}
+                <button
+                  onClick={() => {
+                    toggleTheme();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+                  {theme === 'dark' ? (
+                    <SunIcon className="w-4 h-4 text-slate-400" />
+                  ) : (
+                    <MoonIcon className="w-4 h-4 text-slate-400" />
+                  )}
+                </button>
 
-                  {/* Account Section - Push to bottom */}
-                  <div className="mt-auto p-2 border-t border-slate-200 dark:border-slate-800">
-                    <p className="px-3 py-2 text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                      Account
-                    </p>
-                    <AuthButton variant="mobile" onNavigate={() => setMobileMenuOpen(false)} />
-                  </div>
+                {/* Divider */}
+                <div className="border-t border-slate-200 dark:border-slate-700" />
+
+                {/* Account */}
+                <div className="py-1">
+                  <AuthButton variant="dropdown" onNavigate={() => setMobileMenuOpen(false)} />
                 </div>
               </div>
             </>
@@ -1227,6 +1201,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             uniqueSources={new Set(newsItems.map(i => i.source.id)).size}
             hoursWindow={hoursWindow}
             allItemsForTrending={newsItems}
+            allItems={newsItems}
           />
 
           {/* Load more button - shows when there are more items beyond displayLimit */}

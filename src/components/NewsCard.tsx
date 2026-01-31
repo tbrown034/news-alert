@@ -289,6 +289,10 @@ export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
   const isVerified = item.verificationStatus === 'confirmed';
   const regionBadge = regionBadges[item.region] || regionBadges['all'];
 
+  // Show source's original region if detection overrode it
+  // sourceRegion is set when keywords shifted the region from the source's default
+  const sourceBadge = item.sourceRegion ? regionBadges[item.sourceRegion] : null;
+
   // Check if text needs truncation
   const needsTruncation = item.title.length > CHAR_LIMIT;
   const displayText = useMemo(() => {
@@ -352,7 +356,7 @@ export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
       className={`
         relative px-3 py-3 sm:px-4 sm:py-4
         bg-[var(--background-card)] rounded-xl
-        border border-[var(--border-light)]
+        border border-[var(--border-card)]
         hover:border-[var(--border)]
         transition-all duration-200
       `}
@@ -412,10 +416,29 @@ export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
               </span>
             </div>
           </div>
-          {/* Region badge */}
-          <span className={`px-1.5 py-0.5 text-2xs font-semibold rounded-md flex-shrink-0 ${regionBadge.color}`}>
-            {regionBadge.label}
-          </span>
+          {/* Region badge - shows source region → detected region when overridden */}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            {sourceBadge ? (
+              <>
+                {/* Source's original region (faded) */}
+                <span className="px-1.5 py-0.5 text-2xs font-medium rounded-md bg-[var(--background-tertiary)] text-[var(--foreground-light)] line-through opacity-60">
+                  {sourceBadge.label}
+                </span>
+                {/* Arrow */}
+                <svg className="w-2.5 h-2.5 text-[var(--foreground-light)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                {/* Detected region (prominent) */}
+                <span className={`px-1.5 py-0.5 text-2xs font-semibold rounded-md ${regionBadge.color}`}>
+                  {regionBadge.label}
+                </span>
+              </>
+            ) : (
+              <span className={`px-1.5 py-0.5 text-2xs font-semibold rounded-md ${regionBadge.color}`}>
+                {regionBadge.label}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Reply context - show parent post for context */}

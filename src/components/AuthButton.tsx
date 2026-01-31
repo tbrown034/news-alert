@@ -6,7 +6,7 @@ import { UserCircleIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon, ChevronDownIc
 import Link from 'next/link';
 
 interface AuthButtonProps {
-  variant?: 'default' | 'mobile';
+  variant?: 'default' | 'mobile' | 'dropdown';
   onNavigate?: () => void;
 }
 
@@ -41,6 +41,13 @@ export function AuthButton({ variant = 'default', onNavigate }: AuthButtonProps)
 
   // Show skeleton during SSR, hydration, or while auth state is loading
   if (!mounted || isPending) {
+    if (variant === 'dropdown') {
+      return (
+        <div className="px-4 py-2">
+          <div className="h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+        </div>
+      );
+    }
     if (variant === 'mobile') {
       return (
         <div className="flex items-center gap-3 px-4 py-3">
@@ -63,6 +70,26 @@ export function AuthButton({ variant = 'default', onNavigate }: AuthButtonProps)
       : session.user.email?.slice(0, 2).toUpperCase() || '??';
 
     const isAdmin = session.user.email?.endsWith('@gmail.com');
+
+    // Dropdown variant - compact for menu
+    if (variant === 'dropdown') {
+      return (
+        <>
+          <div className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400 truncate">
+            {session.user.email}
+          </div>
+          <button
+            onClick={() => {
+              onNavigate?.();
+              signOut();
+            }}
+            className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+          >
+            Sign out
+          </button>
+        </>
+      );
+    }
 
     // Mobile variant - inline expanded view
     if (variant === 'mobile') {
@@ -205,6 +232,20 @@ export function AuthButton({ variant = 'default', onNavigate }: AuthButtonProps)
   }
 
   // Signed out state
+  if (variant === 'dropdown') {
+    return (
+      <button
+        onClick={() => {
+          onNavigate?.();
+          signIn.social({ provider: 'google' });
+        }}
+        className="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+      >
+        Sign in
+      </button>
+    );
+  }
+
   if (variant === 'mobile') {
     return (
       <button

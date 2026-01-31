@@ -89,3 +89,72 @@ export const blockedSources = [
 
 // Quick lookup
 export const blockedSourceIds = new Set(blockedSources.map(s => s.id));
+
+/**
+ * CONTENT KEYWORD BLOCKLIST
+ * ==========================
+ * Posts containing these keywords are filtered out.
+ * Used to remove sports, entertainment, and other off-topic content.
+ */
+export const blockedKeywords: RegExp[] = [
+  // Sports - General
+  /\bbasketball\b/i,
+  /\bnba\b/i,
+  /\bnfl\b/i,
+  /\bfootball\s+(game|season|player|team|coach)\b/i,
+  /\bmlb\b/i,
+  /\bnhl\b/i,
+  /\bsuper\s*bowl\b/i,
+  /\bworld\s+series\b/i,
+  /\bplayoffs?\b/i,
+  /\btouchdown\b/i,
+  /\bhome\s*run\b/i,
+  /\bquarterback\b/i,
+  /\bwide\s+receiver\b/i,
+  /\brunning\s+back\b/i,
+  // NFL Teams
+  /\bpackers\b/i,
+  /\bpatriots\b/i,
+  /\bcowboys\b/i,
+  /\bsteelers\b/i,
+  /\b49ers\b/i,
+  /\bseahawks\b/i,
+  /\braiders\b/i,
+  /\bchiefs\b/i,
+  /\bbroncos\b/i,
+  /\bbears\b/i,
+  /\blions\b/i,
+  /\bvikings\b/i,
+  /\beagles\b/i,
+  /\bgiants\b/i,
+  /\bredskins\b/i,
+  /\bcommanders\b/i,
+  /\bravens\b/i,
+  /\bbengals\b/i,
+  /\bbrowns\b/i,
+  /\bbills\b/i,
+  /\bdolphins\b/i,
+  /\bjets\b/i,
+  /\btexans\b/i,
+  /\bcolts\b/i,
+  /\bjaguars\b/i,
+  /\btitans\b/i,
+  /\bchargers\b/i,
+  /\bcardinals\b/i,
+  /\brams\b/i,
+  /\bfalcons\b/i,
+  /\bpanthers\b/i,
+  /\bsaints\b/i,
+  /\bbuccaneers\b/i,
+  /\bbucs\b/i,
+];
+
+/**
+ * Check if a post should be filtered based on blocked keywords
+ * @param text - The post title and/or content to check
+ * @returns true if the post should be filtered out
+ */
+export function shouldFilterPost(text: string): boolean {
+  if (!text) return false;
+  return blockedKeywords.some(pattern => pattern.test(text));
+}

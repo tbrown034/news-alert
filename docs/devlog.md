@@ -741,3 +741,371 @@ useEffect(() => { setTime(new Date()); ... }, []);
 | Cache 2MB exceeded | Large Substack feeds | Skip cache for large feeds |
 
 ---
+
+## 2026-01-30 - Comprehensive Site Testing & Critical Bug Fix
+
+**Session Summary:**
+- Conducted full-scale testing operation with 5 parallel agent squads
+- Found and fixed critical bug: feed not auto-loading when SSR fails
+- Validated all 475 sources - zero data quality issues
+- All performance metrics passed targets
+- Created testing infrastructure with organized log files
+
+**Key Findings:**
+
+| Squad | Status | Findings |
+|-------|--------|----------|
+| Code Review | Done | 3 real issues, 1 false positive filtered |
+| Live Site | Done | **Critical bug found** |
+| Sources | Done | 475/475 valid |
+| Performance | Done | All pass |
+| UX Review | Done | Mobile/dark mode pass |
+
+**Critical Bug Fixed:**
+
+*HomeClient.tsx:338* - Feed not auto-loading when SSR fails/times out
+
+```javascript
+// BEFORE (bug) - only fetches if SSR succeeded
+useEffect(() => {
+  if (hasInitialData.current) {
+    fetchIncrementalRef.current();
+  }
+}, []);
+
+// AFTER (fixed) - fetches regardless of SSR success
+useEffect(() => {
+  if (hasInitialData.current) {
+    hasInitialData.current = false;
+    fetchIncrementalRef.current();
+  } else {
+    fetchNewsRef.current();  // NEW: handles SSR failure
+  }
+}, []);
+```
+
+**Root Cause:** When `initialData` is null (SSR failed/timed out), `hasInitialData.current = false` (line 161), so the useEffect condition failed and NO FETCH OCCURRED. First-time visitors saw empty dashboard.
+
+**Other Issues Found:**
+- Unsafe JSON.parse in aiSummary.ts:274 (no try/catch)
+- Missing try/catch around logActivitySnapshot in news/route.ts:339
+- Division display issue when baseline=0 in activityDetection.ts:106
+
+**Testing Infrastructure Created:**
+- `/scratchpad/pulse-testing/errors.md` - All bugs with fixes
+- `/scratchpad/pulse-testing/performance.md` - Timing data
+- `/scratchpad/pulse-testing/ux-issues.md` - UX findings
+- `/scratchpad/pulse-testing/sources.md` - Source audit results
+- `/scratchpad/pulse-testing/mistakes.md` - False positives logged
+
+**Performance Results (All Pass):**
+| Metric | Value | Target |
+|--------|-------|--------|
+| /api/news | 1.86s | <2s |
+| /api/summary | 4.25s | <5s |
+| First Paint | 300ms | <1.5s |
+| TTI | 319ms | <3s |
+
+**Lessons Learned:**
+- Squad 1 reported "critical syntax error" in fires/route.ts that was a false positive
+- Cross-referencing code review with runtime tests catches false positives
+- The endpoint returned 200 during testing, proving code compiles and runs
+
+**Technical Notes:**
+- Testing used browser automation via Claude-in-Chrome MCP
+- Background agents ran in parallel for code review and source validation
+- Source validation confirmed all 475 sources have valid schemas, URLs, and no duplicates
+- 22 sources intentionally have low confidence (<80) for state-sponsored/partisan content monitoring
+
+---
+
+## 2026-01-30 - Trending Keywords Feature
+
+**Session Summary:**
+- Built trending topics feature reusing existing regionDetection keyword infrastructure (467 patterns)
+- Placed "Trending" button with fire icon next to "All Sources" dropdown
+- Click reveals popup with top 15 keywords ranked by count
+- Fixed pagination bug where only 50 posts were analyzed instead of full ~1,000+ set
+
+**Key Decisions:**
+- KISS approach: reuse `detectRegion()` to extract keyword matches, no new ML/NLP infrastructure
+- Signal purity: only count explicit keyword matches, not source region fallbacks
+- Per-item deduplication: same keyword 5x in one post = 1 count (prevents spam inflation)
+- Separated concerns: trending analyzes all items; pagination only affects display rendering
+
+**Notable Changes:**
+
+*src/lib/trendingKeywords.ts* (NEW)
+- Core extraction and counting logic
+- `extractKeywordsFromItem()` runs detectRegion on title+content, collects matched keywords
+- `countKeywords()` aggregates across items with per-item deduplication
+- `getTrendingKeywords()` returns sorted keywords with metadata
+
+*src/lib/__tests__/trendingKeywords.test.ts* (NEW)
+- 11 tests using Node's built-in test runner with tsx
+- Tests cover: keyword extraction, counting, sorting, deduplication, region tracking, empty input
+
+*src/components/TrendingKeywords.tsx* (NEW)
+- Fire icon button with "Trending" label
+- Dropdown popup showing ranked keywords with counts
+- Header displays "From X of Y posts" stats
+- Uses useMemo to compute trending data only when items change
+
+*src/components/NewsFeed.tsx*
+- Added `allItemsForTrending?: NewsItem[]` prop to interface
+- Integrated TrendingKeywords next to "All Sources" dropdown
+- Passes full item set for trending vs paginated subset for display
+
+*src/app/HomeClient.tsx*
+- Added `allItemsForTrending={newsItems}` prop to NewsFeed
+- Ensures trending analyzes all ~1,000+ posts, not just displayed 50
+
+**Technical Notes:**
+- Pagination bug: NewsFeed received `newsItems.slice(0, displayLimit)` where displayLimit=50
+- Fix: separate prop `allItemsForTrending` passes full array for analysis
+- Result: "From 601 of 1057 posts" with accurate keyword counts (trump 197, federal 65, ukraine 59, etc.)
+- Tests run with: `npx tsx --test src/lib/__tests__/trendingKeywords.test.ts`
+
+**Design Pattern:**
+```typescript
+// TrendingKeywords gets full set for analysis
+<TrendingKeywords items={allItemsForTrending || items} />
+
+// Feed list gets paginated subset for rendering
+{items.map(item => <NewsCard key={item.id} item={item} />)}
+```
+
+---
+
+## 2026-01-30 - New Features Brainstorming
+
+**Session Summary:**
+- Brainstormed two new feature tracks to extend Pulse's early warning capabilities
+- Focus: "First 30 minutes of contextualized awareness" — prediction + first draft of history
+- Created detailed design doc at `docs/plans/2026-01-30-new-features-design.md`
+
+**Key Decisions:**
+
+| Decision | Choice |
+|----------|--------|
+| Primary goal | Prediction/early warning with journalistic "first draft of history" angle |
+| Signal source | External indicators (not just existing 475 sources) |
+| Data sources | Google Trends + Wikipedia Pageviews (both free APIs) |
+
+**Track 1: Signals Page**
+
+External attention tracking — detect when the world starts paying attention before curated sources report.
+
+| Aspect | Design |
+|--------|--------|
+| Location | Dedicated "Signals" page (separate from Live Wire) |
+| Display | Chart-first with data table toggle |
+| Time range | 24h (default) / 7d / 30d, selectable |
+| Comparison | Rolling: "Now vs. same time yesterday/last week" |
+| Region filter | Independent from Live Wire |
+| Topics | Hybrid: curated watchlist + auto-detected "Emerging" |
+
+**Initial Watchlist (10 topics):**
+Taiwan Strait, Iran Nuclear, Ukraine War, US-China, Israel-Gaza, North Korea, Russia NATO, Venezuela, Sudan, Red Sea
+
+**Track 2: US Government Wire**
+
+Official government action tracking — awareness dashboard looking both directions (past + future).
+
+| Aspect | Design |
+|--------|--------|
+| Core value | Awareness dashboard (passive monitoring) |
+| Time orientation | Past actions + future calendar |
+| Scope options | Executive Branch OR Legislative Branch (TBD) |
+
+**Executive Branch option:** President's schedule, executive orders, proclamations (whitehouse.gov, Federal Register)
+
+**Legislative Branch option:** Bills signed, hearings, floor votes (congress.gov API)
+
+**Open Questions:**
+- Which branch to build first for Track 2?
+- How to display calendar vs. recent actions?
+
+**Technical Notes:**
+- Google Trends API: Free, needs filtering for celebrity/sports noise
+- Wikipedia Pageviews API: Free, less noisy, good "deep dive" signal
+- Combined signals stronger than either alone
+- Journalism angle differentiates from pure data dashboards
+
+---
+
+## 2026-01-30 - Regional Feed Enrichment & Platform Multi-Select
+
+**Session Summary:**
+- Investigated sparse regional feeds (Middle East showing only 7 posts from 5 sources)
+- Found client-side filter was stricter than server-side, dropping relevant global posts
+- Implemented content-based keyword detection to enrich regional feeds with global source coverage
+- Added "detected region" tag for global posts (e.g., "GLOBAL → MIDEAST" when Reuters posts about Iran)
+- Redesigned platform filter from single-select dropdown to multi-select with checkboxes and brand colors
+
+**Key Decisions:**
+- Truth-preserving approach: global sources keep "GLOBAL" tag, detected region shown as secondary tag
+- `classifyRegion()` from sourceUtils.ts reused for on-render detection (no new infrastructure)
+- Multi-select platform filter allows "show Bluesky + Telegram but not YouTube" use case
+- useMemo for detected region calculation (only runs when items/region change)
+
+**Notable Changes:**
+
+*src/components/NewsCard.tsx*
+- Added `detectRegionFromContent()` helper using `regionKeywords` from sourceUtils
+- Added `detectedRegion` useMemo calculating region for items where `region === 'all'`
+- Region badge now shows dual tags: "GLOBAL → MIDEAST" with subtle chevron arrow
+- Styling: gradient background `from-slate-100 to-slate-50` for detected tag
+
+*src/components/NewsFeed.tsx*
+- Added `contentMatchesRegion()` helper function for smart filtering
+- Changed filter logic: includes `region === selectedTab` OR (`region === 'all'` AND content matches keywords)
+- Changed `platformFilter` state from single value to `enabledPlatforms: Set<PlatformId>`
+- New dropdown UI with checkboxes, platform icons, brand colors, All/None toggles
+- Mini platform icons shown in button when filter is active
+- Imported `PlatformIcon`, `platformColors`, `platformBadgeStyles` from PlatformIcon.tsx
+
+*src/lib/sourceUtils.ts* (existing, no changes)
+- `regionKeywords` object already had comprehensive keyword lists for all regions
+- ~30 keywords per region including countries, cities, leaders, organizations
+
+**Technical Notes:**
+- Big O analysis: O(n × c × m) average case where n=items, c=avg keyword checks before match (~3-5), m=text length
+- Short-circuit evaluation with `.some()` means most items don't check all 30 keywords
+- useMemo caches result until items/selectedTab change - doesn't recalculate on every render
+- Platform badge styles: `bg-sky-500/10 text-sky-600` for Bluesky, `bg-orange-500/10 text-orange-600` for RSS, etc.
+
+**Edge Cases Considered:**
+- Non-English content (won't match English keywords - acceptable)
+- False positives (Jordan country vs person) - rare in news context
+- Empty content falls back to title - always has text to search
+- HTML entities already decoded by rss.ts before reaching client
+
+**User Education:**
+- Explained useMemo vs edge cache (per-component memoization vs shared across users)
+- useMemo is "render-level caching" - remembers output for same inputs across re-renders
+- Valid useEffect use case for timer subscriptions (not an Effect anti-pattern)
+
+---
+
+## 2026-01-30 - Database & Cache Architecture Assessment
+
+**Session Summary:**
+- Conducted comprehensive database and data retention assessment at user's request
+- User clarified KISS mandate: no persistent news history, no Redis/KV, no cron pre-warming
+- Identified and fixed inconsistency between news cache and summary cache patterns
+- User bumped AI summary post selection from 25 to 50 posts (manual edit to sources-clean.ts)
+
+**Key Decisions:**
+- Current ephemeral in-memory cache is appropriate for KISS approach
+- No database needed for transient news data (5-15 min TTL is fine)
+- Summary cache aligned to use same `globalThis` pattern as news cache
+- Sources hardcoded in TypeScript = correct choice (version controlled, no runtime complexity)
+
+**Notable Changes:**
+
+*src/lib/aiSummary.ts*
+- Migrated `summaryCache` and `lastRequestTime` from module-level variables to `globalThis.summaryCache`
+- Added `SummaryCache` interface wrapping both Maps
+- Added `getCache()` helper function matching `newsCache.ts` pattern
+- All cache access now goes through `getCache()` for consistency
+- User also changed `maxPosts` default from 25 to 50 and added multi-source importance hint to prompt
+
+**Architecture Documented:**
+
+| Layer | Technology | TTL | Pattern |
+|-------|-----------|-----|---------|
+| News cache | In-memory Map | 5-15 min | `globalThis.newsCache` |
+| Summary cache | In-memory Map | 10 min | `globalThis.summaryCache` (now aligned) |
+| Rate limits | In-memory Map | ~5 min cleanup | Module variable |
+| Sources | TypeScript arrays | Forever | Compiled into build |
+| User prefs | localStorage | Forever | Client-side only |
+
+**Technical Notes:**
+- `globalThis` pattern survives Next.js hot reloads in dev; module variables don't
+- Both caches now reset together on deploy/cold start (consistent behavior)
+- Multi-instance cache divergence on Vercel is acceptable for a news dashboard - caches naturally converge within TTL window
+- Thundering herd prevention via `inFlightFetches` Map in route.ts handles concurrent requests
+
+**KISS Principles Confirmed:**
+- No Redis/Vercel KV needed at current scale
+- No database for ephemeral news posts
+- No cron jobs for cache warming
+- Sources in code = audit trail via git
+
+---
+
+## 2026-01-30 - Feed Activity System Fix & Region Selector Redesign
+
+**Session Summary:**
+- Code review found LATAM and Asia incorrectly removed from both map AND activity scoring
+- Fixed: put them back on map but exclude from activity scoring (always show NORMAL)
+- Added loading.tsx files for instant navigation feedback (React 19/Next.js 16 patterns)
+- Redesigned region selector from dropdown to pill tabs with useTransition for smooth switching
+- Changed initial view strategy: always start global, remember user preference, focus map camera on hottest region
+- Increased AI briefing post selection from 25 to 50 with multi-source importance signal
+
+**Key Decisions:**
+- `SCORING_EXCLUDED_REGIONS` pattern: regions on map but always NORMAL activity (insufficient source coverage)
+- useTransition for region switching: defers expensive filter operation for instant UI feedback
+- localStorage persistence for selected region: returning users see their last preference
+- initialMapFocus prop: camera zooms to hottest region without filtering feed (subtle guidance)
+- AI briefing now prioritizes events with multiple sources covering same story
+
+**Notable Changes:**
+
+*src/lib/activityDetection.ts*
+- Added `SCORING_EXCLUDED_REGIONS: WatchpointId[] = ['latam', 'asia']`
+- Regions in list always assigned `level = 'normal'` regardless of multiplier
+
+*src/components/WorldMap.tsx*
+- Re-added LATAM marker: `{ coordinates: [-46.63, -23.55], label: 'Latin America', city: 'São Paulo', zoom: 1.8 }`
+- Re-added Asia marker: `{ coordinates: [139.69, 35.69], label: 'Asia-Pacific', city: 'Tokyo', zoom: 1.6 }`
+- Added `initialFocus` prop for camera positioning without filter change
+
+*src/app/page.tsx*
+- Simplified: always start with `initialRegion = 'all'`
+- Added `initialMapFocus` calculation: finds hottest region (elevated or critical) among scored regions
+- `SCORED_REGIONS = ['us', 'middle-east', 'europe-russia']` excludes LATAM/Asia
+
+*src/app/HomeClient.tsx*
+- Added localStorage persistence for selected region
+- `setSelectedWatchpoint` wrapper saves to localStorage on every change
+- Reads saved preference on mount (useEffect with empty deps)
+- Passes `initialMapFocus` to WorldMap
+
+*src/components/NewsFeed.tsx*
+- Replaced dropdown with segmented control pill tabs
+- Primary tabs: All, US, Middle East, Europe
+- "More" dropdown for LATAM and Asia
+- Added `useTransition` hook for smooth region switching
+- `isPending` state shows subtle opacity during transition
+- `startTransition` wraps `onSelectWatchpoint` call
+
+*src/lib/aiSummary.ts*
+- Increased `maxPosts` from 25 to 50 in `selectAndStructurePosts()`
+- Added prompt rule: "Multiple sources reporting the same event = high importance signal (prioritize these)"
+- Cost impact minimal: ~$0.006 per briefing with Haiku 3.5
+
+*src/app/loading.tsx* (NEW)
+- Root loading state with pulsing "Loading Pulse..." spinner
+- Provides instant feedback during navigation
+
+*src/app/admin/loading.tsx* (NEW)
+- Admin section loading state
+
+*src/app/global-error.tsx* (NEW)
+- Catches errors in root layout (rare edge case)
+
+**Technical Notes:**
+- useTransition creates two-phase update: immediate (isPending=true, old content) then deferred (actual filter)
+- User sees instant feedback (pill highlights immediately) while expensive filtering happens in background
+- localStorage key: `news-selected-region` - simple string value
+- LATAM/Asia still process in activity detection but their final level gets overwritten to 'normal'
+- React 19's `use` hook not needed here - classic useTransition pattern sufficient
+
+**UX Improvement:**
+Before: Click region → 200ms freeze → UI updates (felt laggy)
+After: Click region → instant pill highlight → content fades in 200ms later (feels responsive)
+
+---

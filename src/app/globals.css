@@ -21,6 +21,7 @@
   /* Borders */
   --border: #dee2e6;
   --border-light: #e9ecef;
+  --border-card: #e0e4e8;
 
   /* Semantic colors ONLY - no decorative accents */
   --color-critical: #dc2626;
@@ -87,6 +88,7 @@
   /* Borders - subtle, low contrast */
   --border: #2a2a2a;
   --border-light: #1f1f1f;
+  --border-card: #262626;
 
   /* Semantic colors - slightly muted for dark mode */
   --color-critical: #ef4444;
@@ -128,6 +130,7 @@
   /* Borders */
   --color-border: var(--border);
   --color-border-light: var(--border-light);
+  --color-border-card: var(--border-card);
 
   /* Semantic colors */
   --color-critical: var(--color-critical);
@@ -388,13 +391,13 @@ h1, h2, h3, .font-serif {
 .card {
   background: var(--background-card);
   border-radius: 0.75rem;
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border-card);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .dark .card {
   background: var(--background-card);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-card);
   box-shadow: none;
 }
 

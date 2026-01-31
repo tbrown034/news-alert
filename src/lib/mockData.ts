@@ -1,7 +1,7 @@
 import { Watchpoint, NewsItem, Source } from '@/types';
 
-// Note: Asia and LatAm removed due to low source coverage (39 and 11 sources respectively)
-// Those regions still show in "All" view, just no dedicated tabs
+// All regions shown on map. LATAM and Asia are excluded from activity scoring
+// due to low source coverage (11 and 39 sources respectively) - they always show NORMAL.
 export const watchpoints: Watchpoint[] = [
   {
     id: 'us',
@@ -10,6 +10,14 @@ export const watchpoints: Watchpoint[] = [
     priority: 1,
     activityLevel: 'normal',
     color: '#8b5cf6',
+  },
+  {
+    id: 'latam',
+    name: 'Latin America',
+    shortName: 'LATAM',
+    priority: 4,
+    activityLevel: 'normal',
+    color: '#10b981',
   },
   {
     id: 'middle-east',
@@ -26,6 +34,14 @@ export const watchpoints: Watchpoint[] = [
     priority: 3,
     activityLevel: 'elevated',
     color: '#f59e0b',
+  },
+  {
+    id: 'asia',
+    name: 'Asia-Pacific',
+    shortName: 'Asia',
+    priority: 5,
+    activityLevel: 'normal',
+    color: '#6366f1',
   },
 ];
 

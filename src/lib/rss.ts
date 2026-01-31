@@ -1280,9 +1280,7 @@ export async function fetchRssFeed(
     };
 
     return items.map((item) => {
-      const region = source.region !== 'all'
-        ? source.region
-        : classifyRegion(item.title, item.description);
+      const { region, sourceRegion } = classifyRegion(item.title, item.description, source.region);
 
       return {
         id: `${source.id}-${hashString(item.guid || item.link)}`,
@@ -1291,6 +1289,7 @@ export async function fetchRssFeed(
         source: sourceWithAvatar,
         timestamp: parsePubDate(item.pubDate),
         region,
+        sourceRegion,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
         alertStatus: null,
@@ -1309,9 +1308,7 @@ export async function fetchRssFeed(
     };
 
     return items.map((item) => {
-      const region = source.region !== 'all'
-        ? source.region
-        : classifyRegion(item.title, item.description);
+      const { region, sourceRegion } = classifyRegion(item.title, item.description, source.region);
 
       return {
         id: `${source.id}-${hashString(item.guid || item.link)}`,
@@ -1320,6 +1317,7 @@ export async function fetchRssFeed(
         source: sourceWithAvatar,
         timestamp: parsePubDate(item.pubDate),
         region,
+        sourceRegion,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
         alertStatus: null,
@@ -1335,9 +1333,7 @@ export async function fetchRssFeed(
     const { items } = await fetchRedditFeed(source);
 
     return items.map((item) => {
-      const region = source.region !== 'all'
-        ? source.region
-        : classifyRegion(item.title, item.description);
+      const { region, sourceRegion } = classifyRegion(item.title, item.description, source.region);
 
       return {
         id: `${source.id}-${hashString(item.guid || item.link)}`,
@@ -1346,6 +1342,7 @@ export async function fetchRssFeed(
         source,
         timestamp: parsePubDate(item.pubDate),
         region,
+        sourceRegion,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
         alertStatus: null,
@@ -1366,9 +1363,7 @@ export async function fetchRssFeed(
     };
 
     return items.map((item) => {
-      const region = source.region !== 'all'
-        ? source.region
-        : classifyRegion(item.title, item.description);
+      const { region, sourceRegion } = classifyRegion(item.title, item.description, source.region);
 
       return {
         id: `${source.id}-${hashString(item.guid || item.link)}`,
@@ -1377,6 +1372,7 @@ export async function fetchRssFeed(
         source: sourceWithAvatar,
         timestamp: parsePubDate(item.pubDate),
         region,
+        sourceRegion,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
         alertStatus: null,
@@ -1457,9 +1453,7 @@ export async function fetchRssFeed(
       };
 
       return items.map((item) => {
-        const region = source.region !== 'all'
-          ? source.region
-          : classifyRegion(item.title, item.description);
+        const { region, sourceRegion } = classifyRegion(item.title, item.description, source.region);
 
         return {
           id: `${source.id}-${hashString(item.guid || item.link)}`,
@@ -1468,6 +1462,7 @@ export async function fetchRssFeed(
           source: sourceWithAvatar,
           timestamp: parsePubDate(item.pubDate),
           region,
+          sourceRegion,
           verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
           url: item.link,
           alertStatus: null,
@@ -1530,9 +1525,7 @@ export async function fetchRssFeed(
     };
 
     return items.map((item) => {
-      const region = source.region !== 'all'
-        ? source.region
-        : classifyRegion(item.title, item.description);
+      const { region, sourceRegion } = classifyRegion(item.title, item.description, source.region);
 
       return {
         id: `${source.id}-${hashString(item.guid || item.link)}`,
@@ -1541,6 +1534,7 @@ export async function fetchRssFeed(
         source: sourceWithAvatar,
         timestamp: parsePubDate(item.pubDate),
         region,
+        sourceRegion,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
         alertStatus: null, // Will be set by processAlertStatuses in API

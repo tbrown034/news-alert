@@ -15,6 +15,10 @@ import { tier1Sources, tier2Sources, tier3Sources, TieredSource } from './source
 
 const CONSERVATIVE_DEFAULT = 3; // posts/day for guessed sources
 
+// Regions excluded from activity scoring due to insufficient source coverage.
+// These always show NORMAL level regardless of post frequency.
+const SCORING_EXCLUDED_REGIONS: WatchpointId[] = ['latam', 'asia'];
+
 // Check if a number was likely measured (has decimals) vs guessed (round)
 function isMeasuredValue(n: number): boolean {
   return n !== Math.floor(n);
@@ -109,14 +113,21 @@ export function calculateRegionActivity(
     // Requirements:
     // - Raised thresholds: 2.5x for elevated, 5x for critical (was 2x/4x)
     // - Minimum post count: need at least 25 posts to trigger elevated, 50 for critical
-    //   This prevents low-source regions (Asia) from false positives
+    // - LATAM and Asia excluded from scoring (always NORMAL) until source coverage improves
     let level: RegionActivity['level'];
     const MIN_ELEVATED_COUNT = 25;
     const MIN_CRITICAL_COUNT = 50;
 
-    if (multiplier >= 5 && count >= MIN_CRITICAL_COUNT) level = 'critical';
-    else if (multiplier >= 2.5 && count >= MIN_ELEVATED_COUNT) level = 'elevated';
-    else level = 'normal';
+    // Excluded regions always show NORMAL regardless of activity
+    if (SCORING_EXCLUDED_REGIONS.includes(region)) {
+      level = 'normal';
+    } else if (multiplier >= 5 && count >= MIN_CRITICAL_COUNT) {
+      level = 'critical';
+    } else if (multiplier >= 2.5 && count >= MIN_ELEVATED_COUNT) {
+      level = 'elevated';
+    } else {
+      level = 'normal';
+    }
 
     let vsNormal: 'above' | 'below' | 'normal';
     if (multiplier >= 1.5) vsNormal = 'above';

@@ -123,7 +123,8 @@ export interface NewsItem {
   content: string;
   source: Source;
   timestamp: Date;
-  region: WatchpointId;
+  region: WatchpointId;           // Effective region (detected or source default)
+  sourceRegion?: WatchpointId;    // Original source region (shown when overridden)
   verificationStatus: VerificationStatus;
   url?: string;
 

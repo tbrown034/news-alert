@@ -73,7 +73,7 @@ interface StructuredPost {
  * Takes the N most recent posts and lets Claude determine importance
  * Multiple sources covering the same story = importance signal
  */
-function selectAndStructurePosts(posts: NewsItem[], maxPosts: number = 25): StructuredPost[] {
+function selectAndStructurePosts(posts: NewsItem[], maxPosts: number = 50): StructuredPost[] {
   const now = Date.now();
 
   // Sort by recency (newest first) and take top N
@@ -174,6 +174,7 @@ Rules:
 - Overview = big picture assessment, not a list of events
 - Developments = 2-3 specific items with sources, each one line
 - Reference time naturally (this morning, overnight, since dawn)
+- Multiple sources reporting the same event = high importance signal (prioritize these)
 - No jargon, no severity labels, no scores`;
 }
 
@@ -324,21 +325,38 @@ interface CachedSummary {
   cachedAt: Date;
 }
 
-const summaryCache = new Map<string, CachedSummary>();
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes (increased from 5)
+interface SummaryCache {
+  data: Map<string, CachedSummary>;
+  lastRequestTime: Map<string, number>;
+}
 
-// Rate limiting - track last request time per region
-const lastRequestTime = new Map<string, number>();
+// Use globalThis to persist cache across Next.js hot reloads (matches newsCache.ts pattern)
+const globalForCache = globalThis as unknown as {
+  summaryCache: SummaryCache | undefined;
+};
+
+function getCache(): SummaryCache {
+  if (!globalForCache.summaryCache) {
+    globalForCache.summaryCache = {
+      data: new Map<string, CachedSummary>(),
+      lastRequestTime: new Map<string, number>(),
+    };
+  }
+  return globalForCache.summaryCache;
+}
+
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes (increased from 5)
 const MIN_REQUEST_INTERVAL_MS = 60 * 1000; // 1 minute between requests per region
 
 export function getCachedSummary(region: WatchpointId, tier: string = 'quick'): SituationBriefing | null {
+  const cache = getCache();
   const cacheKey = `${region}:${tier}`;
-  const cached = summaryCache.get(cacheKey);
+  const cached = cache.data.get(cacheKey);
   if (!cached) return null;
 
   const age = Date.now() - cached.cachedAt.getTime();
   if (age > CACHE_TTL_MS) {
-    summaryCache.delete(cacheKey);
+    cache.data.delete(cacheKey);
     return null;
   }
 
@@ -346,24 +364,27 @@ export function getCachedSummary(region: WatchpointId, tier: string = 'quick'): 
 }
 
 export function cacheSummary(briefing: SituationBriefing, tier: string = 'quick'): void {
+  const cache = getCache();
   const cacheKey = `${briefing.region}:${tier}`;
-  summaryCache.set(cacheKey, {
+  cache.data.set(cacheKey, {
     briefing,
     cachedAt: new Date(),
   });
-  lastRequestTime.set(briefing.region, Date.now());
+  cache.lastRequestTime.set(briefing.region, Date.now());
 }
 
 export function canRequestSummary(region: WatchpointId): boolean {
-  const lastTime = lastRequestTime.get(region);
+  const cache = getCache();
+  const lastTime = cache.lastRequestTime.get(region);
   if (!lastTime) return true;
   return Date.now() - lastTime >= MIN_REQUEST_INTERVAL_MS;
 }
 
 export function clearSummaryCache(region?: WatchpointId): void {
+  const cache = getCache();
   if (region) {
-    summaryCache.delete(region);
+    cache.data.delete(region);
   } else {
-    summaryCache.clear();
+    cache.data.clear();
   }
 }

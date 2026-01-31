@@ -16,6 +16,7 @@ import { WatchpointId, NewsItem, Source } from '@/types';
 import { checkRateLimit, getClientIp, rateLimitHeaders } from '@/lib/rateLimit';
 import { getActiveEditorialPosts } from '@/lib/editorial';
 import { EditorialPost } from '@/types/editorial';
+import { shouldFilterPost } from '@/lib/blocklist';
 import { logActivitySnapshot } from '@/lib/activityLogging';
 
 export const dynamic = 'force-dynamic';
@@ -301,7 +302,7 @@ async function fetchNewsWithCache(region: WatchpointId): Promise<NewsItem[]> {
     const allCached = getCachedNews('all');
     if (allCached && isCacheFresh('all')) {
       const filtered = allCached.items.filter(
-        item => item.region === region || item.region === 'all'
+        item => item.region === region
       );
       setCachedNews(cacheKey, filtered, true);
       return filtered;
@@ -416,10 +417,13 @@ export async function GET(request: Request) {
     // Filter by region if needed
     let filtered = region === 'all'
       ? newsItems
-      : newsItems.filter((item) => item.region === region || item.region === 'all');
+      : newsItems.filter((item) => item.region === region);
 
     // Apply time window filter
     filtered = filterByTimeWindow(filtered, hours);
+
+    // Filter out posts with blocked keywords (sports, entertainment, etc.)
+    filtered = filtered.filter(item => !shouldFilterPost(`${item.title} ${item.content || ''}`));
 
     // If 'since' param provided, only return items newer than that timestamp
     // This enables incremental updates - client fetches only new items

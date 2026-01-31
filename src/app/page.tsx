@@ -12,10 +12,15 @@ interface ApiResponse {
   totalItems: number;
 }
 
+// Regions that participate in "hottest region" calculation
+// LATAM and Asia excluded due to low source coverage
+const SCORED_REGIONS = ['us', 'middle-east', 'europe-russia'];
+
 // Server Component - fetches initial data at request time
 export default async function Home() {
   let initialData: ApiResponse | null = null;
   let initialRegion: WatchpointId = 'all';
+  let initialMapFocus: WatchpointId | undefined;
 
   try {
     // Server-side fetch with timeout - don't block page render for too long
@@ -37,7 +42,7 @@ export default async function Home() {
     if (response.ok) {
       initialData = await response.json();
 
-      // Auto-select hottest region
+      // Find hottest region to focus map camera (but keep feed global)
       if (initialData?.activity) {
         const activityPriority: Record<string, number> = {
           critical: 3,
@@ -45,16 +50,19 @@ export default async function Home() {
           normal: 1,
         };
 
-        const regions = Object.entries(initialData.activity)
-          .filter(([id]) => id !== 'all')
+        const rankedRegions = Object.entries(initialData.activity)
+          .filter(([id]) => SCORED_REGIONS.includes(id))
           .map(([id, activity]) => ({
             id: id as WatchpointId,
             priority: activityPriority[activity.level] || 0,
+            multiplier: activity.multiplier || 0,
           }))
-          .sort((a, b) => b.priority - a.priority);
+          // Sort by priority first, then by multiplier for tiebreaker
+          .sort((a, b) => b.priority - a.priority || b.multiplier - a.multiplier);
 
-        if (regions.length > 0 && regions[0].priority >= 2) {
-          initialRegion = regions[0].id;
+        // Focus map on hottest region if elevated or critical
+        if (rankedRegions.length > 0 && rankedRegions[0].priority >= 2) {
+          initialMapFocus = rankedRegions[0].id;
         }
       }
     }
@@ -62,5 +70,5 @@ export default async function Home() {
     console.error('[Page] Failed to fetch initial data:', error);
   }
 
-  return <HomeClient initialData={initialData} initialRegion={initialRegion} />;
+  return <HomeClient initialData={initialData} initialRegion={initialRegion} initialMapFocus={initialMapFocus} />;
 }

@@ -18,11 +18,10 @@ const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
 /**
  * Get time at a given longitude with city name
+ * @param now - Current time (passed in to trigger React re-renders)
  * @param useUTC - If true, shows UTC time instead of estimated local time
  */
-function getTimeDisplay(longitude: number, city: string, useUTC: boolean): string {
-  const now = new Date();
-
+function getTimeDisplay(longitude: number, city: string, now: Date, useUTC: boolean): string {
   if (useUTC) {
     const time = now.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -57,6 +56,7 @@ interface WorldMapProps {
   hoursWindow?: number; // Time window in hours
   hotspotsOnly?: boolean; // Only show elevated/critical regions
   useUTC?: boolean; // Display times in UTC instead of local
+  initialFocus?: WatchpointId; // Focus map here on load (without filtering feed)
 }
 
 // Activity level colors - visual language:
@@ -68,21 +68,31 @@ const activityColors: Record<string, { fill: string; glow: string; text: string 
 };
 
 // Region marker positions (longitude, latitude) - positioned for visual balance
-// Note: Asia and LatAm removed from UI due to low source coverage
 const regionMarkers: Record<string, { coordinates: [number, number]; label: string; city: string; zoom: number }> = {
   'us': { coordinates: [-77.04, 38.91], label: 'United States', city: 'DC', zoom: 2.2 },
+  'latam': { coordinates: [-66.90, 10.48], label: 'Latin America', city: 'Caracas', zoom: 1.8 },
   'middle-east': { coordinates: [51.39, 35.69], label: 'Middle East', city: 'Tehran', zoom: 2.5 },
   'europe-russia': { coordinates: [30.52, 50.45], label: 'Europe-Russia', city: 'Kyiv', zoom: 2.2 },
+  'asia': { coordinates: [116.40, 39.90], label: 'Asia-Pacific', city: 'Beijing', zoom: 1.6 },
 };
 
-// Default zoom settings
-const DEFAULT_CENTER: [number, number] = [40, 25];
-const DEFAULT_ZOOM = 1;
+// Default zoom settings - zoomed in for tighter view while showing all regions
+const DEFAULT_CENTER: [number, number] = [20, 30];
+const DEFAULT_ZOOM = 1.6;
 
-function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {}, activity = {}, significantQuakes = [], hoursWindow = 6, hotspotsOnly = false, useUTC = false }: WorldMapProps) {
+function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {}, activity = {}, significantQuakes = [], hoursWindow = 6, hotspotsOnly = false, useUTC = false, initialFocus }: WorldMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
+  const [hasAppliedInitialFocus, setHasAppliedInitialFocus] = useState(false);
+
+  // Start focused on initialFocus region if provided, otherwise default center
+  const [position, setPosition] = useState(() => {
+    if (initialFocus && initialFocus !== 'all' && regionMarkers[initialFocus]) {
+      const marker = regionMarkers[initialFocus];
+      return { coordinates: marker.coordinates, zoom: marker.zoom };
+    }
+    return { coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM };
+  });
   const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
   const [hoveredQuake, setHoveredQuake] = useState<string | null>(null);
   const { theme } = useMapTheme();
@@ -130,15 +140,22 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
     return () => clearInterval(timer);
   }, []);
 
-  // Zoom to selected region
+  // Zoom to selected region (but preserve initial focus on first render)
   useEffect(() => {
+    // Skip the first effect if we have an initial focus and selected is 'all'
+    // This preserves the "camera pointed at hotspot" while showing global feed
+    if (!hasAppliedInitialFocus && initialFocus && selected === 'all') {
+      setHasAppliedInitialFocus(true);
+      return; // Keep the initial focus position
+    }
+
     if (selected === 'all') {
       setPosition({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
     } else if (regionMarkers[selected]) {
       const marker = regionMarkers[selected];
       setPosition({ coordinates: marker.coordinates, zoom: marker.zoom });
     }
-  }, [selected]);
+  }, [selected, hasAppliedInitialFocus, initialFocus]);
 
   const getActivityLevel = (id: string) => {
     const wp = watchpoints.find(w => w.id === id);
@@ -335,7 +352,7 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
                     pointerEvents: 'none',
                   }}
                 >
-                  {getTimeDisplay(marker.coordinates[0], marker.city, useUTC)}
+                  {getTimeDisplay(marker.coordinates[0], marker.city, currentTime, useUTC)}
                 </text>
 
                 {/* Hover tooltip - activity level */}
