@@ -28,9 +28,9 @@ export default async function Home() {
       ? `https://${process.env.VERCEL_URL}`
       : 'http://localhost:3000';
 
-    // Abort if SSR fetch takes longer than 15s - client will fetch fresh
+    // Abort if SSR fetch takes longer than 25s - client will fetch fresh
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
     // Fetch all sources (no tier separation - simplified architecture)
     const response = await fetch(`${baseUrl}/api/news?region=all&hours=6&limit=2000`, {

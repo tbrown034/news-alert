@@ -628,8 +628,15 @@ interface RedditListing {
   };
 }
 
+interface RedditFeedItem extends RssItem {
+  isMegathread: boolean;
+  commentCount: number;
+  upvotes: number;
+  subreddit: string;
+}
+
 interface RedditFeedResult {
-  items: RssItem[];
+  items: RedditFeedItem[];
   subredditIcon?: string;
 }
 
@@ -642,11 +649,15 @@ const REDDIT_MIN_SCORE = 100;
 
 // Megathread detection patterns (case-insensitive)
 const MEGATHREAD_PATTERNS = [
-  /live\s*thread/i,
   /megathread/i,
+  /live\s*thread/i,
   /\[live\]/i,
   /breaking:/i,
+  /breaking\s*news/i,
   /developing:/i,
+  /discussion\s*thread/i,
+  /official\s*thread/i,
+  /\bofficial\b/i,
 ];
 
 // Extract subreddit from feedUrl
@@ -723,7 +734,7 @@ async function fetchRedditFeed(source: Source & { feedUrl: string }): Promise<Re
     if (!listing) return { items: [] };
 
     // Check if post is a megathread (stickied or matches pattern)
-    const isMegathread = (post: RedditPost): boolean => {
+    const checkIsMegathread = (post: RedditPost): boolean => {
       const title = post.data.title;
       const isStickied = post.data.stickied === true;
       const matchesPattern = MEGATHREAD_PATTERNS.some(pattern => pattern.test(title));
@@ -731,9 +742,9 @@ async function fetchRedditFeed(source: Source & { feedUrl: string }): Promise<Re
     };
 
     // Only show megathreads from news subreddits (skip regular posts)
-    const megathreads = listing.data.children.filter(post => isMegathread(post));
+    const megathreads = listing.data.children.filter(post => checkIsMegathread(post));
 
-    const items: RssItem[] = megathreads
+    const items: RedditFeedItem[] = megathreads
       .map(post => {
         const data = post.data;
         const link = `https://www.reddit.com${data.permalink}`;
@@ -784,6 +795,10 @@ async function fetchRedditFeed(source: Source & { feedUrl: string }): Promise<Re
           pubDate: new Date(data.created_utc * 1000).toISOString(),
           guid: `reddit-${data.id}`,
           media: media.length > 0 ? media : undefined,
+          isMegathread: checkIsMegathread(post),
+          commentCount: data.num_comments,
+          upvotes: data.score,
+          subreddit: data.subreddit,
         };
       });
 
@@ -807,6 +822,110 @@ export function getInvalidRedditCacheSize(): number {
 // Clear invalid Reddit cache (for testing/maintenance)
 export function clearInvalidRedditCache(): void {
   invalidRedditCache.clear();
+}
+
+// Megathread result type for the dedicated megathread fetcher
+export interface RedditMegathread {
+  title: string;
+  url: string;
+  commentCount: number;
+  upvotes: number;
+  createdAt: Date;
+  subreddit: string;
+  isStickied: boolean;
+}
+
+// Default subreddits to check for megathreads
+const DEFAULT_MEGATHREAD_SUBREDDITS = ['news', 'worldnews', 'politics'];
+
+/**
+ * Fetch megathreads and breaking news threads from multiple subreddits.
+ * Returns only stickied posts or posts matching megathread patterns.
+ *
+ * @param subreddits - Array of subreddit names to check (defaults to news, worldnews, politics)
+ * @returns Array of megathreads sorted by upvotes (highest first)
+ */
+export async function fetchRedditMegathreads(
+  subreddits: string[] = DEFAULT_MEGATHREAD_SUBREDDITS
+): Promise<RedditMegathread[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for multiple requests
+
+  const allMegathreads: RedditMegathread[] = [];
+
+  try {
+    // Fetch all subreddits in parallel
+    const results = await Promise.allSettled(
+      subreddits.map(async (subreddit) => {
+        // Skip if subreddit is cached as invalid
+        if (isRedditSubredditCachedAsInvalid(subreddit)) {
+          return [];
+        }
+
+        const jsonUrl = `https://www.reddit.com/r/${subreddit}/hot.json?limit=25`;
+        const response = await fetch(jsonUrl, {
+          signal: controller.signal,
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; PulseAlert/1.0)',
+            'Accept': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 404 || response.status === 403) {
+            invalidRedditCache.set(subreddit, { error: 'NotFoundOrPrivate', timestamp: Date.now() });
+            console.warn(`[Reddit] Subreddit r/${subreddit} not found or private. Cached for 1 hour.`);
+          } else if (response.status === 429) {
+            console.warn(`[Reddit] Rate limited on r/${subreddit}. Consider reducing request frequency.`);
+          } else {
+            console.error(`[Reddit] r/${subreddit}: HTTP ${response.status}`);
+          }
+          return [];
+        }
+
+        const listing: RedditListing | null = await response.json().catch(() => null);
+        if (!listing) return [];
+
+        // Filter for megathreads (stickied or matching patterns)
+        const megathreads = listing.data.children.filter(post => {
+          const title = post.data.title;
+          const isStickied = post.data.stickied === true;
+          const matchesPattern = MEGATHREAD_PATTERNS.some(pattern => pattern.test(title));
+          return isStickied || matchesPattern;
+        });
+
+        return megathreads.map(post => ({
+          title: post.data.title,
+          url: `https://www.reddit.com${post.data.permalink}`,
+          commentCount: post.data.num_comments,
+          upvotes: post.data.score,
+          createdAt: new Date(post.data.created_utc * 1000),
+          subreddit: post.data.subreddit,
+          isStickied: post.data.stickied === true,
+        }));
+      })
+    );
+
+    clearTimeout(timeoutId);
+
+    // Combine results from all subreddits
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        allMegathreads.push(...result.value);
+      }
+    }
+
+    // Sort by upvotes (highest first) to surface most popular megathreads
+    return allMegathreads.sort((a, b) => b.upvotes - a.upvotes);
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn(`[Reddit] Megathread fetch timeout (15s)`);
+    } else if (error instanceof Error) {
+      console.error(`[Reddit] Megathread fetch error: ${error.message}`);
+    }
+    return allMegathreads; // Return whatever we collected before the error
+  }
 }
 
 // =============================================================================

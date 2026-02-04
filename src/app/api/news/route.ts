@@ -26,6 +26,21 @@ export const maxDuration = 60;
 // Valid regions
 const VALID_REGIONS: WatchpointId[] = ['all', 'us', 'latam', 'middle-east', 'europe-russia', 'asia', 'seismic'];
 
+// =============================================================================
+// MVP PLATFORM FILTER
+// Toggle platforms on/off here. Set to false to disable fetching.
+// Source definitions are preserved - just not fetched until re-enabled.
+// =============================================================================
+const ENABLED_PLATFORMS = {
+  bluesky: true,    // 229 sources - API-based, fast
+  telegram: true,   // 11 sources - web scraping
+  mastodon: true,   // 6 sources - API-based
+  rss: false,       // 214 sources - TODO: re-enable after MVP
+  reddit: false,    // 8 sources - TODO: re-enable after MVP
+  youtube: false,   // 7 sources - TODO: re-enable after MVP
+};
+// =============================================================================
+
 // Time window defaults (in hours)
 const DEFAULT_TIME_WINDOW = 6; // 6 hours - optimized for "what's happening NOW"
 const MAX_TIME_WINDOW = 72; // Max 3 days
@@ -63,9 +78,21 @@ function isYouTubeSource(source: TieredSource): boolean {
   return source.platform === 'youtube' || source.feedUrl.includes('youtube.com/feeds/');
 }
 
-// Get sources filtered by region (all sources, no tier separation)
+// Check if source platform is enabled
+function isPlatformEnabled(source: TieredSource): boolean {
+  if (isBlueskySource(source)) return ENABLED_PLATFORMS.bluesky;
+  if (isTelegramSource(source)) return ENABLED_PLATFORMS.telegram;
+  if (isMastodonSource(source)) return ENABLED_PLATFORMS.mastodon;
+  if (isRedditSource(source)) return ENABLED_PLATFORMS.reddit;
+  if (isYouTubeSource(source)) return ENABLED_PLATFORMS.youtube;
+  // Default to RSS for anything else
+  return ENABLED_PLATFORMS.rss;
+}
+
+// Get sources filtered by region AND enabled platforms
 function getSourcesForRegion(region: WatchpointId): TieredSource[] {
-  return getSourcesByRegion(region);
+  const regionSources = getSourcesByRegion(region);
+  return regionSources.filter(isPlatformEnabled);
 }
 
 // Filter items by time window
@@ -102,7 +129,44 @@ function editorialToNewsItem(post: EditorialPost): NewsItem & { isEditorial: tru
 }
 
 /**
+ * Fetch sources in batches for a single platform
+ */
+async function fetchPlatformSources(
+  sources: TieredSource[],
+  batchSize: number,
+  batchDelay: number
+): Promise<NewsItem[]> {
+  const items: NewsItem[] = [];
+
+  for (let i = 0; i < sources.length; i += batchSize) {
+    const batch = sources.slice(i, i + batchSize);
+
+    const batchPromises = batch.map(async (source) => {
+      try {
+        return await fetchRssFeed(source);
+      } catch {
+        return [];
+      }
+    });
+
+    const batchResults = await Promise.allSettled(batchPromises);
+    for (const result of batchResults) {
+      if (result.status === 'fulfilled') {
+        items.push(...result.value);
+      }
+    }
+
+    if (i + batchSize < sources.length) {
+      await new Promise(r => setTimeout(r, batchDelay));
+    }
+  }
+
+  return items;
+}
+
+/**
  * Fetch sources - grouped by platform with appropriate batching
+ * Platforms are fetched IN PARALLEL for speed
  */
 async function fetchAllSources(
   sources: TieredSource[]
@@ -123,171 +187,17 @@ async function fetchAllSources(
     !isYouTubeSource(s)
   );
 
-  const allItems: NewsItem[] = [];
+  // Fetch ALL platforms in parallel (each platform still batches internally)
+  const [rssItems, bskyItems, tgItems, mastoItems, redditItems, ytItems] = await Promise.all([
+    fetchPlatformSources(rssSources, 30, 100),      // RSS: 30 at a time
+    fetchPlatformSources(blueskySources, 30, 100),  // Bluesky: 30 at a time
+    fetchPlatformSources(telegramSources, 10, 200), // Telegram: 10 at a time (slow scraping)
+    fetchPlatformSources(mastodonSources, 20, 100), // Mastodon: 20 at a time
+    fetchPlatformSources(redditSources, 5, 500),    // Reddit: 5 at a time (tight rate limit)
+    fetchPlatformSources(youtubeSources, 10, 100),  // YouTube: 10 at a time
+  ]);
 
-  // Fetch RSS sources in batches to avoid network saturation
-  const RSS_BATCH_SIZE = 30;
-  const RSS_BATCH_DELAY = 100;
-
-  for (let i = 0; i < rssSources.length; i += RSS_BATCH_SIZE) {
-    const batch = rssSources.slice(i, i + RSS_BATCH_SIZE);
-
-    const batchPromises = batch.map(async (source) => {
-      try {
-        return await fetchRssFeed(source);
-      } catch {
-        return [];
-      }
-    });
-
-    const batchResults = await Promise.allSettled(batchPromises);
-    for (const result of batchResults) {
-      if (result.status === 'fulfilled') {
-        allItems.push(...result.value);
-      }
-    }
-
-    if (i + RSS_BATCH_SIZE < rssSources.length) {
-      await new Promise(r => setTimeout(r, RSS_BATCH_DELAY));
-    }
-  }
-
-  // Fetch Bluesky in batches
-  const BSKY_BATCH_SIZE = 30;
-  const BSKY_BATCH_DELAY = 100;
-
-  for (let i = 0; i < blueskySources.length; i += BSKY_BATCH_SIZE) {
-    const batch = blueskySources.slice(i, i + BSKY_BATCH_SIZE);
-
-    const batchPromises = batch.map(async (source) => {
-      try {
-        return await fetchRssFeed(source);
-      } catch {
-        return [];
-      }
-    });
-
-    const batchResults = await Promise.allSettled(batchPromises);
-    for (const result of batchResults) {
-      if (result.status === 'fulfilled') {
-        allItems.push(...result.value);
-      }
-    }
-
-    if (i + BSKY_BATCH_SIZE < blueskySources.length) {
-      await new Promise(r => setTimeout(r, BSKY_BATCH_DELAY));
-    }
-  }
-
-  // Fetch Telegram in batches (web scraping can be slow)
-  const TG_BATCH_SIZE = 10;
-  const TG_BATCH_DELAY = 200;
-
-  for (let i = 0; i < telegramSources.length; i += TG_BATCH_SIZE) {
-    const batch = telegramSources.slice(i, i + TG_BATCH_SIZE);
-
-    const batchPromises = batch.map(async (source) => {
-      try {
-        return await fetchRssFeed(source);
-      } catch {
-        return [];
-      }
-    });
-
-    const batchResults = await Promise.allSettled(batchPromises);
-    for (const result of batchResults) {
-      if (result.status === 'fulfilled') {
-        allItems.push(...result.value);
-      }
-    }
-
-    if (i + TG_BATCH_SIZE < telegramSources.length) {
-      await new Promise(r => setTimeout(r, TG_BATCH_DELAY));
-    }
-  }
-
-  // Fetch Mastodon in batches (API is generous - 7,500 req/5min)
-  const MASTO_BATCH_SIZE = 20;
-  const MASTO_BATCH_DELAY = 100;
-
-  for (let i = 0; i < mastodonSources.length; i += MASTO_BATCH_SIZE) {
-    const batch = mastodonSources.slice(i, i + MASTO_BATCH_SIZE);
-
-    const batchPromises = batch.map(async (source) => {
-      try {
-        return await fetchRssFeed(source);
-      } catch {
-        return [];
-      }
-    });
-
-    const batchResults = await Promise.allSettled(batchPromises);
-    for (const result of batchResults) {
-      if (result.status === 'fulfilled') {
-        allItems.push(...result.value);
-      }
-    }
-
-    if (i + MASTO_BATCH_SIZE < mastodonSources.length) {
-      await new Promise(r => setTimeout(r, MASTO_BATCH_DELAY));
-    }
-  }
-
-  // Fetch Reddit in smaller batches (tight rate limit ~10 req/min)
-  const REDDIT_BATCH_SIZE = 5;
-  const REDDIT_BATCH_DELAY = 500;
-
-  for (let i = 0; i < redditSources.length; i += REDDIT_BATCH_SIZE) {
-    const batch = redditSources.slice(i, i + REDDIT_BATCH_SIZE);
-
-    const batchPromises = batch.map(async (source) => {
-      try {
-        return await fetchRssFeed(source);
-      } catch {
-        return [];
-      }
-    });
-
-    const batchResults = await Promise.allSettled(batchPromises);
-    for (const result of batchResults) {
-      if (result.status === 'fulfilled') {
-        allItems.push(...result.value);
-      }
-    }
-
-    if (i + REDDIT_BATCH_SIZE < redditSources.length) {
-      await new Promise(r => setTimeout(r, REDDIT_BATCH_DELAY));
-    }
-  }
-
-  // Fetch YouTube (standard RSS, moderate batching)
-  const YT_BATCH_SIZE = 10;
-  const YT_BATCH_DELAY = 100;
-
-  for (let i = 0; i < youtubeSources.length; i += YT_BATCH_SIZE) {
-    const batch = youtubeSources.slice(i, i + YT_BATCH_SIZE);
-
-    const batchPromises = batch.map(async (source) => {
-      try {
-        return await fetchRssFeed(source);
-      } catch {
-        return [];
-      }
-    });
-
-    const batchResults = await Promise.allSettled(batchPromises);
-    for (const result of batchResults) {
-      if (result.status === 'fulfilled') {
-        allItems.push(...result.value);
-      }
-    }
-
-    if (i + YT_BATCH_SIZE < youtubeSources.length) {
-      await new Promise(r => setTimeout(r, YT_BATCH_DELAY));
-    }
-  }
-
-  return allItems;
+  return [...rssItems, ...bskyItems, ...tgItems, ...mastoItems, ...redditItems, ...ytItems];
 }
 
 /**
