@@ -7,7 +7,7 @@ import { EditorialCard, isEditorialItem } from './EditorialCard';
 import { BriefingCard } from './BriefingCard';
 import { ArrowPathIcon, ExclamationTriangleIcon, GlobeAltIcon, ChevronDownIcon, SignalIcon } from '@heroicons/react/24/outline';
 import { regionDisplayNames } from '@/lib/regionDetection';
-import { TrendingKeywords } from './TrendingKeywords';
+import { TrendingKeywords, TrendingKeywordsInline } from './TrendingKeywords';
 import { PlatformIcon, platformColors, platformBadgeStyles } from './PlatformIcon';
 
 interface ActivityData {
@@ -120,17 +120,28 @@ const secondaryTabs: TabConfig[] = [
 
 const allTabs: TabConfig[] = [...primaryTabs, ...secondaryTabs];
 
-// Platform filter options (multi-select)
-type PlatformId = 'bluesky' | 'rss' | 'telegram' | 'mastodon' | 'youtube' | 'reddit';
+// Platform filter options (multi-select) - Only MVP platforms
+type PlatformId = 'bluesky' | 'telegram' | 'mastodon';
 const platformOptions: { id: PlatformId; label: string }[] = [
   { id: 'bluesky', label: 'Bluesky' },
-  { id: 'rss', label: 'RSS' },
   { id: 'telegram', label: 'Telegram' },
   { id: 'mastodon', label: 'Mastodon' },
-  { id: 'youtube', label: 'YouTube' },
-  { id: 'reddit', label: 'Reddit' },
 ];
-const ALL_PLATFORMS = new Set<PlatformId>(['bluesky', 'rss', 'telegram', 'mastodon', 'youtube', 'reddit']);
+const ALL_PLATFORMS = new Set<PlatformId>(['bluesky', 'telegram', 'mastodon']);
+
+// Source type filter options
+type SourceTypeId = 'osint' | 'news-org' | 'reporter' | 'analyst' | 'official' | 'aggregator' | 'bot' | 'ground';
+const sourceTypeOptions: { id: SourceTypeId; label: string }[] = [
+  { id: 'osint', label: 'OSINT' },
+  { id: 'news-org', label: 'News Org' },
+  { id: 'reporter', label: 'Reporter' },
+  { id: 'analyst', label: 'Analyst' },
+  { id: 'official', label: 'Official' },
+  { id: 'aggregator', label: 'Aggregator' },
+  { id: 'bot', label: 'Bot' },
+  { id: 'ground', label: 'Ground' },
+];
+const ALL_SOURCE_TYPES = new Set<SourceTypeId>(['osint', 'news-org', 'reporter', 'analyst', 'official', 'aggregator', 'bot', 'ground']);
 
 // Format actual time for last updated (e.g., "3:45 PM")
 function formatActualTime(isoString: string | null | undefined): string {
@@ -164,9 +175,11 @@ export function NewsFeed({
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
   const [enabledPlatforms, setEnabledPlatforms] = useState<Set<PlatformId>>(new Set(ALL_PLATFORMS));
+  const [enabledSourceTypes, setEnabledSourceTypes] = useState<Set<SourceTypeId>>(new Set(ALL_SOURCE_TYPES));
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [regionalExpanded, setRegionalExpanded] = useState(false);
-  const [sourceFilterExpanded, setSourceFilterExpanded] = useState(false);
+  const [sourcesExpanded, setSourcesExpanded] = useState(false);
+  const [trendingExpanded, setTrendingExpanded] = useState(false);
   const [selectedTab, setSelectedTab] = useState<SelectedTab>('all'); // Local tab state, defaults to All
   const moreDropdownRef = useRef<HTMLDivElement>(null);
   const isInitialLoadRef = useRef(true);
@@ -218,13 +231,19 @@ export function NewsFeed({
     }
 
     // Apply platform filter (multi-select)
-    const allEnabled = enabledPlatforms.size === ALL_PLATFORMS.size;
-    if (!allEnabled) {
+    const allPlatformsEnabled = enabledPlatforms.size === ALL_PLATFORMS.size;
+    if (!allPlatformsEnabled) {
       filtered = filtered.filter((item) => enabledPlatforms.has(item.source.platform as PlatformId));
     }
 
+    // Apply source type filter (multi-select)
+    const allSourceTypesEnabled = enabledSourceTypes.size === ALL_SOURCE_TYPES.size;
+    if (!allSourceTypesEnabled) {
+      filtered = filtered.filter((item) => enabledSourceTypes.has(item.source.sourceType as SourceTypeId));
+    }
+
     return filtered;
-  }, [items, selectedTab, enabledPlatforms]);
+  }, [items, selectedTab, enabledPlatforms, enabledSourceTypes]);
 
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort(
@@ -304,6 +323,19 @@ export function NewsFeed({
     }, {} as Record<string, number>);
   }, [items, selectedTab]);
 
+  // Count items by source type (from region-filtered items)
+  const sourceTypeCounts = useMemo(() => {
+    const regionFiltered = selectedTab === 'all'
+      ? items
+      : items.filter((item) => item.region === selectedTab);
+
+    return regionFiltered.reduce((acc, item) => {
+      const sourceType = item.source.sourceType;
+      acc[sourceType] = (acc[sourceType] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [items, selectedTab]);
+
   // Get count for a tab (use full item counts, not paginated)
   const getTabCount = (tabId: TabId): number => {
     if (tabId === 'all') return itemsForCounts.length;
@@ -362,24 +394,12 @@ export function NewsFeed({
     ? 'All Regions'
     : allTabs.find(t => t.id === selectedTab)?.label || 'All Regions';
 
-  // Get the current source label for multi-select
-  const allPlatformsEnabled = enabledPlatforms.size === ALL_PLATFORMS.size;
-  const currentSourceLabel = allPlatformsEnabled
-    ? 'All Sources'
-    : enabledPlatforms.size === 0
-      ? 'None'
-      : enabledPlatforms.size === 1
-        ? platformOptions.find(p => enabledPlatforms.has(p.id))?.label || 'Sources'
-        : `${enabledPlatforms.size} Sources`;
-
-  const totalFilteredPosts = Object.values(platformCounts).reduce((sum, c) => sum + c, 0);
-
   // Calculate display stats based on filtered view
-  // Region selection = still show "Fetched X in {region}"
-  // Platform filter = show "(filtered)"
-  const isPlatformFiltered = !allPlatformsEnabled;
-  const displayPosts = (selectedTab !== 'all' || isPlatformFiltered) ? filteredItems.length : (totalPosts ?? filteredItems.length);
-  const displaySources = (selectedTab !== 'all' || isPlatformFiltered)
+  const allPlatformsEnabled = enabledPlatforms.size === ALL_PLATFORMS.size;
+  const allSourceTypesEnabled = enabledSourceTypes.size === ALL_SOURCE_TYPES.size;
+  const isFiltered = !allPlatformsEnabled || !allSourceTypesEnabled;
+  const displayPosts = (selectedTab !== 'all' || isFiltered) ? filteredItems.length : (totalPosts ?? filteredItems.length);
+  const displaySources = (selectedTab !== 'all' || isFiltered)
     ? new Set(filteredItems.map(i => i.source.id)).size
     : (uniqueSources ?? new Set(filteredItems.map(i => i.source.id)).size);
 
@@ -416,36 +436,54 @@ export function NewsFeed({
             )}
           </div>
 
-          {/* Row 2: Stats - consistent format for all views */}
+          {/* Row 2: Stats - with loading skeleton */}
           <div className="text-xs text-slate-500 dark:text-slate-400 mb-2.5">
-            <div>
-              {isPlatformFiltered ? 'Showing ' : 'Fetched '}
-              <span className="font-semibold text-slate-700 dark:text-slate-300">{displayPosts.toLocaleString()} posts</span>
-              {' from '}
-              <span className="font-semibold text-slate-700 dark:text-slate-300">{displaySources.toLocaleString()} sources</span>
-              {isPlatformFiltered
-                ? ' (filtered by platform)'
-                : <> in last <span className="font-semibold text-slate-700 dark:text-slate-300">six hours</span> {selectedTab === 'all' ? 'globally' : `in ${regionDisplayNames[selectedTab] || selectedTab}`}</>
-              }
-            </div>
-            {/* Activity indicator - show for both global and regional views */}
-            {!isPlatformFiltered && activity && activity[selectedTab] && (
-              <div className="italic mt-0.5">
-                {(() => {
-                  const a = activity[selectedTab];
-                  if (!a.vsNormal || a.vsNormal === 'normal') return 'Typical activity';
-                  if (a.vsNormal === 'above') {
-                    if (a.multiplier && a.multiplier >= 2) return `More than usual (${a.multiplier}× normal)`;
-                    if (a.percentChange && a.percentChange >= 50) return `More than usual (+${a.percentChange}%)`;
-                    return 'Slightly more than usual';
-                  }
-                  if (a.vsNormal === 'below') {
-                    if (a.percentChange) return `Less than usual (${Math.abs(a.percentChange)}% below)`;
-                    return 'Less than usual';
-                  }
-                  return 'Typical activity';
-                })()}
+            {isLoading && displayPosts === 0 ? (
+              // Skeleton loading state
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1">
+                  <span>Fetching</span>
+                  <span className="inline-block w-12 h-3.5 skeleton-shimmer rounded" />
+                  <span>posts from</span>
+                  <span className="inline-block w-10 h-3.5 skeleton-shimmer rounded" />
+                  <span>sources...</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="inline-block w-24 h-3 skeleton-shimmer rounded" />
+                </div>
               </div>
+            ) : (
+              <>
+                <div>
+                  {isFiltered ? 'Showing ' : 'Fetched '}
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{displayPosts.toLocaleString()} posts</span>
+                  {' from '}
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">{displaySources.toLocaleString()} sources</span>
+                  {isFiltered
+                    ? ' (filtered)'
+                    : <> in last <span className="font-semibold text-slate-700 dark:text-slate-300">six hours</span> {selectedTab === 'all' ? 'globally' : `in ${regionDisplayNames[selectedTab] || selectedTab}`}</>
+                  }
+                </div>
+                {/* Activity indicator - show for both global and regional views */}
+                {!isFiltered && activity && activity[selectedTab] && (
+                  <div className="italic mt-0.5">
+                    {(() => {
+                      const a = activity[selectedTab];
+                      if (!a.vsNormal || a.vsNormal === 'normal') return 'Typical activity';
+                      if (a.vsNormal === 'above') {
+                        if (a.multiplier && a.multiplier >= 2) return `More than usual (${a.multiplier}× normal)`;
+                        if (a.percentChange && a.percentChange >= 50) return `More than usual (+${a.percentChange}%)`;
+                        return 'Slightly more than usual';
+                      }
+                      if (a.vsNormal === 'below') {
+                        if (a.percentChange) return `Less than usual (${Math.abs(a.percentChange)}% below)`;
+                        return 'Less than usual';
+                      }
+                      return 'Typical activity';
+                    })()}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -510,7 +548,7 @@ export function NewsFeed({
                 <button
                   onClick={() => {
                     setRegionalExpanded(!regionalExpanded);
-                    setSourceFilterExpanded(false);
+                    setSourcesExpanded(false);
                   }}
                   className={`
                     group relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap
@@ -570,60 +608,50 @@ export function NewsFeed({
             )}
           </div>
 
-          {/* Row 3: Source filter */}
-          <div className="flex items-center gap-2 sm:gap-3 pb-2">
-            {/* Source Dropdown - Multi-select with checkboxes */}
-            <div className="relative">
+          {/* Row 3: Expandable Filters */}
+          <div className="flex flex-col gap-2 pb-2">
+            {/* Filter toggles row */}
+            <div className="flex items-center gap-2">
+              {/* Sources toggle */}
               <button
                 onClick={() => {
-                  setSourceFilterExpanded(!sourceFilterExpanded);
-                  setRegionalExpanded(false);
+                  setSourcesExpanded(!sourcesExpanded);
+                  setTrendingExpanded(false);
                 }}
-                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${
+                  sourcesExpanded
+                    ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                }`}
               >
-                {/* Show mini platform icons when filtered */}
-                {!allPlatformsEnabled && enabledPlatforms.size > 0 && enabledPlatforms.size <= 3 && (
-                  <div className="flex items-center -space-x-1">
-                    {Array.from(enabledPlatforms).slice(0, 3).map((p) => (
-                      <span key={p} className={platformColors[p]}>
-                        <PlatformIcon platform={p} className="w-3.5 h-3.5" />
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <span className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200">{currentSourceLabel}</span>
-                <ChevronDownIcon className={`w-3.5 h-3.5 text-slate-400 transition-transform ${sourceFilterExpanded ? 'rotate-180' : ''}`} />
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Sources</span>
+                <span className="text-2xs text-slate-500 dark:text-slate-400">
+                  {enabledPlatforms.size}/{platformOptions.length}
+                </span>
+                <ChevronDownIcon className={`w-3 h-3 text-slate-400 transition-transform ${sourcesExpanded ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Source dropdown menu - multi-select with checkboxes */}
-              {sourceFilterExpanded && (
-                <div className="absolute top-full left-0 mt-1 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 min-w-[200px]">
-                  {/* Select All / None header */}
-                  <div className="px-3 pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Platforms</span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setEnabledPlatforms(new Set(ALL_PLATFORMS))}
-                        className="text-2xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                      >
-                        All
-                      </button>
-                      <span className="text-slate-300 dark:text-slate-600">|</span>
-                      <button
-                        onClick={() => setEnabledPlatforms(new Set())}
-                        className="text-2xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                      >
-                        None
-                      </button>
-                    </div>
-                  </div>
+              {/* Trending toggle */}
+              <TrendingKeywordsInline
+                items={allItemsForTrending || items}
+                isLoading={isLoading}
+                expanded={trendingExpanded}
+                onToggle={() => {
+                  setTrendingExpanded(!trendingExpanded);
+                  setSourcesExpanded(false);
+                }}
+              />
+            </div>
 
-                  {/* Platform checkboxes */}
+            {/* Expanded Sources row */}
+            {sourcesExpanded && (
+              <div className="flex flex-col gap-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                {/* Platforms row */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-2xs font-semibold text-slate-500 dark:text-slate-400 uppercase mr-1">Platforms:</span>
                   {platformOptions.map((platform) => {
                     const isEnabled = enabledPlatforms.has(platform.id);
                     const count = platformCounts[platform.id] || 0;
-                    const badgeStyle = platformBadgeStyles[platform.id] || '';
-
                     return (
                       <button
                         key={platform.id}
@@ -636,55 +664,70 @@ export function NewsFeed({
                           }
                           setEnabledPlatforms(newSet);
                         }}
-                        className="w-full px-3 py-2 text-sm transition-colors text-left flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                          isEnabled
+                            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                            : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600 opacity-60'
+                        }`}
                       >
-                        {/* Custom checkbox */}
-                        <div className={`
-                          w-4 h-4 rounded border-2 flex items-center justify-center transition-all
-                          ${isEnabled
-                            ? 'bg-blue-500 border-blue-500'
-                            : 'border-slate-300 dark:border-slate-600'
-                          }
-                        `}>
-                          {isEnabled && (
-                            <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </div>
-
-                        {/* Platform icon and name */}
-                        <div className={`flex items-center gap-2 flex-1 ${isEnabled ? '' : 'opacity-50'}`}>
-                          <span className={platformColors[platform.id]}>
-                            <PlatformIcon platform={platform.id} className="w-4 h-4" />
-                          </span>
-                          <span className="font-medium text-slate-700 dark:text-slate-200">{platform.label}</span>
-                        </div>
-
-                        {/* Count badge */}
-                        <span className={`
-                          px-1.5 py-0.5 text-2xs font-semibold rounded-md border
-                          ${isEnabled ? badgeStyle : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'}
-                        `}>
-                          {isLoading && count === 0 ? '...' : count}
-                        </span>
+                        <PlatformIcon platform={platform.id} className="w-3 h-3" />
+                        <span>{platform.label}</span>
+                        <span className="text-2xs opacity-75">({count})</span>
                       </button>
                     );
                   })}
-
-                  {/* Total footer */}
-                  <div className="px-3 pt-2 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Total</span>
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                      {filteredItems.length} posts
-                    </span>
-                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* Trending Keywords - uses all items, not paginated subset */}
-            <TrendingKeywords items={allItemsForTrending || items} isLoading={isLoading} />
+                {/* Source Types row */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-2xs font-semibold text-slate-500 dark:text-slate-400 uppercase mr-1">Types:</span>
+                  {sourceTypeOptions.map((sourceType) => {
+                    const isEnabled = enabledSourceTypes.has(sourceType.id);
+                    const count = sourceTypeCounts[sourceType.id] || 0;
+                    if (count === 0 && !isEnabled) return null; // Hide types with no items
+                    return (
+                      <button
+                        key={sourceType.id}
+                        onClick={() => {
+                          const newSet = new Set(enabledSourceTypes);
+                          if (isEnabled) {
+                            newSet.delete(sourceType.id);
+                          } else {
+                            newSet.add(sourceType.id);
+                          }
+                          setEnabledSourceTypes(newSet);
+                        }}
+                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                          isEnabled
+                            ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                            : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600 opacity-60'
+                        }`}
+                      >
+                        <span>{sourceType.label}</span>
+                        <span className="text-2xs opacity-75">({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Quick actions */}
+                <div className="flex items-center gap-2 pt-1 border-t border-slate-200 dark:border-slate-700">
+                  <button
+                    onClick={() => {
+                      setEnabledPlatforms(new Set(ALL_PLATFORMS));
+                      setEnabledSourceTypes(new Set(ALL_SOURCE_TYPES));
+                    }}
+                    className="text-2xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Select All
+                  </button>
+                  <span className="text-slate-300 dark:text-slate-600">|</span>
+                  <span className="text-2xs text-slate-500 dark:text-slate-400">
+                    {filteredItems.length} posts showing
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

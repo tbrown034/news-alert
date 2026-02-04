@@ -11,6 +11,7 @@ interface TrendingKeywordsProps {
   isLoading?: boolean;
 }
 
+// Original dropdown version (kept for backwards compatibility)
 export function TrendingKeywords({ items, isLoading }: TrendingKeywordsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -32,7 +33,6 @@ export function TrendingKeywords({ items, isLoading }: TrendingKeywordsProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const topKeyword = trendingData?.keywords[0];
   const hasKeywords = trendingData && trendingData.keywords.length > 0;
 
   return (
@@ -88,6 +88,97 @@ export function TrendingKeywords({ items, isLoading }: TrendingKeywordsProps) {
         </div>
       )}
     </div>
+  );
+}
+
+// New inline expandable version
+interface TrendingKeywordsInlineProps {
+  items: NewsItem[];
+  isLoading?: boolean;
+  expanded: boolean;
+  onToggle: () => void;
+}
+
+export function TrendingKeywordsInline({ items, isLoading, expanded, onToggle }: TrendingKeywordsInlineProps) {
+  const [showAll, setShowAll] = useState(false);
+
+  // Compute trending keywords from items
+  const trendingData = useMemo(() => {
+    if (items.length === 0) return null;
+    return getTrendingKeywords(items, 15);
+  }, [items]);
+
+  const hasKeywords = trendingData && trendingData.keywords.length > 0;
+  const visibleKeywords = showAll ? trendingData?.keywords : trendingData?.keywords.slice(0, 5);
+  const hiddenCount = (trendingData?.keywords.length || 0) - 5;
+
+  return (
+    <>
+      {/* Toggle button */}
+      <button
+        onClick={onToggle}
+        disabled={isLoading || !hasKeywords}
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${
+          expanded
+            ? 'bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800'
+            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+      >
+        <FireIcon className="w-3.5 h-3.5 text-orange-500" />
+        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+          {isLoading ? 'Loading...' : hasKeywords ? 'Trending' : 'No trends'}
+        </span>
+        {hasKeywords && (
+          <>
+            <span className="text-2xs text-slate-500 dark:text-slate-400">
+              {trendingData?.keywords.length}
+            </span>
+            <ChevronDownIcon className={`w-3 h-3 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+          </>
+        )}
+      </button>
+
+      {/* Expanded inline view - rendered by parent */}
+      {expanded && trendingData && (
+        <div className="w-full p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-2xs font-semibold text-orange-600 dark:text-orange-400 uppercase mr-1">
+              <FireIcon className="w-3 h-3 inline mr-0.5" />
+              Trending:
+            </span>
+            {visibleKeywords?.map((kw, index) => (
+              <span
+                key={kw.keyword}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                  index < 3
+                    ? 'bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200'
+                    : 'bg-orange-100 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300'
+                }`}
+              >
+                {kw.keyword}
+                <span className="text-2xs opacity-75">({kw.count})</span>
+              </span>
+            ))}
+            {!showAll && hiddenCount > 0 && (
+              <button
+                onClick={() => setShowAll(true)}
+                className="text-2xs font-medium text-orange-600 dark:text-orange-400 hover:underline"
+              >
+                +{hiddenCount} more
+              </button>
+            )}
+            {showAll && hiddenCount > 0 && (
+              <button
+                onClick={() => setShowAll(false)}
+                className="text-2xs font-medium text-orange-600 dark:text-orange-400 hover:underline"
+              >
+                Show less
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
