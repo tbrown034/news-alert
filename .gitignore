@@ -41,5 +41,12 @@ yarn-error.log*
 next-env.d.ts
 auth.db
 
-# playwright screenshots (testing)
+# telegram auth artifacts
+telegram_code_hash.txt
+*.session
+pulse_session.session
+
+# playwright
 .playwright-mcp/
+playwright-report/
+test-results/

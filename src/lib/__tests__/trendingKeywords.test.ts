@@ -151,7 +151,7 @@ describe('getTrendingKeywords', () => {
     const result = getTrendingKeywords(items, 10);
 
     assert.ok(result.keywords.length > 0, 'Should return keywords');
-    assert.strictEqual(result.keywords[0].keyword, 'ukraine', 'Ukraine should be first (most frequent)');
+    assert.strictEqual(result.keywords[0].keyword, 'Ukraine', 'Ukraine should be first (most frequent)');
     assert.strictEqual(result.keywords[0].count, 3, 'Ukraine count should be 3');
   });
 

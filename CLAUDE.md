@@ -31,7 +31,6 @@ src/
 │   ├── rss.ts                  # Multi-platform fetcher (1300+ lines)
 │   ├── regionDetection.ts      # Keyword-based geo classification
 │   ├── activityDetection.ts    # Regional activity levels
-│   ├── alertStatus.ts          # Chronological sorting
 │   ├── aiSummary.ts            # Claude API integration
 │   ├── newsCache.ts            # 5min TTL cache
 │   ├── rateLimit.ts            # 60 req/min per IP

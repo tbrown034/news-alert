@@ -89,10 +89,6 @@ export interface Source {
   tags?: USTag[];
 }
 
-// Alert status (deprecated - keeping for backward compatibility)
-export type AlertStatus = 'first' | 'developing' | 'confirmed' | null;
-
-// News item
 export type VerificationStatus = 'unverified' | 'multiple-sources' | 'confirmed';
 
 // Media attachment for posts (images, videos, external links)
@@ -134,11 +130,6 @@ export interface NewsItem {
   // Reply/repost context for social media posts
   replyContext?: ReplyContext;
   repostContext?: RepostContext;
-
-  // DEPRECATED: Old cascade system
-  alertStatus?: AlertStatus;
-  isBreaking?: boolean;
-  confirmsSource?: string;
 
   // For grouping similar stories
   relatedItems?: string[];

@@ -51,38 +51,3 @@ export function classifyRegion(
   return { region: sourceRegion };
 }
 
-// Breaking news keywords - focused on geopolitical events
-export const breakingKeywords = [
-  'breaking:', 'urgent:', 'alert:', 'just in:', 'developing:',
-  'explosion', 'airstrike', 'missile strike', 'rocket attack',
-  'troops', 'military operation', 'invasion', 'declaration of war',
-  'ceasefire', 'peace deal', 'hostage', 'assassination',
-  'coup', 'martial law', 'state of emergency', 'sanctions',
-  'nuclear', 'chemical weapons', 'biological weapons',
-  'embassy', 'diplomat expelled', 'protests',
-];
-
-// Keywords that indicate NOT breaking (sports, entertainment, etc.)
-const notBreakingKeywords = [
-  'semifinal', 'final score', 'match', 'goal', 'tournament',
-  'cup of nations', 'world cup', 'premier league', 'champions league',
-  'nba', 'nfl', 'mlb', 'tennis', 'golf', 'cricket',
-  'box office', 'movie', 'album', 'concert', 'celebrity',
-  'recipe', 'weather forecast', 'stock market', 'earnings',
-];
-
-/**
- * Check if content appears to be breaking news.
- * Excludes sports/entertainment, then checks for breaking indicators.
- */
-export function isBreakingNews(title: string, content: string): boolean {
-  const text = `${title} ${content}`.toLowerCase();
-
-  // First check if it's clearly NOT breaking (sports, entertainment)
-  if (notBreakingKeywords.some((kw) => text.includes(kw))) {
-    return false;
-  }
-
-  // Then check for actual breaking news indicators
-  return breakingKeywords.some((kw) => text.includes(kw));
-}

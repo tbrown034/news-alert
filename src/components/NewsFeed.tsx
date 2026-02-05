@@ -5,14 +5,13 @@ import { NewsItem, WatchpointId } from '@/types';
 import { NewsCard } from './NewsCard';
 import { EditorialCard, isEditorialItem } from './EditorialCard';
 import { BriefingCard } from './BriefingCard';
-import { ArrowPathIcon, ExclamationTriangleIcon, GlobeAltIcon, ChevronDownIcon, SignalIcon, FireIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ExclamationTriangleIcon, GlobeAltIcon, ChevronDownIcon, SignalIcon, FireIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { regionDisplayNames } from '@/lib/regionDetection';
 import { getTrendingKeywords } from '@/lib/trendingKeywords';
 
 interface ActivityData {
   level: string;
   count: number;
-  breaking: number;
   baseline?: number;
   multiplier?: number;
   vsNormal?: string;
@@ -152,6 +151,7 @@ export function NewsFeed({
   const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [regionalExpanded, setRegionalExpanded] = useState(false);
+  const [showFeedStats, setShowFeedStats] = useState(false);
   const [selectedTab, setSelectedTab] = useState<SelectedTab>('all'); // Local tab state, defaults to All
   const moreDropdownRef = useRef<HTMLDivElement>(null);
   const isInitialLoadRef = useRef(true);
@@ -212,6 +212,38 @@ export function NewsFeed({
     const result = getTrendingKeywords(items, 4);
     return result.keywords; // Keep full objects with count
   }, [items, selectedTab]);
+
+  // Feed stats: platform + source type breakdowns
+  const feedStats = useMemo(() => {
+    const source = allItems || items;
+    const platformCounts: Record<string, { posts: number; sources: Set<string> }> = {};
+    const typeCounts: Record<string, number> = {};
+
+    for (const item of source) {
+      if (item.id.startsWith('editorial-')) continue;
+      const platform = item.source?.platform || 'unknown';
+      const sourceType = item.source?.sourceType || 'unknown';
+
+      if (!platformCounts[platform]) {
+        platformCounts[platform] = { posts: 0, sources: new Set() };
+      }
+      platformCounts[platform].posts++;
+      platformCounts[platform].sources.add(item.source.id);
+
+      typeCounts[sourceType] = (typeCounts[sourceType] || 0) + 1;
+    }
+
+    // Convert to sorted arrays
+    const platforms = Object.entries(platformCounts)
+      .map(([name, { posts, sources }]) => ({ name, posts, sources: sources.size }))
+      .sort((a, b) => b.posts - a.posts);
+
+    const types = Object.entries(typeCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+
+    return { platforms, types };
+  }, [allItems, items]);
 
   // Track new items for animation
   useEffect(() => {
@@ -361,13 +393,65 @@ export function NewsFeed({
                   <span>{isLoading ? 'Refreshing...' : 'Refresh Feed'}</span>
                 </button>
                 {lastUpdated && (
-                  <span className="text-2xs text-slate-400 dark:text-slate-500" suppressHydrationWarning>
-                    Last updated {formatActualTime(lastUpdated)}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-2xs text-slate-400 dark:text-slate-500" suppressHydrationWarning>
+                      Last updated {formatActualTime(lastUpdated)}
+                    </span>
+                    <button
+                      onClick={() => setShowFeedStats(!showFeedStats)}
+                      className={`p-0.5 rounded transition-colors ${
+                        showFeedStats
+                          ? 'text-blue-500 dark:text-blue-400'
+                          : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                      }`}
+                      aria-label="Toggle feed stats"
+                      aria-expanded={showFeedStats}
+                    >
+                      <ChartBarIcon className="w-3 h-3" />
+                    </button>
+                  </div>
                 )}
               </div>
             )}
           </div>
+
+          {/* Collapsible Feed Stats Panel */}
+          {showFeedStats && (
+            <div className="mb-2 p-2.5 bg-white/60 dark:bg-slate-800/60 rounded-lg border border-slate-200/50 dark:border-slate-700/50 space-y-2">
+              {/* Platform breakdown */}
+              <div>
+                <div className="text-2xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">By Platform</div>
+                <div className="grid grid-cols-1 xs:grid-cols-3 gap-1.5">
+                  {feedStats.platforms.map(({ name, posts, sources }) => (
+                    <div key={name} className="flex items-center justify-between px-2 py-1 bg-slate-50 dark:bg-slate-900/50 rounded text-xs">
+                      <span className="font-medium text-slate-700 dark:text-slate-300 capitalize">{name}</span>
+                      <span className="text-slate-500 dark:text-slate-400">
+                        {posts} <span className="text-slate-400 dark:text-slate-500">/ {sources} src</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Source type breakdown */}
+              <div>
+                <div className="text-2xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">By Source Type</div>
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                  {feedStats.types.map(({ name, count }) => (
+                    <span key={name} className="text-slate-600 dark:text-slate-400">
+                      <span className="capitalize">{name}</span>{' '}
+                      <span className="font-mono text-slate-500 dark:text-slate-500">{count}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+              {/* Load time */}
+              {loadTimeMs && (
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  Fetch time: <span className="font-mono text-slate-700 dark:text-slate-300">{(loadTimeMs / 1000).toFixed(1)}s</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Row 2: Stats - with loading skeleton */}
           <div className="text-xs text-slate-500 dark:text-slate-400 mb-2.5">

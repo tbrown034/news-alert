@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import { fetchRssFeed } from '@/lib/rss';
 import {
-  allTieredSources,
   getSourcesByRegion,
   TieredSource,
 } from '@/lib/sources-clean';
-import { processAlertStatuses, sortByCascadePriority } from '@/lib/alertStatus';
 import { calculateRegionActivity } from '@/lib/activityDetection';
 import {
   getCachedNews,
@@ -16,7 +14,6 @@ import { WatchpointId, NewsItem, Source } from '@/types';
 import { checkRateLimit, getClientIp, rateLimitHeaders } from '@/lib/rateLimit';
 import { getActiveEditorialPosts } from '@/lib/editorial';
 import { EditorialPost } from '@/types/editorial';
-import { shouldFilterPost } from '@/lib/blocklist';
 import { logActivitySnapshot } from '@/lib/activityLogging';
 
 export const dynamic = 'force-dynamic';
@@ -27,19 +24,11 @@ export const maxDuration = 60;
 const VALID_REGIONS: WatchpointId[] = ['all', 'us', 'latam', 'middle-east', 'europe-russia', 'asia', 'seismic'];
 
 // =============================================================================
-// MVP PLATFORM FILTER
-// Toggle platforms on/off here. Set to false to disable fetching.
-// Source definitions are preserved - just not fetched until re-enabled.
+// ENABLED PLATFORMS
+// This route serves the OSINT/social feed (Bluesky, Telegram, Mastodon).
+// RSS news agencies are served by /api/mainstream instead.
 // =============================================================================
-const ENABLED_PLATFORMS = {
-  bluesky: true,    // 229 sources - API-based, fast
-  telegram: true,   // 11 sources - web scraping
-  mastodon: true,   // 6 sources - API-based
-  rss: false,       // 214 sources - TODO: re-enable after MVP
-  reddit: false,    // 8 sources - TODO: re-enable after MVP
-  youtube: false,   // 7 sources - TODO: re-enable after MVP
-};
-// =============================================================================
+const ENABLED_PLATFORMS: Set<string> = new Set(['bluesky', 'telegram', 'mastodon']);
 
 // Time window defaults (in hours)
 const DEFAULT_TIME_WINDOW = 6; // 6 hours - optimized for "what's happening NOW"
@@ -53,40 +42,22 @@ const DEFAULT_LIMIT = 2000;
 const inFlightFetches = new Map<string, Promise<NewsItem[]>>();
 
 
-// Check if source is Bluesky
-function isBlueskySource(source: TieredSource): boolean {
-  return source.platform === 'bluesky' || source.feedUrl.includes('bsky.app');
-}
-
-// Check if source is Telegram
-function isTelegramSource(source: TieredSource): boolean {
-  return source.platform === 'telegram' || source.feedUrl.includes('t.me/');
-}
-
-// Check if source is Mastodon
-function isMastodonSource(source: TieredSource): boolean {
-  return source.platform === 'mastodon';
-}
-
-// Check if source is Reddit
-function isRedditSource(source: TieredSource): boolean {
-  return source.platform === 'reddit' || source.feedUrl.includes('reddit.com/r/');
-}
-
-// Check if source is YouTube
-function isYouTubeSource(source: TieredSource): boolean {
-  return source.platform === 'youtube' || source.feedUrl.includes('youtube.com/feeds/');
-}
-
 // Check if source platform is enabled
 function isPlatformEnabled(source: TieredSource): boolean {
-  if (isBlueskySource(source)) return ENABLED_PLATFORMS.bluesky;
-  if (isTelegramSource(source)) return ENABLED_PLATFORMS.telegram;
-  if (isMastodonSource(source)) return ENABLED_PLATFORMS.mastodon;
-  if (isRedditSource(source)) return ENABLED_PLATFORMS.reddit;
-  if (isYouTubeSource(source)) return ENABLED_PLATFORMS.youtube;
-  // Default to RSS for anything else
-  return ENABLED_PLATFORMS.rss;
+  return ENABLED_PLATFORMS.has(source.platform);
+}
+
+// Platform type helpers (used for batching)
+function isBlueskySource(source: TieredSource): boolean {
+  return source.platform === 'bluesky';
+}
+
+function isTelegramSource(source: TieredSource): boolean {
+  return source.platform === 'telegram';
+}
+
+function isMastodonSource(source: TieredSource): boolean {
+  return source.platform === 'mastodon';
 }
 
 // Get sources filtered by region AND enabled platforms
@@ -171,33 +142,19 @@ async function fetchPlatformSources(
 async function fetchAllSources(
   sources: TieredSource[]
 ): Promise<NewsItem[]> {
-  // Separate sources by platform
+  // Separate sources by platform for appropriate batching
   const blueskySources = sources.filter(isBlueskySource);
   const telegramSources = sources.filter(isTelegramSource);
   const mastodonSources = sources.filter(isMastodonSource);
-  const redditSources = sources.filter(isRedditSource);
-  const youtubeSources = sources.filter(isYouTubeSource);
 
-  // RSS = everything else
-  const rssSources = sources.filter(s =>
-    !isBlueskySource(s) &&
-    !isTelegramSource(s) &&
-    !isMastodonSource(s) &&
-    !isRedditSource(s) &&
-    !isYouTubeSource(s)
-  );
-
-  // Fetch ALL platforms in parallel (each platform still batches internally)
-  const [rssItems, bskyItems, tgItems, mastoItems, redditItems, ytItems] = await Promise.all([
-    fetchPlatformSources(rssSources, 30, 100),      // RSS: 30 at a time
+  // Fetch all platforms in parallel (each platform batches internally)
+  const [bskyItems, tgItems, mastoItems] = await Promise.all([
     fetchPlatformSources(blueskySources, 30, 100),  // Bluesky: 30 at a time
-    fetchPlatformSources(telegramSources, 10, 200), // Telegram: 10 at a time (slow scraping)
+    fetchPlatformSources(telegramSources, 10, 200), // Telegram: 10 at a time (MTProto API)
     fetchPlatformSources(mastodonSources, 20, 100), // Mastodon: 20 at a time
-    fetchPlatformSources(redditSources, 5, 500),    // Reddit: 5 at a time (tight rate limit)
-    fetchPlatformSources(youtubeSources, 10, 100),  // YouTube: 10 at a time
   ]);
 
-  return [...rssItems, ...bskyItems, ...tgItems, ...mastoItems, ...redditItems, ...ytItems];
+  return [...bskyItems, ...tgItems, ...mastoItems];
 }
 
 /**
@@ -332,9 +289,6 @@ export async function GET(request: Request) {
     // Apply time window filter
     filtered = filterByTimeWindow(filtered, hours);
 
-    // Filter out posts with blocked keywords (sports, entertainment, etc.)
-    filtered = filtered.filter(item => !shouldFilterPost(`${item.title} ${item.content || ''}`));
-
     // If 'since' param provided, only return items newer than that timestamp
     // This enables incremental updates - client fetches only new items
     let sinceCutoff: Date | null = null;
@@ -365,11 +319,8 @@ export async function GET(request: Request) {
     const contextPosts = editorialItems.filter(p => p.editorialType === 'context');
     const eventPosts = editorialItems.filter(p => p.editorialType === 'event');
 
-    // Process alert statuses - O(n)
-    const withAlertStatus = processAlertStatuses(filtered);
-
-    // Sort by published timestamp (pure chronological)
-    const sorted = sortByCascadePriority(withAlertStatus);
+    // Sort by published timestamp (pure chronological, newest first)
+    filtered.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
     // Merge with editorial posts:
     // 1. BREAKING posts at the very top
@@ -384,15 +335,15 @@ export async function GET(request: Request) {
     let feedIdx = 0;
     let editIdx = 0;
 
-    while (feedIdx < sorted.length || editIdx < contextAndEvents.length) {
+    while (feedIdx < filtered.length || editIdx < contextAndEvents.length) {
       if (editIdx >= contextAndEvents.length) {
-        mergedFeed.push(sorted[feedIdx++]);
-      } else if (feedIdx >= sorted.length) {
+        mergedFeed.push(filtered[feedIdx++]);
+      } else if (feedIdx >= filtered.length) {
         mergedFeed.push(contextAndEvents[editIdx++]);
-      } else if (contextAndEvents[editIdx].timestamp >= sorted[feedIdx].timestamp) {
+      } else if (contextAndEvents[editIdx].timestamp >= filtered[feedIdx].timestamp) {
         mergedFeed.push(contextAndEvents[editIdx++]);
       } else {
-        mergedFeed.push(sorted[feedIdx++]);
+        mergedFeed.push(filtered[feedIdx++]);
       }
     }
 

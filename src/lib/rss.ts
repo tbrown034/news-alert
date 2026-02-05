@@ -1,6 +1,7 @@
 import { NewsItem, Source, VerificationStatus, MediaAttachment, ReplyContext, RepostContext } from '@/types';
-import { classifyRegion, isBreakingNews } from './sourceUtils';
+import { classifyRegion } from './sourceUtils';
 import { createHash } from 'crypto';
+import { getTelegramClient, isTelegramApiAvailable } from './telegramClient';
 
 /**
  * Parse a pubDate string into a Date object with timezone normalization.
@@ -227,9 +228,8 @@ function decodeHtmlEntities(text: string): string {
 }
 
 // =============================================================================
-// TELEGRAM WEB PREVIEW FETCHING
+// TELEGRAM FETCHING (MTProto API with web scraping fallback)
 // =============================================================================
-// Telegram doesn't have a public API - we scrape t.me/s/{channel} web preview
 
 interface TelegramFeedResult {
   items: RssItem[];
@@ -309,8 +309,8 @@ function parseTelegramHtml(html: string, handle: string): TelegramFeedResult {
   return { items, channelAvatar };
 }
 
-// Fetch posts from Telegram using web preview
-async function fetchTelegramFeed(source: Source & { feedUrl: string }): Promise<TelegramFeedResult> {
+// Fallback: Fetch posts from Telegram using web preview scraping
+async function fetchTelegramFeedScraper(source: Source & { feedUrl: string }): Promise<TelegramFeedResult> {
   const handle = extractTelegramHandle(source.feedUrl);
   if (!handle) {
     console.error(`[Telegram] Invalid feedUrl format: ${source.feedUrl}`);
@@ -368,6 +368,168 @@ async function fetchTelegramFeed(source: Source & { feedUrl: string }): Promise<
       console.error(`[Telegram] ${source.name} (@${handle}): ${error.message}`);
     }
     return { items: [] };
+  }
+}
+
+// Cache for Telegram FloodWait rate limits (handle -> resume timestamp)
+const telegramFloodCache = new Map<string, number>();
+
+// Fetch posts from Telegram using MTProto API (primary) with web scraping fallback
+async function fetchTelegramFeed(source: Source & { feedUrl: string }): Promise<TelegramFeedResult> {
+  const handle = extractTelegramHandle(source.feedUrl);
+  if (!handle) {
+    console.error(`[Telegram] Invalid feedUrl format: ${source.feedUrl}`);
+    return { items: [] };
+  }
+
+  // Skip if handle is cached as invalid
+  if (isTelegramHandleCachedAsInvalid(handle)) {
+    return { items: [] };
+  }
+
+  // If MTProto API is not configured, use scraper directly
+  if (!isTelegramApiAvailable()) {
+    return fetchTelegramFeedScraper(source);
+  }
+
+  // If this channel is FloodWait-cached, use scraper
+  const floodUntil = telegramFloodCache.get(handle);
+  if (floodUntil && Date.now() < floodUntil) {
+    return fetchTelegramFeedScraper(source);
+  }
+  telegramFloodCache.delete(handle);
+
+  try {
+    const client = await getTelegramClient();
+    if (!client) {
+      console.warn(`[Telegram MTProto] Client unavailable, falling back to scraper for @${handle}`);
+      return fetchTelegramFeedScraper(source);
+    }
+
+    const messages = await client.getMessages(handle, { limit: 20 });
+
+    if (!messages || messages.length === 0) {
+      return { items: [] };
+    }
+
+    // Extract channel avatar from entity
+    let channelAvatar: string | undefined;
+    try {
+      const entity = await client.getEntity(handle);
+      if (entity && 'photo' in entity && entity.photo) {
+        // For channels, the photo is accessible via the entity
+        // We can construct a placeholder or skip (avatar not critical)
+        // The web preview URL pattern: https://cdn4.telegram-cdn.org/file/...
+        // GramJS doesn't give direct URLs for photos without downloading
+        // Fall back to channel page avatar if needed
+      }
+    } catch {
+      // Avatar extraction is optional, don't fail on it
+    }
+
+    const items: RssItem[] = [];
+    for (const msg of messages) {
+      const text = msg.message || '';
+      if (!text.trim()) continue;
+
+      const messageId = msg.id;
+      const link = `https://t.me/${handle}/${messageId}`;
+      const pubDate = msg.date
+        ? new Date(msg.date * 1000).toISOString()
+        : new Date().toISOString();
+
+      const item: RssItem = {
+        title: text.slice(0, 500),
+        description: text,
+        link,
+        pubDate,
+        guid: `telegram-${handle}/${messageId}`,
+      };
+
+      // Extract media attachments
+      if (msg.media) {
+        const media: MediaAttachment[] = [];
+        // Use unknown to safely inspect GramJS media types
+        const mediaObj = msg.media as unknown as { className?: string; photo?: unknown; document?: { mimeType?: string }; webpage?: { url?: string; title?: string } };
+
+        if (mediaObj.photo) {
+          media.push({
+            type: 'image',
+            url: link, // Direct photo URL requires download; link to message instead
+          });
+        }
+        if (mediaObj.document) {
+          const mimeType = mediaObj.document.mimeType || '';
+          if (mimeType.startsWith('video/')) {
+            media.push({
+              type: 'video',
+              url: link,
+            });
+          }
+        }
+        if (mediaObj.webpage && mediaObj.webpage.url) {
+          media.push({
+            type: 'external',
+            url: mediaObj.webpage.url,
+            title: mediaObj.webpage.title || undefined,
+          });
+        }
+
+        if (media.length > 0) {
+          item.media = media;
+        }
+      }
+
+      // Extract forward/repost context
+      if (msg.fwdFrom) {
+        const fwd = msg.fwdFrom as unknown as { fromName?: string };
+        item.repostContext = {
+          originalAuthor: fwd.fromName || 'Unknown',
+        };
+      }
+
+      items.push(item);
+    }
+
+    if (items.length > 0) {
+      console.log(`[Telegram MTProto] @${handle}: ${items.length} posts`);
+    }
+
+    return { items, channelAvatar };
+  } catch (error: unknown) {
+    // Handle FloodWait - cache the channel and fall back to scraper
+    if (error instanceof Error && error.message.includes('FloodWait')) {
+      const waitMatch = error.message.match(/(\d+)/);
+      const waitSeconds = waitMatch ? parseInt(waitMatch[1], 10) : 60;
+      telegramFloodCache.set(handle, Date.now() + waitSeconds * 1000);
+      console.warn(`[Telegram MTProto] FloodWait ${waitSeconds}s for @${handle}, using scraper`);
+      return fetchTelegramFeedScraper(source);
+    }
+
+    // Handle auth errors - session may be expired
+    if (error instanceof Error && (
+      error.message.includes('AUTH_KEY_UNREGISTERED') ||
+      error.message.includes('SESSION_REVOKED') ||
+      error.message.includes('USER_DEACTIVATED')
+    )) {
+      console.error(`[Telegram MTProto] Session invalid: ${error.message}. Falling back to scraper.`);
+      return fetchTelegramFeedScraper(source);
+    }
+
+    // Handle channel not found / private
+    if (error instanceof Error && (
+      error.message.includes('CHANNEL_PRIVATE') ||
+      error.message.includes('USERNAME_NOT_OCCUPIED')
+    )) {
+      invalidTelegramCache.set(handle, { error: error.message, timestamp: Date.now() });
+      console.warn(`[Telegram MTProto] @${handle}: ${error.message}. Cached for 1 hour.`);
+      return { items: [] };
+    }
+
+    // Generic error - fall back to scraper
+    const msg = error instanceof Error ? error.message : String(error);
+    console.warn(`[Telegram MTProto] @${handle} error: ${msg}. Falling back to scraper.`);
+    return fetchTelegramFeedScraper(source);
   }
 }
 
@@ -1389,7 +1551,7 @@ function getFaviconUrl(domain: string): string {
 export async function fetchRssFeed(
   source: Source & { feedUrl: string }
 ): Promise<NewsItem[]> {
-  // Use Telegram web scraping for Telegram sources
+  // Use Telegram MTProto API (with web scraping fallback) for Telegram sources
   if (isTelegramSource(source)) {
     const { items, channelAvatar } = await fetchTelegramFeed(source);
 
@@ -1411,8 +1573,6 @@ export async function fetchRssFeed(
         sourceRegion,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
-        alertStatus: null,
-        isBreaking: isBreakingNews(item.title, item.description),
       };
     });
   }
@@ -1439,8 +1599,6 @@ export async function fetchRssFeed(
         sourceRegion,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
-        alertStatus: null,
-        isBreaking: isBreakingNews(item.title, item.description),
         media: item.media,
         repostContext: item.repostContext,
       };
@@ -1464,8 +1622,6 @@ export async function fetchRssFeed(
         sourceRegion,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
-        alertStatus: null,
-        isBreaking: isBreakingNews(item.title, item.description),
         media: item.media,
       };
     });
@@ -1494,9 +1650,6 @@ export async function fetchRssFeed(
         sourceRegion,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
-        alertStatus: null,
-        isBreaking: isBreakingNews(item.title, item.description),
-        // Pass through media and context for Bluesky posts
         media: item.media,
         replyContext: item.replyContext,
         repostContext: item.repostContext,
@@ -1584,8 +1737,6 @@ export async function fetchRssFeed(
           sourceRegion,
           verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
           url: item.link,
-          alertStatus: null,
-          isBreaking: isBreakingNews(item.title, item.description),
           media: item.media,
         };
       });
@@ -1656,8 +1807,6 @@ export async function fetchRssFeed(
         sourceRegion,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
-        alertStatus: null, // Will be set by processAlertStatuses in API
-        isBreaking: isBreakingNews(item.title, item.description), // Deprecated, kept for compatibility
       };
     });
   } catch (error) {
@@ -1691,53 +1840,3 @@ function hashString(str: string): string {
   return createHash('sha256').update(str).digest('hex').slice(0, 16);
 }
 
-// Helper to add delay between requests
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Fetch multiple RSS feeds with rate limiting for Bluesky
-export async function fetchAllRssFeeds(
-  sources: (Source & { feedUrl: string })[]
-): Promise<NewsItem[]> {
-  // Separate Bluesky and RSS sources
-  const blueskySources = sources.filter(isBlueskySource);
-  const rssSources = sources.filter(s => !isBlueskySource(s));
-
-  // Fetch RSS sources in parallel (no rate limit issues)
-  const rssResultsPromise = Promise.allSettled(
-    rssSources.map((source) => fetchRssFeed(source))
-  );
-
-  // Fetch Bluesky sources in batches to avoid rate limits
-  const BLUESKY_BATCH_SIZE = 50; // Larger batches for faster completion
-  const BLUESKY_BATCH_DELAY_MS = 50; // Minimal delay between batches
-  const blueskyResults: PromiseSettledResult<NewsItem[]>[] = [];
-
-  for (let i = 0; i < blueskySources.length; i += BLUESKY_BATCH_SIZE) {
-    const batch = blueskySources.slice(i, i + BLUESKY_BATCH_SIZE);
-    const batchResults = await Promise.allSettled(
-      batch.map((source) => fetchRssFeed(source))
-    );
-    blueskyResults.push(...batchResults);
-
-    // Add delay between batches (except for last batch)
-    if (i + BLUESKY_BATCH_SIZE < blueskySources.length) {
-      await delay(BLUESKY_BATCH_DELAY_MS);
-    }
-  }
-
-  // Wait for RSS results
-  const rssResults = await rssResultsPromise;
-
-  // Combine all results
-  const allItems: NewsItem[] = [];
-  for (const result of [...rssResults, ...blueskyResults]) {
-    if (result.status === 'fulfilled') {
-      allItems.push(...result.value);
-    }
-  }
-
-  // Sort by timestamp, newest first
-  return allItems.sort(
-    (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-  );
-}

@@ -68,8 +68,21 @@ async function main() {
   console.log(`API_ID: ${API_ID}`);
   console.log(`API_HASH: ${API_HASH.slice(0, 8)}...`);
 
-  // Start with empty session (we're creating new auth)
-  const stringSession = new StringSession('');
+  // For Stage 2, try to restore the session from Stage 1 (preserves DC migration)
+  let initialSession = '';
+  if (CODE) {
+    try {
+      const saved = JSON.parse(readFileSync(CODE_HASH_FILE, 'utf-8'));
+      if (saved.session) {
+        initialSession = saved.session;
+        console.log('✅ Restored session from Stage 1 (DC migration preserved)\n');
+      }
+    } catch {
+      // Fall through to empty session
+    }
+  }
+
+  const stringSession = new StringSession(initialSession);
   const client = new TelegramClient(stringSession, API_ID, API_HASH, {
     connectionRetries: 5,
   });
@@ -102,10 +115,12 @@ async function main() {
       );
 
       const phoneCodeHash = result.phoneCodeHash;
-      writeFileSync(CODE_HASH_FILE, phoneCodeHash);
+      // Save code hash AND the session (which includes DC migration info)
+      const pendingSession = client.session.save() as string;
+      writeFileSync(CODE_HASH_FILE, JSON.stringify({ phoneCodeHash, session: pendingSession }));
 
       console.log('\n✅ Verification code sent!');
-      console.log(`\nPhone code hash saved to: ${CODE_HASH_FILE}`);
+      console.log(`\nAuth state saved to: ${CODE_HASH_FILE}`);
       console.log('\n📲 Check your Telegram app for the code.\n');
       console.log('Then run:');
       console.log(`  TELEGRAM_CODE=<code> npx tsx scripts/telegram-auth.ts\n`);
@@ -125,7 +140,14 @@ async function main() {
   if (CODE) {
     let phoneCodeHash: string;
     try {
-      phoneCodeHash = readFileSync(CODE_HASH_FILE, 'utf-8').trim();
+      const raw = readFileSync(CODE_HASH_FILE, 'utf-8').trim();
+      // Support both new JSON format and legacy plain text
+      try {
+        const parsed = JSON.parse(raw);
+        phoneCodeHash = parsed.phoneCodeHash;
+      } catch {
+        phoneCodeHash = raw;
+      }
     } catch {
       console.error('❌ Code hash file not found. Run Stage 1 first.');
       await client.disconnect();

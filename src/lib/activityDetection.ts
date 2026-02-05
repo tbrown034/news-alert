@@ -70,8 +70,6 @@ export interface RegionActivity {
   count: number;
   baseline: number;
   multiplier: number;
-  // For compatibility with UI
-  breaking: number;
   vsNormal: 'above' | 'below' | 'normal';
   percentChange: number;
 }
@@ -139,7 +137,6 @@ export function calculateRegionActivity(
       count,
       baseline,
       multiplier,
-      breaking: 0, // Simplified - we don't track breaking separately
       vsNormal,
       percentChange,
     };

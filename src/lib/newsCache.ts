@@ -39,8 +39,7 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const STALE_WHILE_REVALIDATE_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
- * Get cached news data for a cache key
- * Cache key can be a region or a composite key like 'all:T1-T2-T3'
+ * Get cached news data for a cache key (region name)
  */
 export function getCachedNews(cacheKey: string): CachedNewsData | null {
   const cache = getCache();
@@ -93,30 +92,6 @@ export function setCachedNews(
     timestamp: Date.now(),
     isComplete,
   });
-
-  // Also update the 'all:T1-T2-T3' cache when updating specific regions
-  const isRegionSpecific = !cacheKey.startsWith('all');
-  if (isRegionSpecific) {
-    const allCached = cache.get('all:T1-T2-T3');
-    if (allCached) {
-      // Merge items into 'all' cache
-      const itemMap = new Map<string, NewsItem>();
-      for (const item of allCached.items) {
-        itemMap.set(item.id, item);
-      }
-      for (const item of items) {
-        itemMap.set(item.id, item);
-      }
-      const merged = Array.from(itemMap.values()).sort(
-        (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-      );
-      cache.set('all:T1-T2-T3', {
-        items: merged,
-        timestamp: allCached.timestamp,
-        isComplete: allCached.isComplete,
-      });
-    }
-  }
 }
 
 /**

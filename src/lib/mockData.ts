@@ -123,7 +123,7 @@ export const mockNewsItems: NewsItem[] = [
     timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
     region: 'middle-east',
     verificationStatus: 'confirmed',
-    isBreaking: true,
+
     url: 'https://twitter.com/IDF/status/123',
   },
   {
@@ -135,7 +135,7 @@ export const mockNewsItems: NewsItem[] = [
     timestamp: new Date(Date.now() - 12 * 60 * 1000), // 12 minutes ago
     region: 'middle-east',
     verificationStatus: 'unverified',
-    isBreaking: true,
+
   },
   {
     id: '3',
@@ -157,7 +157,7 @@ export const mockNewsItems: NewsItem[] = [
     timestamp: new Date(Date.now() - 45 * 60 * 1000), // 45 minutes ago
     region: 'europe-russia',
     verificationStatus: 'multiple-sources',
-    isBreaking: true,
+
   },
   {
     id: '5',
