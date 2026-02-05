@@ -37,6 +37,28 @@ function normalizeKeyword(keyword: string): string {
 }
 
 /**
+ * Common abbreviations that should be all uppercase
+ */
+const UPPERCASE_ABBREVIATIONS = new Set([
+  'us', 'eu', 'uk', 'un', 'nato', 'who', 'fbi', 'cia', 'doj', 'dhs',
+  'ice', 'nsa', 'cdc', 'fda', 'epa', 'sec', 'ftc', 'dod', 'nyc', 'la',
+  'dc', 'uae', 'isis', 'idf', 'hamas', 'cnn', 'bbc', 'nyt', 'wsj', 'ap',
+  'gop', 'dnc', 'rnc', 'scotus', 'potus', 'flotus', 'opec', 'imf', 'wto',
+]);
+
+/**
+ * Format a keyword for display with proper casing
+ */
+function formatKeywordDisplay(keyword: string): string {
+  const lower = keyword.toLowerCase();
+  if (UPPERCASE_ABBREVIATIONS.has(lower)) {
+    return keyword.toUpperCase();
+  }
+  // Default: capitalize first letter
+  return keyword.charAt(0).toUpperCase() + keyword.slice(1).toLowerCase();
+}
+
+/**
  * Extract matched keywords from a single news item
  * Returns only explicit keyword matches, not source region fallbacks
  */
@@ -84,8 +106,8 @@ export function countKeywords(
         existing.count++;
         existing.regions.add(item.region);
       } else {
-        // Preserve original casing from first occurrence, with first letter capitalized
-        const displayName = keyword.trim().charAt(0).toUpperCase() + keyword.trim().slice(1).toLowerCase();
+        // Format display name with proper casing
+        const displayName = formatKeywordDisplay(keyword.trim());
         counts.set(normalized, {
           count: 1,
           regions: new Set([item.region]),
