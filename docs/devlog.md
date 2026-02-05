@@ -1109,3 +1109,167 @@ Before: Click region → 200ms freeze → UI updates (felt laggy)
 After: Click region → instant pill highlight → content fades in 200ms later (feels responsive)
 
 ---
+
+## 2026-02-05 - Dead Code Cleanup, Test Suite, and Feed Stats Panel
+
+**Session Summary:**
+- Comprehensive code review of the entire newsfeed pipeline (route.ts → rss.ts → newsCache.ts → activityDetection.ts → NewsFeed.tsx)
+- Removed 6 categories of deprecated/dead code that accumulated from earlier iterations
+- Added E2E API health tests (Playwright) and unit tests for activity detection
+- Added collapsible feed stats panel showing platform and source type breakdowns
+- Investigated and validated the frequency-based activity detection system
+
+**Key Decisions:**
+- Alert status system (keyword-based "first"/"confirmed" badges) fully removed — activity detection is the only status system
+- Content keyword blocklist removed entirely — NFL team names (`/\bbears\b/i`, `/\bjets\b/i`) were causing false positives on geopolitical news
+- `ENABLED_PLATFORMS` simplified from object with boolean flags to `Set<string>` with only active platforms
+- Source-level blocklist kept (rejected sources registry) — content-level filtering removed
+- Trending keywords test fixed to match display-cased output (`'Ukraine'` not `'ukraine'`)
+
+**Notable Changes:**
+
+*DELETED: src/lib/alertStatus.ts*
+- Contained `determineAlertStatus()`, `processAlertStatuses()`, `sortByCascadePriority()`, and ALERT_KEYWORDS
+- Set `alertStatus` on items but no UI component ever consumed it
+- Activity detection had fully replaced this system
+
+*src/types/index.ts*
+- Removed `AlertStatus` type, `alertStatus`, `isBreaking`, `confirmsSource` fields from `NewsItem`
+- These fields were set in rss.ts but never read by any component
+
+*src/lib/sourceUtils.ts*
+- Removed `breakingKeywords`, `notBreakingKeywords` arrays and `isBreakingNews()` function
+- Kept `classifyRegion()` which is actively used for region detection
+
+*src/lib/rss.ts*
+- Removed `alertStatus: null` and `isBreaking: isBreakingNews(...)` from all 6 platform return blocks
+- Removed `fetchAllRssFeeds()` function and `delay` helper (dead code, never imported)
+
+*src/lib/newsCache.ts*
+- Removed `'all:T1-T2-T3'` composite cache key merge logic (never written or read by current route)
+
+*src/lib/blocklist.ts*
+- Removed `blockedKeywords` array (50+ RegExp patterns including sports teams)
+- Removed `shouldFilterPost()` function
+- Kept `blockedSources` and `blockedSourceIds` (source-level blocklist)
+
+*src/app/api/news/route.ts*
+- Removed imports: `processAlertStatuses`, `sortByCascadePriority`, `shouldFilterPost`
+- Simplified `ENABLED_PLATFORMS` to `new Set(['bluesky', 'telegram', 'mastodon'])`
+- Simplified `fetchAllSources()` to batch only 3 platforms
+- Replaced alert status processing with inline chronological sort
+
+*src/lib/activityDetection.ts*
+- Removed vestigial `breaking: number` field from `RegionActivity` interface
+
+*src/components/NewsFeed.tsx*
+- Removed `breaking` from local `ActivityData` interface
+- Added `showFeedStats` toggle state and `feedStats` useMemo computation
+- Added `ChartBarIcon` button next to "Last updated" timestamp
+- Added collapsible stats panel showing:
+  - Platform breakdown (posts and unique sources per platform)
+  - Source type breakdown (osint, reporter, news-org, etc.)
+  - Total fetch time
+
+*e2e/api-health.spec.ts* (NEW - 15 tests)
+- News API suite: response structure, no deprecated fields, chronological order, platform enforcement, region filtering, time window, incremental updates, cache hit speed
+- Activity Detection suite: region coverage, LATAM/Asia forced normal, multiplier math, threshold enforcement
+- Mainstream API suite: structure validation
+- Analytics API suite: rolling averages, regional trends
+
+*src/lib/__tests__/activityDetection.test.ts* (NEW - 9 tests)
+- Region coverage, correct counts, excluded regions always NORMAL, positive baselines, multiplier math, vsNormal logic, no breaking field, percentChange, dual-threshold enforcement
+
+*src/lib/__tests__/trendingKeywords.test.ts*
+- Fixed case sensitivity: `'ukraine'` → `'Ukraine'` to match display-cased keyword output
+
+**Activity Detection Validation:**
+- System is functional: baselines calculated from source `postsPerDay` values (measured decimals trusted, round guesses get conservative default of 3)
+- Thresholds: elevated = 2.5x + 25 posts, critical = 5x + 50 posts
+- LATAM/Asia excluded from scoring (always NORMAL) due to insufficient source coverage
+- Rolling averages logged to PostgreSQL with 6-hour bucketing and 14-day retention
+- Historical vs current mismatch noted: DB shows avg=8094/6h historically (when 214 RSS sources were active), current counts ~647 with only OSINT platforms enabled
+
+**Technical Notes:**
+- All 28 E2E tests passed, all 9 unit tests passed
+- Build compiles cleanly after all removals
+- Mainstream API returning 0 sources during E2E run — RSS feeds may be failing/blocked (separate issue)
+- `feedStats` uses `useMemo` keyed on `allItems` — recomputes only when feed data changes
+
+---
+
+## 2026-02-05 - Telegram MTProto API Migration
+
+**Session Summary:**
+- Migrated Telegram fetching from fragile HTML web scraping to proper MTProto API via GramJS
+- All three OSINT platforms (Bluesky, Mastodon, Telegram) now use structured APIs instead of parsing HTML
+- Re-authenticated Telegram session, fixed auth script DC migration bug, fixed concurrent connection issue
+- 155 posts fetched via API across all 11 channels (vs ~9 from scraper)
+
+**Key Decisions:**
+- MTProto API (GramJS) chosen over Bot API (bots can't read channels without admin), RSS services (same scraping underneath), and third-party APIs (adds cost)
+- Keep HTML scraper as fallback for FloodWait, expired sessions, or missing credentials
+- Shared singleton client with connection lock to prevent concurrent connect() calls in serverless
+- Auto-disable MTProto after fatal errors (bad session) to avoid retry loops
+
+**Notable Changes:**
+
+*src/lib/telegramClient.ts* (NEW)
+- Shared GramJS `TelegramClient` singleton with lazy connect
+- Connection lock (`connectPromise`) prevents concurrent `connect()` calls from batched fetches
+- 10s connection timeout via `Promise.race` (prevents hanging in serverless)
+- `disabled` flag: after fatal error (bad session, auth revoked), stops retrying for the session lifetime
+- Exports: `getTelegramClient()`, `disconnectTelegram()`, `isTelegramApiAvailable()`
+
+*src/lib/rss.ts*
+- New `fetchTelegramFeed()` tries MTProto API first, falls back to `fetchTelegramFeedScraper()`
+- Old scraper renamed to `fetchTelegramFeedScraper()` (preserved as fallback)
+- Maps GramJS `Message` objects to `RssItem[]` (same shape as before)
+- Extracts media (photo/video/webpage), forward context (repostContext)
+- `telegramFloodCache`: per-channel FloodWait tracking, falls back to scraper for rate-limited channels
+- Handles auth errors (SESSION_REVOKED, AUTH_KEY_UNREGISTERED) by falling back to scraper
+
+*scripts/telegram-auth.ts*
+- Fixed DC migration bug: Stage 1 saves session (including DC info) alongside code hash
+- Stage 2 restores the Stage 1 session so it connects to the same DC where the code was sent
+- Without this fix, Stage 2 connected to DC 5 (default) while code was on DC 1, causing instant "expired" errors
+
+*.gitignore*
+- Added `telegram_code_hash.txt`, `*.session`, `pulse_session.session`
+
+*Deleted files:*
+- `telegram_code_hash.txt` (stale auth artifact)
+- `pulse_session.session` (unused SQLite session file)
+
+**Technical Notes:**
+- GramJS reconnect loop: 10 concurrent `fetchTelegramFeed()` calls each called `getTelegramClient()` which all saw `!client.connected` and called `client.connect()` simultaneously, causing an infinite reconnect cycle
+- Fix: `connectPromise` lock ensures only one `connect()` runs; others await the same promise
+- Old session (352 chars) was incompatible with current GramJS — `StringSession` constructor threw `BinaryReader` error with negative length (-27238). Root cause unclear (same package version 2.26.22), likely format corruption
+- New session (369 chars) generated fresh via two-stage auth, works perfectly
+- Telegram codes expire fast (~30s). The DC migration fix was critical — without it, codes always appeared "expired" because Stage 2 connected to the wrong datacenter
+
+**Platform Consistency Achieved:**
+
+| Platform | Primary | Fallback | Data Format |
+|----------|---------|----------|-------------|
+| Bluesky | xRPC API | None | JSON |
+| Mastodon | REST API | None | JSON |
+| Telegram | MTProto API | Web scraper | TL objects → JSON |
+
+**Verification Results:**
+```
+[Telegram MTProto] Connected successfully
+[Telegram MTProto] @GeneralStaffZSU: 5 posts
+[Telegram MTProto] @inikiforov: 2 posts
+[Telegram MTProto] @OSINTdefender: 20 posts
+[Telegram MTProto] @idfofficial: 20 posts
+[Telegram MTProto] @Middle_East_Spectator: 18 posts
+[Telegram MTProto] @DIUkraine: 10 posts
+[Telegram MTProto] @ddgeopolitics: 18 posts
+[Telegram MTProto] @DeepStateEN: 14 posts
+[Telegram MTProto] @wartranslated: 13 posts
+[Telegram MTProto] @DeepStateUA: 15 posts
+[Telegram MTProto] @gulfnewsUAE: 20 posts
+```
+
+---
