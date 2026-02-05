@@ -429,9 +429,7 @@ export function NewsFeed({
                         {trendingKeywords.map((kw, i) => (
                           <span key={kw.keyword}>
                             {i > 0 && '  ·  '}
-                            <span className="text-slate-400 dark:text-slate-500">#{i + 1}</span>{' '}
-                            {kw.keyword}{' '}
-                            <span className="text-slate-400 dark:text-slate-500">({kw.count})</span>
+                            {kw.keyword} <span className="text-slate-400 dark:text-slate-500">({kw.count})</span>
                           </span>
                         ))}
                       </span>
