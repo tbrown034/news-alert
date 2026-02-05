@@ -36,10 +36,9 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const { data: session } = useSession();
   const [selectedWatchpoint, setSelectedWatchpointState] = useState<WatchpointId>(initialRegion);
 
-  // Wrapper to persist region selection to localStorage
+  // Simple region setter (no persistence - always starts at "All")
   const setSelectedWatchpoint = useCallback((region: WatchpointId) => {
     setSelectedWatchpointState(region);
-    localStorage.setItem('news-selected-region', region);
   }, []);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [newsItems, setNewsItems] = useState<NewsItem[]>(() => {
@@ -130,13 +129,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
     }
   }, []);
 
-  // Restore saved region preference for returning users
-  useEffect(() => {
-    const savedRegion = localStorage.getItem('news-selected-region') as WatchpointId | null;
-    if (savedRegion && ['all', 'us', 'latam', 'middle-east', 'europe-russia', 'asia'].includes(savedRegion)) {
-      setSelectedWatchpointState(savedRegion); // Use state setter directly to avoid re-saving
-    }
-  }, []);
 
   // Toggle theme and persist to localStorage
   const toggleTheme = () => {
@@ -505,6 +497,12 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 Feed
               </a>
               <a
+                href="/threats"
+                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
+              >
+                Threats
+              </a>
+              <a
                 href="/about"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
               >
@@ -575,6 +573,13 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     Feed
+                  </a>
+                  <a
+                    href="/threats"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Threats
                   </a>
                   <a
                     href="/about"
