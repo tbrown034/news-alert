@@ -73,6 +73,9 @@ interface BriefingData {
 
 interface BriefingCardProps {
   region: WatchpointId;
+  autoGenerate?: boolean; // If false, show manual trigger button
+  postCount?: number; // Number of posts in current filter
+  filterDescription?: string; // e.g., "US + Bluesky" or "keyword: ukraine"
 }
 
 // Countries/locations to highlight in briefing text
@@ -247,7 +250,9 @@ function PulseAvatar() {
   );
 }
 
-export function BriefingCard({ region }: BriefingCardProps) {
+const MIN_POSTS_FOR_BRIEFING = 10;
+
+export function BriefingCard({ region, autoGenerate = true, postCount = 0, filterDescription }: BriefingCardProps) {
   const [briefing, setBriefing] = useState<BriefingData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -255,6 +260,7 @@ export function BriefingCard({ region }: BriefingCardProps) {
   const [loadingElapsed, setLoadingElapsed] = useState(0);
   const [isPinned, setIsPinned] = useState(true);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [manuallyTriggered, setManuallyTriggered] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
   const loadingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const autoLoadedRef = useRef(false);
@@ -342,7 +348,7 @@ export function BriefingCard({ region }: BriefingCardProps) {
     }
   }, [region]);
 
-  // Auto-load on mount and region change
+  // Auto-load on mount and region change (only if autoGenerate is true)
   useEffect(() => {
     if (controllerRef.current) {
       controllerRef.current.abort();
@@ -357,6 +363,10 @@ export function BriefingCard({ region }: BriefingCardProps) {
     setCurrentTier('quick');
     setLoadingElapsed(0);
     autoLoadedRef.current = false;
+    setManuallyTriggered(false);
+
+    // Only auto-load for global view
+    if (!autoGenerate) return;
 
     const timer = setTimeout(() => {
       if (!autoLoadedRef.current) {
@@ -366,7 +376,7 @@ export function BriefingCard({ region }: BriefingCardProps) {
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [region, fetchBriefing]);
+  }, [region, fetchBriefing, autoGenerate]);
 
   const regionBadge = regionBadges[region] || regionBadges['all'];
   const tierInfo = TIER_INFO[briefing?.tier || currentTier];
@@ -463,8 +473,58 @@ export function BriefingCard({ region }: BriefingCardProps) {
     );
   }
 
-  // No briefing yet - show placeholder
+  // No briefing yet - show placeholder or manual trigger
   if (!briefing) {
+    // Manual trigger mode - show button to generate
+    if (!autoGenerate && !manuallyTriggered) {
+      const hasEnoughPosts = postCount >= MIN_POSTS_FOR_BRIEFING;
+
+      return (
+        <article className="relative px-3 py-3 sm:px-4 sm:py-4 bg-[var(--background-card)] rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <PulseAvatar />
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-label font-medium text-[var(--foreground)]">Pulse AI</span>
+                  <SparklesIcon className="w-4 h-4 text-cyan-500/50 flex-shrink-0" />
+                </div>
+              </div>
+              {filterDescription && (
+                <span className="px-1.5 py-0.5 text-2xs font-medium rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 flex-shrink-0">
+                  {filterDescription}
+                </span>
+              )}
+            </div>
+            <div className="py-2">
+              {hasEnoughPosts ? (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <span className="text-sm text-[var(--foreground-muted)]">
+                    {postCount} posts in this view
+                  </span>
+                  <button
+                    onClick={() => {
+                      setManuallyTriggered(true);
+                      fetchBriefing('quick');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-500 rounded-lg transition-colors"
+                  >
+                    <SparklesIcon className="w-4 h-4" />
+                    Generate Briefing
+                  </button>
+                </div>
+              ) : (
+                <span className="text-sm text-[var(--foreground-light)]">
+                  {postCount} posts — need {MIN_POSTS_FOR_BRIEFING}+ for AI briefing
+                </span>
+              )}
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    // Auto-generate mode - show preparing state
     return (
       <article className="relative px-3 py-3 sm:px-4 sm:py-4 bg-[var(--background-card)] rounded-xl border-2 border-slate-400 dark:border-slate-500">
         <div className="flex flex-col gap-2">
