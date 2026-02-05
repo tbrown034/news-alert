@@ -4,60 +4,7 @@ Features that were built but not fully integrated into production. These are pre
 
 ---
 
-## 1. Advanced Message Analysis (`src/lib/messageAnalysis.ts`)
-
-### What Was Built
-A sophisticated pattern-matching system to classify news posts by:
-
-**Content Type** (what kind of post):
-- `breaking` - Urgent news ("Breaking:", "Just in:", "Alert:")
-- `statement` - Official statements (quotes from leaders, ministries)
-- `report` - Third-party reporting ("According to", "Reuters reports")
-- `analysis` - Expert commentary ("Thread:", expert assessments)
-- `rumor` - Unverified claims ("Allegedly", "Claims")
-- `general` - Miscellaneous
-
-**Verification Level** (how confirmed):
-- `confirmed` - Multiple sources, officially confirmed
-- `unverified` - Single source, no corroboration
-- `developing` - Story still emerging
-- `denied` - Official denial or debunked
-
-**Provenance** (where info came from):
-- `original` - First-hand ("I'm seeing", "On the ground", "Eyewitness")
-- `official` - Government/institutional ("Officials say", "Ministry announces")
-- `media` - News organizations ("Reuters", "AP", "ISW reports")
-- `aggregating` - Curating others ("per @", "via", "multiple accounts say")
-
-### How It Works
-```typescript
-import { analyzeMessage } from '@/lib/messageAnalysis';
-
-const analysis = analyzeMessage(title, content);
-// Returns:
-// {
-//   contentType: { type: 'breaking', confidence: 0.85, matchedPatterns: ['breaking'] },
-//   verification: { level: 'developing', confidence: 0.7, matchedPatterns: ['developing'] },
-//   provenance: { type: 'media', confidence: 0.9, matchedPatterns: ['Reuters reports'], citedSources: ['Reuters'] }
-// }
-```
-
-### Why Not Used
-- Current system is KISS - simple keyword matching suffices for MVP
-- Pattern matching adds latency (~5ms per post)
-- No UI to display the classification
-- Need to test accuracy before deploying
-
-### Future Integration Ideas
-1. **Priority scoring** - Weight breaking+confirmed+official higher
-2. **Feed filtering** - "Show only confirmed" toggle
-3. **Visual badges** - Show verification level on NewsCard
-4. **AI enhancement** - Use Claude to validate classifications
-5. **Alert thresholds** - Notify on confirmed+breaking+official combo
-
----
-
-## 2. Advanced Region Detection (`src/lib/regionDetection.ts`)
+## 1. Advanced Region Detection (`src/lib/regionDetection.ts`)
 
 ### What Was Built
 A weighted scoring system with three confidence tiers:
@@ -98,7 +45,7 @@ if (text.includes('iran')) return 'middle-east';
 
 ---
 
-## 3. Per-Source Anomaly Detection
+## 2. Per-Source Anomaly Detection
 
 ### What Was Built (Interfaces Only)
 Types defined in `src/types/index.ts`:
@@ -135,7 +82,7 @@ No per-source tracking exists - the interface is there but never populated.
 
 ---
 
-## 4. Keywords for Priority/Filtering
+## 3. Keywords for Priority/Filtering
 
 ### What Exists
 Three keyword sets defined:
@@ -168,9 +115,6 @@ items.sort((a, b) => b.priority - a.priority);
 | Feature | Current (Simple) | Advanced (Built, Unused) |
 |---------|------------------|--------------------------|
 | Region detection | First-match keywords | Weighted scoring |
-| Content type | Not classified | 6 types with patterns |
-| Verification | Source-based only | Content pattern matching |
-| Provenance | Not tracked | 4 types detected |
 | Activity | Regional only | Per-source planned |
 | Priority | Timestamp only | Multi-factor ready |
 
@@ -180,11 +124,10 @@ items.sort((a, b) => b.priority - a.priority);
 
 If you want to activate these features:
 
-1. **Start with messageAnalysis** - Already complete, just needs integration
-2. **Add UI toggles** - "Show only confirmed", "Breaking first"
-3. **A/B test** - Compare simple vs. advanced accuracy
-4. **Performance test** - Measure latency impact at scale
+1. **Add UI toggles** - "Breaking first", keyword filters
+2. **A/B test** - Compare simple vs. advanced accuracy
+3. **Performance test** - Measure latency impact at scale
 
 ---
 
-*Last updated: 2026-01-27*
+*Last updated: 2026-02-04*

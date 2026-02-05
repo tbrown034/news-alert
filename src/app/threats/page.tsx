@@ -15,81 +15,103 @@ import {
   FunnelIcon,
 } from '@heroicons/react/24/outline';
 
-// Types for the consolidated threat data
+// Types matching the API response
 interface ThreatSummary {
-  total: number;
-  critical: number;
-  elevated: number;
-  byCategory: {
+  totalThreats: number;
+  criticalCount: number;
+  severeCount: number;
+  byType: {
     seismic: number;
     weather: number;
     fires: number;
     travel: number;
     outages: number;
   };
+  lastUpdated: string;
 }
 
 interface SeismicThreat {
   id: string;
+  type: 'seismic';
+  title: string;
+  description: string;
+  severity: 'critical' | 'severe' | 'moderate' | 'minor';
+  coordinates: [number, number];
+  timestamp: string;
+  source: string;
+  url?: string;
   magnitude: number;
-  place: string;
-  time: string;
-  coordinates: [number, number, number];
-  alert: 'green' | 'yellow' | 'orange' | 'red' | null;
+  depth: number;
   tsunami: boolean;
-  region?: string;
 }
 
 interface WeatherThreat {
   id: string;
-  type: string;
-  name: string;
+  type: 'weather';
+  title: string;
   description: string;
-  severity: 'extreme' | 'severe' | 'moderate' | 'minor';
+  severity: 'critical' | 'severe' | 'moderate' | 'minor';
   coordinates: [number, number];
-  startTime: string;
+  timestamp: string;
   source: string;
-  region?: string;
+  url?: string;
+  eventType: string;
 }
 
 interface FireThreat {
   id: string;
-  latitude: number;
-  longitude: number;
-  brightness: number;
-  confidence: string;
-  acq_date: string;
-  daynight: string;
-  region?: string;
+  type: 'fire';
+  title: string;
+  description: string;
+  severity: 'critical' | 'severe' | 'moderate' | 'minor';
+  coordinates: [number, number];
+  timestamp: string;
+  source: string;
+  url?: string;
+  brightness?: number;
+  confidence?: string;
 }
 
 interface TravelThreat {
   id: string;
+  type: 'travel';
+  title: string;
+  description: string;
+  severity: 'critical' | 'severe' | 'moderate' | 'minor';
+  coordinates: [number, number];
+  timestamp: string;
+  source: string;
+  url?: string;
   country: string;
-  level: number;
-  levelDescription: string;
-  summary: string;
-  lastUpdated: string;
-  region?: string;
+  countryCode: string;
+  level: 1 | 2 | 3 | 4;
+  levelText: string;
 }
 
 interface OutageThreat {
   id: string;
-  name: string;
+  type: 'outage';
+  title: string;
+  description: string;
+  severity: 'critical' | 'severe' | 'moderate' | 'minor';
+  coordinates: [number, number];
+  timestamp: string;
+  source: string;
+  url?: string;
   country: string;
-  status: string;
-  severity: 'critical' | 'major' | 'minor';
-  startTime: string;
-  region?: string;
+  countryCode: string;
+  percentDown: number;
 }
 
 interface ThreatsData {
+  threats: {
+    seismic: SeismicThreat[];
+    weather: WeatherThreat[];
+    fires: FireThreat[];
+    travel: TravelThreat[];
+    outages: OutageThreat[];
+  };
   summary: ThreatSummary;
-  seismic: SeismicThreat[];
-  weather: WeatherThreat[];
-  fires: FireThreat[];
-  travel: TravelThreat[];
-  outages: OutageThreat[];
   fetchedAt: string;
 }
 
@@ -219,7 +241,7 @@ export default function ThreatsPage() {
             <button
               onClick={fetchThreats}
               disabled={isLoading}
-              className="p-2 text-slate-400 hover:text-white transition-colors disabled:opacity-50"
+              className="p-2 text-slate-400 hover:text-white transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -235,7 +257,7 @@ export default function ThreatsPage() {
           <select
             value={selectedRegion}
             onChange={(e) => setSelectedRegion(e.target.value)}
-            className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500"
+            className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer"
           >
             {REGIONS.map((region) => (
               <option key={region.id} value={region.id}>
@@ -266,7 +288,7 @@ export default function ThreatsPage() {
               </div>
               <button
                 onClick={fetchThreats}
-                className="px-3 py-1.5 text-xs font-medium bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
+                className="px-3 py-1.5 text-xs font-medium bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors cursor-pointer"
               >
                 Retry
               </button>
@@ -287,22 +309,22 @@ export default function ThreatsPage() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-white">{data.summary.total}</p>
+                    <p className="text-3xl font-bold text-white">{data.summary.totalThreats}</p>
                     <p className="text-xs text-slate-400 uppercase tracking-wider">Total Threats</p>
                   </div>
                   <div className="w-px h-12 bg-slate-700" />
                   <div className="text-center">
-                    <p className={`text-3xl font-bold ${data.summary.critical > 0 ? 'text-red-400' : 'text-slate-500'}`}>
-                      {data.summary.critical}
+                    <p className={`text-3xl font-bold ${data.summary.criticalCount > 0 ? 'text-red-400' : 'text-slate-500'}`}>
+                      {data.summary.criticalCount}
                     </p>
                     <p className="text-xs text-slate-400 uppercase tracking-wider">Critical</p>
                   </div>
                   <div className="w-px h-12 bg-slate-700" />
                   <div className="text-center">
-                    <p className={`text-3xl font-bold ${data.summary.elevated > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
-                      {data.summary.elevated}
+                    <p className={`text-3xl font-bold ${data.summary.severeCount > 0 ? 'text-amber-400' : 'text-slate-500'}`}>
+                      {data.summary.severeCount}
                     </p>
-                    <p className="text-xs text-slate-400 uppercase tracking-wider">Elevated</p>
+                    <p className="text-xs text-slate-400 uppercase tracking-wider">Severe</p>
                   </div>
                 </div>
               </div>
@@ -310,7 +332,7 @@ export default function ThreatsPage() {
               {/* Category breakdown */}
               <div className="mt-6 pt-6 border-t border-slate-800">
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                  {Object.entries(data.summary.byCategory).map(([category, count]) => {
+                  {Object.entries(data.summary.byType).map(([category, count]) => {
                     const config = categoryConfig[category as keyof typeof categoryConfig];
                     const Icon = config.icon;
                     return (
@@ -338,13 +360,13 @@ export default function ThreatsPage() {
                 color={categoryConfig.seismic.color}
                 bgColor={categoryConfig.seismic.bgColor}
                 borderColor={categoryConfig.seismic.borderColor}
-                count={data.seismic.length}
+                count={data.threats.seismic.length}
               >
-                {data.seismic.length === 0 ? (
+                {data.threats.seismic.length === 0 ? (
                   <p className="text-slate-500 text-sm py-4">No significant seismic activity</p>
                 ) : (
                   <div className="space-y-3">
-                    {data.seismic.slice(0, 5).map((eq) => (
+                    {data.threats.seismic.slice(0, 5).map((eq) => (
                       <div key={eq.id} className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -361,10 +383,10 @@ export default function ThreatsPage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-slate-300 mt-1 truncate">{eq.place}</p>
+                          <p className="text-sm text-slate-300 mt-1 truncate">{eq.description}</p>
                         </div>
                         <span className="text-xs text-slate-500 whitespace-nowrap">
-                          {formatTimeAgo(eq.time)}
+                          {formatTimeAgo(eq.timestamp)}
                         </span>
                       </div>
                     ))}
@@ -380,29 +402,29 @@ export default function ThreatsPage() {
                 color={categoryConfig.weather.color}
                 bgColor={categoryConfig.weather.bgColor}
                 borderColor={categoryConfig.weather.borderColor}
-                count={data.weather.length}
+                count={data.threats.weather.length}
               >
-                {data.weather.length === 0 ? (
+                {data.threats.weather.length === 0 ? (
                   <p className="text-slate-500 text-sm py-4">No active weather alerts</p>
                 ) : (
                   <div className="space-y-3">
-                    {data.weather.slice(0, 5).map((event) => (
+                    {data.threats.weather.slice(0, 5).map((event) => (
                       <div key={event.id} className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className={`px-1.5 py-0.5 text-xs font-medium rounded border ${
-                              event.severity === 'extreme' ? severityStyles.critical :
+                              event.severity === 'critical' ? severityStyles.critical :
                               event.severity === 'severe' ? severityStyles.elevated :
                               severityStyles.normal
                             }`}>
                               {event.severity.toUpperCase()}
                             </span>
-                            <span className="text-xs text-slate-400">{event.type}</span>
+                            <span className="text-xs text-slate-400">{event.eventType}</span>
                           </div>
-                          <p className="text-sm text-slate-300 mt-1 truncate">{event.name}</p>
+                          <p className="text-sm text-slate-300 mt-1 truncate">{event.title}</p>
                         </div>
                         <span className="text-xs text-slate-500 whitespace-nowrap">
-                          {formatTimeAgo(event.startTime)}
+                          {formatTimeAgo(event.timestamp)}
                         </span>
                       </div>
                     ))}
@@ -418,31 +440,29 @@ export default function ThreatsPage() {
                 color={categoryConfig.fires.color}
                 bgColor={categoryConfig.fires.bgColor}
                 borderColor={categoryConfig.fires.borderColor}
-                count={data.fires.length}
+                count={data.threats.fires.length}
               >
-                {data.fires.length === 0 ? (
+                {data.threats.fires.length === 0 ? (
                   <p className="text-slate-500 text-sm py-4">No significant fire activity</p>
                 ) : (
                   <div className="space-y-3">
-                    {data.fires.slice(0, 5).map((fire) => (
+                    {data.threats.fires.slice(0, 5).map((fire) => (
                       <div key={fire.id} className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className={`px-1.5 py-0.5 text-xs font-medium rounded ${
-                              fire.brightness >= 400 ? 'bg-red-500/20 text-red-400' :
-                              fire.brightness >= 350 ? 'bg-orange-500/20 text-orange-400' :
+                              fire.severity === 'critical' ? 'bg-red-500/20 text-red-400' :
+                              fire.severity === 'severe' ? 'bg-orange-500/20 text-orange-400' :
                               'bg-amber-500/20 text-amber-400'
                             }`}>
-                              {fire.brightness.toFixed(0)}K
+                              {fire.severity.toUpperCase()}
                             </span>
-                            <span className="text-xs text-slate-400">{fire.confidence} conf.</span>
+                            {fire.confidence && <span className="text-xs text-slate-400">{fire.confidence} conf.</span>}
                           </div>
-                          <p className="text-sm text-slate-300 mt-1">
-                            {fire.latitude.toFixed(2)}, {fire.longitude.toFixed(2)}
-                          </p>
+                          <p className="text-sm text-slate-300 mt-1 truncate">{fire.title}</p>
                         </div>
                         <span className="text-xs text-slate-500 whitespace-nowrap">
-                          {fire.daynight === 'D' ? 'Day' : 'Night'}
+                          {formatTimeAgo(fire.timestamp)}
                         </span>
                       </div>
                     ))}
@@ -458,13 +478,13 @@ export default function ThreatsPage() {
                 color={categoryConfig.travel.color}
                 bgColor={categoryConfig.travel.bgColor}
                 borderColor={categoryConfig.travel.borderColor}
-                count={data.travel.length}
+                count={data.threats.travel.length}
               >
-                {data.travel.length === 0 ? (
+                {data.threats.travel.length === 0 ? (
                   <p className="text-slate-500 text-sm py-4">No travel advisories</p>
                 ) : (
                   <div className="space-y-3">
-                    {data.travel.slice(0, 5).map((advisory) => (
+                    {data.threats.travel.slice(0, 5).map((advisory) => (
                       <div key={advisory.id} className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -478,10 +498,10 @@ export default function ThreatsPage() {
                             </span>
                           </div>
                           <p className="text-sm text-slate-300 mt-1 font-medium">{advisory.country}</p>
-                          <p className="text-xs text-slate-500 truncate">{advisory.levelDescription}</p>
+                          <p className="text-xs text-slate-500 truncate">{advisory.levelText}</p>
                         </div>
                         <span className="text-xs text-slate-500 whitespace-nowrap">
-                          {formatTimeAgo(advisory.lastUpdated)}
+                          {formatTimeAgo(advisory.timestamp)}
                         </span>
                       </div>
                     ))}
@@ -497,29 +517,29 @@ export default function ThreatsPage() {
                 color={categoryConfig.outages.color}
                 bgColor={categoryConfig.outages.bgColor}
                 borderColor={categoryConfig.outages.borderColor}
-                count={data.outages.length}
+                count={data.threats.outages.length}
               >
-                {data.outages.length === 0 ? (
+                {data.threats.outages.length === 0 ? (
                   <p className="text-slate-500 text-sm py-4">No reported internet outages</p>
                 ) : (
                   <div className="space-y-3">
-                    {data.outages.slice(0, 5).map((outage) => (
+                    {data.threats.outages.slice(0, 5).map((outage) => (
                       <div key={outage.id} className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className={`px-1.5 py-0.5 text-xs font-medium rounded border ${
                               outage.severity === 'critical' ? severityStyles.critical :
-                              outage.severity === 'major' ? severityStyles.elevated :
+                              outage.severity === 'severe' ? severityStyles.elevated :
                               severityStyles.normal
                             }`}>
                               {outage.severity.toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-sm text-slate-300 mt-1 font-medium">{outage.name}</p>
+                          <p className="text-sm text-slate-300 mt-1 font-medium">{outage.title}</p>
                           <p className="text-xs text-slate-500">{outage.country}</p>
                         </div>
                         <span className="text-xs text-slate-500 whitespace-nowrap">
-                          {formatTimeAgo(outage.startTime)}
+                          {formatTimeAgo(outage.timestamp)}
                         </span>
                       </div>
                     ))}

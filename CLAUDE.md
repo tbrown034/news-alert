@@ -184,7 +184,6 @@ Multiplier <  2.0 → NORMAL
 | `audit-sources.ts` | Validate all sources, find 404s/inactive |
 | `generate-clean-sources.ts` | Generate tiered source file |
 | `test-bluesky-accounts.ts` | Performance diagnostics |
-| `testParser.ts` | Unit tests for parsing |
 
 ### Archive (One-time use)
 | Script | Purpose |
@@ -224,7 +223,6 @@ Multiplier <  2.0 → NORMAL
 
 1. **Duplicate source files** - `sources.ts` (3,357 lines) mostly dead, only helper functions used
 2. **Unused telegram code** - `telegram-reader.ts`, `telegram.ts` not used
-3. **messageAnalysis.ts** - Analysis functions built but lightly used (AI summary only)
 
 ---
 

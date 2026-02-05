@@ -500,6 +500,32 @@ Rules:
           </div>
         </section>
 
+        {/* Media Literacy Guide */}
+        <section className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl border border-amber-200 dark:border-amber-800/50 overflow-hidden">
+          <Link href="/misinformation" className="block p-6 hover:bg-amber-100/50 dark:hover:bg-amber-900/30 transition-colors">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+                <ShieldCheckIcon className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
+                  Media Literacy Guide
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">
+                  Learn how to spot misinformation, evaluate sources, and become a smarter news consumer.
+                  No one is immune to propaganda—here&apos;s how to build your defenses.
+                </p>
+                <span className="inline-flex items-center text-sm font-medium text-amber-700 dark:text-amber-400">
+                  Read the guide
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+          </Link>
+        </section>
+
         {/* Footer */}
         <footer className="text-center py-8 text-sm text-slate-500 dark:text-slate-400">
           <p>Built with Next.js, TypeScript, and Claude AI</p>

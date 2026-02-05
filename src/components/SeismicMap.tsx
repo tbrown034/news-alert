@@ -8,7 +8,7 @@ import {
   Marker,
   ZoomableGroup,
 } from 'react-simple-maps';
-import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, PlusIcon, MinusIcon, ChevronDownIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import type { Earthquake } from '@/types';
 import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
 
@@ -71,6 +71,7 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
   const [filterMode, setFilterMode] = useState<FilterMode>('major'); // Default to major only
   const [hasAutoFocused, setHasAutoFocused] = useState(false);
+  const [showStats, setShowStats] = useState(false); // Collapsed by default
   const { theme } = useMapTheme();
 
   // Auto-focus on largest earthquake (or specific one if focusOnId provided) when data loads
@@ -88,8 +89,9 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
     }
 
     if (targetQuake) {
-      // Center on the earthquake with appropriate zoom
-      const zoom = targetQuake.magnitude >= 6 ? 1.8 : 1.5;
+      // Center on the earthquake with gentle zoom to maintain global context
+      // Lower zoom keeps more of the world visible (1.0 = full view, 2.0 = 2x zoom)
+      const zoom = targetQuake.magnitude >= 6 ? 1.3 : 1.15;
       setPosition({
         coordinates: [targetQuake.coordinates[0], targetQuake.coordinates[1]],
         zoom,
@@ -236,24 +238,24 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
         </ComposableMap>
 
         {/* Zoom Controls */}
-        <div className="absolute top-14 left-4 flex flex-col gap-1 z-10">
+        <div className="absolute top-14 left-3 flex flex-col gap-1 z-10">
           <button
             onClick={handleZoomIn}
-            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+            className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
             title="Zoom in"
           >
             <PlusIcon className="w-4 h-4" />
           </button>
           <button
             onClick={handleZoomOut}
-            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+            className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
             title="Zoom out"
           >
             <MinusIcon className="w-4 h-4" />
           </button>
           <button
             onClick={handleReset}
-            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+            className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
             title="Reset view"
           >
             <ArrowPathIcon className="w-4 h-4" />
@@ -262,81 +264,133 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
 
         {/* Loading overlay */}
         {isLoading && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <div className="absolute inset-0 bg-slate-900/50 dark:bg-black/50 flex items-center justify-center">
+            <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
         {/* Stats badge with filter toggle */}
-        <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-          <div className="text-sm text-gray-300 bg-black/60 px-3 py-2 rounded-lg font-medium">
-            {filteredEarthquakes.length} earthquakes (24h)
+        <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-sm text-slate-700 dark:text-slate-200 bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-lg font-medium shadow-sm border border-slate-200 dark:border-slate-700">
+              {filteredEarthquakes.length} quakes <span className="text-slate-400 dark:text-slate-500">(24h)</span>
+            </div>
+            <div className="flex bg-white/90 dark:bg-slate-800/90 rounded-lg overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700">
+              <button
+                onClick={() => setFilterMode('major')}
+                className={`px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                  filterMode === 'major'
+                    ? 'bg-amber-500 text-white'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                M5+
+              </button>
+              <button
+                onClick={() => setFilterMode('all')}
+                className={`px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                  filterMode === 'all'
+                    ? 'bg-amber-500 text-white'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              >
+                M4+
+              </button>
+            </div>
+            {/* Refresh with last updated time */}
+            {onRefresh && (
+              <button
+                onClick={onRefresh}
+                disabled={isLoading}
+                className="flex items-center gap-1.5 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                title="Refresh earthquake data"
+              >
+                <ArrowPathIcon className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+                {lastFetched && !isLoading && (
+                  <span>{formatTimeAgo(lastFetched)}</span>
+                )}
+              </button>
+            )}
+            {/* Stats toggle */}
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className="flex items-center gap-1 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 px-2 py-1.5 rounded-lg text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
+              title="Toggle stats"
+            >
+              Stats
+              <ChevronDownIcon className={`w-3 h-3 transition-transform ${showStats ? 'rotate-180' : ''}`} />
+            </button>
           </div>
-          <div className="flex bg-black/60 rounded-lg overflow-hidden">
-            <button
-              onClick={() => setFilterMode('major')}
-              className={`px-2.5 py-2 text-xs font-medium transition-colors ${
-                filterMode === 'major'
-                  ? 'bg-amber-500/80 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              M5+
-            </button>
-            <button
-              onClick={() => setFilterMode('all')}
-              className={`px-2.5 py-2 text-xs font-medium transition-colors ${
-                filterMode === 'all'
-                  ? 'bg-amber-500/80 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-white/10'
-              }`}
-            >
-              M4+
-            </button>
-          </div>
-          {/* Refresh with last updated time */}
-          {onRefresh && (
-            <button
-              onClick={onRefresh}
-              disabled={isLoading}
-              className="flex items-center gap-1.5 bg-black/60 hover:bg-black/80 px-2.5 py-2 rounded-lg text-xs text-gray-400 hover:text-white transition-colors disabled:opacity-50"
-              title="Refresh earthquake data"
-            >
-              <ArrowPathIcon className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-              {lastFetched && !isLoading && (
-                <span>{formatTimeAgo(lastFetched)}</span>
-              )}
-            </button>
+          {/* Expandable stats row */}
+          {showStats && filteredEarthquakes.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 text-2xs">
+              {(() => {
+                const largest = Math.max(...filteredEarthquakes.map(eq => eq.magnitude));
+                const majorCount = filteredEarthquakes.filter(eq => eq.magnitude >= 6).length;
+                const tsunamiCount = filteredEarthquakes.filter(eq => eq.tsunami).length;
+                const depths = filteredEarthquakes.map(eq => eq.depth);
+                const avgDepth = Math.round(depths.reduce((a, b) => a + b, 0) / depths.length);
+                return (
+                  <>
+                    <span className="px-2 py-1 bg-white/90 dark:bg-slate-800/90 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                      Max <span className="font-semibold text-amber-600 dark:text-amber-400">M{largest.toFixed(1)}</span>
+                    </span>
+                    {majorCount > 0 && (
+                      <span className="px-2 py-1 bg-white/90 dark:bg-slate-800/90 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                        <span className="font-semibold text-red-500">{majorCount}</span> major
+                      </span>
+                    )}
+                    {tsunamiCount > 0 && (
+                      <span className="px-2 py-1 bg-blue-50/90 dark:bg-blue-900/30 rounded border border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-300">
+                        <span className="font-semibold">{tsunamiCount}</span> tsunami
+                      </span>
+                    )}
+                    <span className="px-2 py-1 bg-white/90 dark:bg-slate-800/90 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+                      ~{avgDepth}km deep
+                    </span>
+                    <a
+                      href="https://earthquake.usgs.gov/earthquakes/map/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 px-2 py-1 bg-white/90 dark:bg-slate-800/90 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                    >
+                      <GlobeAltIcon className="w-3 h-3" />
+                      USGS
+                    </a>
+                  </>
+                );
+              })()}
+            </div>
           )}
         </div>
       </div>
 
       {/* Selected earthquake details */}
       {selected && (
-        <div className={`px-4 py-4 ${theme.infoPanelBg} border-t ${theme.infoPanelBorder}`}>
-          <div className="flex items-start justify-between gap-4">
+        <div className="px-3 sm:px-4 py-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
+          <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
                 <span
-                  className="px-3 py-1 text-sm font-bold rounded-lg"
+                  className="px-2.5 py-1 text-sm font-bold rounded-md"
                   style={{
-                    backgroundColor: `${getMagnitudeColor(selected.magnitude)}25`,
+                    backgroundColor: `${getMagnitudeColor(selected.magnitude)}20`,
                     color: getMagnitudeColor(selected.magnitude),
                   }}
                 >
                   M{selected.magnitude.toFixed(1)}
                 </span>
-                <span className={`text-sm ${theme.infoPanelTextMuted}`}>{formatTimeAgo(selected.time)}</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400">{formatTimeAgo(selected.time)}</span>
                 {selected.tsunami && (
-                  <span className="px-2 py-1 text-xs font-medium bg-blue-500/20 text-blue-400 rounded-lg">
+                  <span className="px-2 py-0.5 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md">
                     TSUNAMI
                   </span>
                 )}
                 {selected.alert && (
                   <span
-                    className="px-2 py-1 text-xs font-medium rounded-lg"
+                    className="px-2 py-0.5 text-xs font-semibold rounded-md"
                     style={{
-                      backgroundColor: `${getAlertColor(selected.alert)}20`,
+                      backgroundColor: `${getAlertColor(selected.alert)}15`,
                       color: getAlertColor(selected.alert),
                     }}
                   >
@@ -344,19 +398,19 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
                   </span>
                 )}
               </div>
-              <p className={`text-base ${theme.infoPanelTextPrimary} truncate`}>{selected.place}</p>
-              <p className={`text-sm ${theme.infoPanelTextSecondary} mt-1`}>
+              <p className="text-sm sm:text-base font-medium text-slate-900 dark:text-white">{selected.place}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 Depth: {selected.depth.toFixed(1)}km
-                {selected.felt && ` • ${selected.felt} felt reports`}
+                {selected.felt && ` · ${selected.felt.toLocaleString()} felt reports`}
               </p>
             </div>
             <a
               href={selected.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-blue-400 hover:text-blue-300 whitespace-nowrap font-medium"
+              className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 whitespace-nowrap font-medium flex-shrink-0 cursor-pointer"
             >
-              USGS Details →
+              USGS →
             </a>
           </div>
         </div>

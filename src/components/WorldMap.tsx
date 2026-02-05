@@ -8,7 +8,7 @@ import {
   Marker,
   ZoomableGroup,
 } from 'react-simple-maps';
-import { ArrowPathIcon, PlusIcon, MinusIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MinusIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import { Watchpoint, WatchpointId, Earthquake } from '@/types';
 import { RegionActivity } from '@/lib/activityDetection';
 import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
@@ -109,10 +109,6 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
   const handleZoomOut = () => {
     if (position.zoom <= 0.5) return;
     setPosition(pos => ({ ...pos, zoom: pos.zoom / 1.5 }));
-  };
-
-  const handleReset = () => {
-    setPosition({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
   };
 
   // Reset to world view AND clear region filter
@@ -471,13 +467,6 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
             title="Zoom out"
           >
             <MinusIcon className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleReset}
-            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
-            title="Reset view"
-          >
-            <ArrowPathIcon className="w-4 h-4" />
           </button>
         </div>
 
