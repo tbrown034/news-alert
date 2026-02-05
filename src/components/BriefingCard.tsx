@@ -78,16 +78,28 @@ interface BriefingCardProps {
   filterDescription?: string; // e.g., "US + Bluesky" or "keyword: ukraine"
 }
 
-// Countries/locations to highlight in briefing text
+// Countries/locations/entities to highlight in briefing text
 const HIGHLIGHT_LOCATIONS = [
-  'Ukraine', 'Russia', 'Crimea', 'Donbas', 'Kyiv', 'Moscow', 'Kharkiv', 'Odesa',
-  'Israel', 'Gaza', 'West Bank', 'Lebanon', 'Beirut', 'Hezbollah', 'Hamas', 'Jerusalem', 'Tel Aviv',
-  'Iran', 'Tehran', 'Syria', 'Damascus', 'Yemen', 'Houthi',
-  'China', 'Taiwan', 'Beijing', 'Taipei', 'North Korea', 'Pyongyang', 'South Korea', 'Seoul',
-  'Philippines', 'South China Sea', 'Japan', 'Tokyo',
-  'United States', 'U.S.', 'US', 'Washington', 'Mexico', 'Venezuela', 'Cuba',
-  'NATO', 'EU', 'European Union', 'Germany', 'France', 'UK', 'Britain', 'Poland', 'Belarus', 'Moldova',
-  'Sudan', 'Ethiopia', 'Myanmar', 'Afghanistan', 'Pakistan', 'India', 'Kashmir',
+  // Eastern Europe / Russia-Ukraine
+  'Ukraine', 'Ukrainian', 'Russia', 'Russian', 'Crimea', 'Donbas', 'Kyiv', 'Moscow', 'Kharkiv', 'Odesa',
+  'Zelenskyy', 'Putin',
+  // Middle East
+  'Israel', 'Israeli', 'Gaza', 'Palestinian', 'West Bank', 'Lebanon', 'Lebanese', 'Beirut',
+  'Hezbollah', 'Hamas', 'Jerusalem', 'Tel Aviv', 'Netanyahu',
+  'Iran', 'Iranian', 'Tehran', 'Syria', 'Syrian', 'Damascus', 'Yemen', 'Yemeni', 'Houthi',
+  // Asia-Pacific
+  'China', 'Chinese', 'Taiwan', 'Taiwanese', 'Beijing', 'Taipei',
+  'North Korea', 'North Korean', 'Pyongyang', 'South Korea', 'South Korean', 'Seoul',
+  'Philippines', 'South China Sea', 'Japan', 'Japanese', 'Tokyo', 'Kim Jong Un', 'Xi Jinping',
+  // Americas
+  'United States', 'U.S.', 'US', 'American', 'Washington', 'Mexico', 'Mexican', 'Venezuela', 'Cuba',
+  'Trump', 'Biden',
+  // Europe
+  'NATO', 'EU', 'European Union', 'European', 'Germany', 'German', 'France', 'French',
+  'UK', 'Britain', 'British', 'Poland', 'Polish', 'Belarus', 'Moldova', 'London', 'Paris', 'Berlin',
+  // Other hotspots
+  'Sudan', 'Sudanese', 'Ethiopia', 'Ethiopian', 'Myanmar', 'Afghanistan', 'Afghan',
+  'Pakistan', 'Pakistani', 'India', 'Indian', 'Kashmir',
 ];
 
 const SOURCE_SUFFIXES = ['Post', 'Times', 'Monitor', 'Tribune', 'Herald', 'Journal', 'News', 'Today', 'Daily'];

@@ -10,7 +10,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { WatchpointId, NewsItem } from '@/types';
 import { regionDisplayNames } from './regionDetection';
-import { analyzeMessage } from './messageAnalysis';
 
 // =============================================================================
 // TYPES
@@ -63,9 +62,6 @@ interface StructuredPost {
   postedAt: string; // Human-readable time (e.g., "2:43 PM")
   title: string;
   content?: string;
-  contentType: string;
-  verification: string;
-  provenance: string;
 }
 
 /**
@@ -87,8 +83,6 @@ function selectAndStructurePosts(posts: NewsItem[], maxPosts: number = 50): Stru
 
   // Structure posts for Claude
   return recentPosts.map((item, idx) => {
-    const analysis = analyzeMessage(item.post.title + ' ' + (item.post.content || ''));
-
     // Calculate human-readable posted time
     const postedTime = new Date(now - item.minutesAgo * 60 * 1000);
     const postedAt = postedTime.toLocaleTimeString('en-US', {
@@ -105,9 +99,6 @@ function selectAndStructurePosts(posts: NewsItem[], maxPosts: number = 50): Stru
       postedAt,
       title: item.post.title,
       content: item.post.content !== item.post.title ? item.post.content : undefined,
-      contentType: analysis.contentType.type,
-      verification: analysis.verification.level,
-      provenance: analysis.provenance.type,
     };
   });
 }
@@ -175,7 +166,8 @@ Rules:
 - Developments = 2-3 specific items with sources, each one line
 - Reference time naturally (this morning, overnight, since dawn)
 - Multiple sources reporting the same event = high importance signal (prioritize these)
-- No jargon, no severity labels, no scores`;
+- No jargon, no severity labels, no scores
+- NEVER use markdown formatting (no **bold**, no *italics*) - plain text only`;
 }
 
 // =============================================================================
