@@ -5,10 +5,9 @@ import { NewsItem, WatchpointId } from '@/types';
 import { NewsCard } from './NewsCard';
 import { EditorialCard, isEditorialItem } from './EditorialCard';
 import { BriefingCard } from './BriefingCard';
-import { ArrowPathIcon, ExclamationTriangleIcon, GlobeAltIcon, ChevronDownIcon, SignalIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ExclamationTriangleIcon, GlobeAltIcon, ChevronDownIcon, SignalIcon, FireIcon } from '@heroicons/react/24/outline';
 import { regionDisplayNames } from '@/lib/regionDetection';
-import { TrendingKeywords, TrendingKeywordsInline } from './TrendingKeywords';
-import { PlatformIcon, platformColors, platformBadgeStyles } from './PlatformIcon';
+import { getTrendingKeywords } from '@/lib/trendingKeywords';
 
 interface ActivityData {
   level: string;
@@ -120,29 +119,6 @@ const secondaryTabs: TabConfig[] = [
 
 const allTabs: TabConfig[] = [...primaryTabs, ...secondaryTabs];
 
-// Platform filter options (multi-select) - Only MVP platforms
-type PlatformId = 'bluesky' | 'telegram' | 'mastodon';
-const platformOptions: { id: PlatformId; label: string }[] = [
-  { id: 'bluesky', label: 'Bluesky' },
-  { id: 'telegram', label: 'Telegram' },
-  { id: 'mastodon', label: 'Mastodon' },
-];
-const ALL_PLATFORMS = new Set<PlatformId>(['bluesky', 'telegram', 'mastodon']);
-
-// Source type filter options
-type SourceTypeId = 'osint' | 'news-org' | 'reporter' | 'analyst' | 'official' | 'aggregator' | 'bot' | 'ground';
-const sourceTypeOptions: { id: SourceTypeId; label: string }[] = [
-  { id: 'osint', label: 'OSINT' },
-  { id: 'news-org', label: 'News Org' },
-  { id: 'reporter', label: 'Reporter' },
-  { id: 'analyst', label: 'Analyst' },
-  { id: 'official', label: 'Official' },
-  { id: 'aggregator', label: 'Aggregator' },
-  { id: 'bot', label: 'Bot' },
-  { id: 'ground', label: 'Ground' },
-];
-const ALL_SOURCE_TYPES = new Set<SourceTypeId>(['osint', 'news-org', 'reporter', 'analyst', 'official', 'aggregator', 'bot', 'ground']);
-
 // Format actual time for last updated (e.g., "3:45 PM")
 function formatActualTime(isoString: string | null | undefined): string {
   if (!isoString) return '';
@@ -174,12 +150,8 @@ export function NewsFeed({
   // Track previously seen item IDs to animate new ones
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
-  const [enabledPlatforms, setEnabledPlatforms] = useState<Set<PlatformId>>(new Set(ALL_PLATFORMS));
-  const [enabledSourceTypes, setEnabledSourceTypes] = useState<Set<SourceTypeId>>(new Set(ALL_SOURCE_TYPES));
   const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [regionalExpanded, setRegionalExpanded] = useState(false);
-  const [sourcesExpanded, setSourcesExpanded] = useState(false);
-  const [trendingExpanded, setTrendingExpanded] = useState(false);
   const [selectedTab, setSelectedTab] = useState<SelectedTab>('all'); // Local tab state, defaults to All
   const moreDropdownRef = useRef<HTMLDivElement>(null);
   const isInitialLoadRef = useRef(true);
@@ -221,34 +193,24 @@ export function NewsFeed({
   }, []);
 
   const filteredItems = useMemo(() => {
-    let filtered = items;
-
-    // Apply region filter
-    // Server-side detection now assigns regions based on content keywords
-    // Just filter by the assigned region (which may have been detected from content)
+    // Apply region filter only
     if (selectedTab !== 'all') {
-      filtered = items.filter((item) => item.region === selectedTab);
+      return items.filter((item) => item.region === selectedTab);
     }
-
-    // Apply platform filter (multi-select)
-    const allPlatformsEnabled = enabledPlatforms.size === ALL_PLATFORMS.size;
-    if (!allPlatformsEnabled) {
-      filtered = filtered.filter((item) => enabledPlatforms.has(item.source.platform as PlatformId));
-    }
-
-    // Apply source type filter (multi-select)
-    const allSourceTypesEnabled = enabledSourceTypes.size === ALL_SOURCE_TYPES.size;
-    if (!allSourceTypesEnabled) {
-      filtered = filtered.filter((item) => enabledSourceTypes.has(item.source.sourceType as SourceTypeId));
-    }
-
-    return filtered;
-  }, [items, selectedTab, enabledPlatforms, enabledSourceTypes]);
+    return items;
+  }, [items, selectedTab]);
 
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort(
       (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
     );
+  }, [filteredItems]);
+
+  // Get top trending keywords for display (informational only)
+  const trendingKeywords = useMemo(() => {
+    if (filteredItems.length === 0) return [];
+    const result = getTrendingKeywords(filteredItems, 5);
+    return result.keywords.map(k => k.keyword);
   }, [filteredItems]);
 
   // Track new items for animation
@@ -309,33 +271,6 @@ export function NewsFeed({
     }, {} as Record<string, number>);
   }, [itemsForCounts]);
 
-  // Count items by platform (from region-filtered items, NOT platform-filtered)
-  const platformCounts = useMemo(() => {
-    // Apply only region filter, not platform filter
-    const regionFiltered = selectedTab === 'all'
-      ? items
-      : items.filter((item) => item.region === selectedTab);
-
-    return regionFiltered.reduce((acc, item) => {
-      const platform = item.source.platform;
-      acc[platform] = (acc[platform] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-  }, [items, selectedTab]);
-
-  // Count items by source type (from region-filtered items)
-  const sourceTypeCounts = useMemo(() => {
-    const regionFiltered = selectedTab === 'all'
-      ? items
-      : items.filter((item) => item.region === selectedTab);
-
-    return regionFiltered.reduce((acc, item) => {
-      const sourceType = item.source.sourceType;
-      acc[sourceType] = (acc[sourceType] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-  }, [items, selectedTab]);
-
   // Get count for a tab (use full item counts, not paginated)
   const getTabCount = (tabId: TabId): number => {
     if (tabId === 'all') return itemsForCounts.length;
@@ -395,16 +330,14 @@ export function NewsFeed({
     : allTabs.find(t => t.id === selectedTab)?.label || 'All Regions';
 
   // Calculate display stats based on filtered view
-  const allPlatformsEnabled = enabledPlatforms.size === ALL_PLATFORMS.size;
-  const allSourceTypesEnabled = enabledSourceTypes.size === ALL_SOURCE_TYPES.size;
-  const isFiltered = !allPlatformsEnabled || !allSourceTypesEnabled;
-  const displayPosts = (selectedTab !== 'all' || isFiltered) ? filteredItems.length : (totalPosts ?? filteredItems.length);
-  const displaySources = (selectedTab !== 'all' || isFiltered)
+  const isFiltered = selectedTab !== 'all';
+  const displayPosts = isFiltered ? filteredItems.length : (totalPosts ?? filteredItems.length);
+  const displaySources = isFiltered
     ? new Set(filteredItems.map(i => i.source.id)).size
     : (uniqueSources ?? new Set(filteredItems.map(i => i.source.id)).size);
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col w-full max-w-4xl mx-auto">
       {/* Header - matches Global Monitor pattern */}
       <div className="relative z-10 px-3 sm:px-4 py-2.5 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-700/50 rounded-t-2xl">
           {/* Row 1: Title + Refresh */}
@@ -483,12 +416,25 @@ export function NewsFeed({
                     })()}
                   </div>
                 )}
+                {/* Trending keywords */}
+                {trendingKeywords.length > 0 && (
+                  <div className="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-slate-700/30">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                        <FireIcon className="w-3 h-3 text-amber-500" />
+                        <span>Trending</span>
+                      </div>
+                      <span className="text-slate-300 dark:text-slate-600">|</span>
+                      <span className="text-sm text-slate-600 dark:text-slate-300">{trendingKeywords.join('  ·  ')}</span>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
 
-          {/* Row 2: Region Selector - elevated segmented control with activity indicators */}
-          <div className="pb-3 border-b border-slate-200/50 dark:border-slate-700/40 mb-3" ref={moreDropdownRef}>
+          {/* Region Selector */}
+          <div className="pb-2" ref={moreDropdownRef}>
             <div className={`
               inline-flex flex-wrap items-center gap-0.5 p-1 rounded-xl
               bg-gradient-to-b from-slate-100 to-slate-50 dark:from-slate-800/80 dark:to-slate-900/60
@@ -520,9 +466,8 @@ export function NewsFeed({
                           <GlobeAltIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />
                         )}
                         <span>{tab.label}</span>
-                        {/* Post count badge - only show on hover or when selected */}
                         <span className={`
-                          text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
+                          hidden sm:inline-flex text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
                           ${isSelected
                             ? 'bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300'
                             : 'bg-transparent text-slate-400 dark:text-slate-500 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50'
@@ -532,7 +477,6 @@ export function NewsFeed({
                         </span>
                       </span>
                     </button>
-                    {/* Subtle separator between tabs */}
                     {!isLast && (
                       <div className="w-px h-5 bg-slate-200/60 dark:bg-slate-600/40 mx-0.5" />
                     )}
@@ -540,193 +484,65 @@ export function NewsFeed({
                 );
               })}
 
-              {/* Divider */}
+              {/* Secondary regions - inline when expanded */}
+              {regionalExpanded && secondaryTabs.map((tab, index) => {
+                const isSelected = selectedTab === tab.id;
+                const count = getTabCount(tab.id);
+                return (
+                  <div key={tab.id} className="flex items-center">
+                    {index === 0 && (
+                      <div className="w-px h-5 bg-slate-200/60 dark:bg-slate-600/40 mx-0.5" />
+                    )}
+                    <button
+                      onClick={() => handleTabSelect(tab.id)}
+                      className={`
+                        group relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap
+                        transition-all duration-200 ease-out
+                        ${isSelected
+                          ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-md dark:shadow-lg dark:shadow-black/30 ring-1 ring-slate-200 dark:ring-slate-600/50 scale-[1.02]'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-700/40'
+                        }
+                      `}
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        <span>{tab.label}</span>
+                        <span className={`
+                          hidden sm:inline-flex text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
+                          ${isSelected
+                            ? 'bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300'
+                            : 'bg-transparent text-slate-400 dark:text-slate-500 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50'
+                          }
+                        `}>
+                          {count}
+                        </span>
+                      </span>
+                    </button>
+                    {index < secondaryTabs.length - 1 && (
+                      <div className="w-px h-5 bg-slate-200/60 dark:bg-slate-600/40 mx-0.5" />
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Divider before More/Less */}
               <div className="w-px h-6 bg-slate-200 dark:bg-slate-700/60 mx-1" />
 
-              {/* More dropdown for secondary regions */}
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    setRegionalExpanded(!regionalExpanded);
-                    setSourcesExpanded(false);
-                  }}
-                  className={`
-                    group relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap
-                    transition-all duration-200 ease-out flex items-center gap-2
-                    ${secondaryTabs.some(t => t.id === selectedTab)
-                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-md dark:shadow-lg dark:shadow-black/30 ring-1 ring-slate-200 dark:ring-slate-600/50 scale-[1.02]'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-700/40'
-                    }
-                  `}
-                >
-                  <span>{secondaryTabs.some(t => t.id === selectedTab)
-                    ? secondaryTabs.find(t => t.id === selectedTab)?.label
-                    : 'More'
-                  }</span>
-                  <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${regionalExpanded ? 'rotate-180' : ''}`} />
-                </button>
-
-                {regionalExpanded && (
-                  <div className="absolute top-full left-0 mt-2 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 rounded-xl shadow-xl dark:shadow-2xl dark:shadow-black/40 z-50 min-w-[180px] animate-in fade-in slide-in-from-top-2 duration-150">
-                    {secondaryTabs.map((tab) => {
-                      const isSelected = selectedTab === tab.id;
-                      const count = regionCounts[tab.id] || 0;
-
-                      return (
-                        <button
-                          key={tab.id}
-                          onClick={() => {
-                            handleTabSelect(tab.id);
-                            setRegionalExpanded(false);
-                          }}
-                          className={`
-                            w-full px-4 py-2.5 text-sm font-medium transition-all text-left flex items-center gap-3
-                            ${isSelected
-                              ? 'bg-slate-100 dark:bg-slate-700/60 text-slate-900 dark:text-white'
-                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/40 hover:text-slate-900 dark:hover:text-white'
-                            }
-                          `}
-                        >
-                          <span className="flex-1">{tab.label}</span>
-                          <span className="text-2xs font-semibold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                            {count}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+              {/* More/Less toggle */}
+              <button
+                onClick={() => setRegionalExpanded(!regionalExpanded)}
+                className="px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-700/40 transition-all duration-200 ease-out flex items-center gap-1.5"
+              >
+                <span>{regionalExpanded ? 'Less' : 'More'}</span>
+                <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${regionalExpanded ? 'rotate-180' : ''}`} />
+              </button>
             </div>
 
-            {/* Loading indicator with better styling */}
+            {/* Loading indicator */}
             {isPending && (
               <span className="ml-3 inline-flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
                 <span className="w-3 h-3 border-2 border-slate-300 dark:border-slate-600 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin" />
                 <span>Filtering...</span>
               </span>
-            )}
-          </div>
-
-          {/* Row 3: Expandable Filters */}
-          <div className="flex flex-col gap-2 pb-2">
-            {/* Filter toggles row */}
-            <div className="flex items-center gap-2">
-              {/* Sources toggle */}
-              <button
-                onClick={() => {
-                  setSourcesExpanded(!sourcesExpanded);
-                  setTrendingExpanded(false);
-                }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${
-                  sourcesExpanded
-                    ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                }`}
-              >
-                <span className="text-xs font-medium text-slate-700 dark:text-slate-200">Sources</span>
-                <span className="text-2xs text-slate-500 dark:text-slate-400">
-                  {enabledPlatforms.size}/{platformOptions.length}
-                </span>
-                <ChevronDownIcon className={`w-3 h-3 text-slate-400 transition-transform ${sourcesExpanded ? 'rotate-180' : ''}`} />
-              </button>
-
-              {/* Trending toggle */}
-              <TrendingKeywordsInline
-                items={allItemsForTrending || items}
-                isLoading={isLoading}
-                expanded={trendingExpanded}
-                onToggle={() => {
-                  setTrendingExpanded(!trendingExpanded);
-                  setSourcesExpanded(false);
-                }}
-              />
-            </div>
-
-            {/* Expanded Sources row */}
-            {sourcesExpanded && (
-              <div className="flex flex-col gap-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
-                {/* Platforms row */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-2xs font-semibold text-slate-500 dark:text-slate-400 uppercase mr-1">Platforms:</span>
-                  {platformOptions.map((platform) => {
-                    const isEnabled = enabledPlatforms.has(platform.id);
-                    const count = platformCounts[platform.id] || 0;
-                    return (
-                      <button
-                        key={platform.id}
-                        onClick={() => {
-                          const newSet = new Set(enabledPlatforms);
-                          if (isEnabled) {
-                            newSet.delete(platform.id);
-                          } else {
-                            newSet.add(platform.id);
-                          }
-                          setEnabledPlatforms(newSet);
-                        }}
-                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                          isEnabled
-                            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-                            : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600 opacity-60'
-                        }`}
-                      >
-                        <PlatformIcon platform={platform.id} className="w-3 h-3" />
-                        <span>{platform.label}</span>
-                        <span className="text-2xs opacity-75">({count})</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Source Types row */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-2xs font-semibold text-slate-500 dark:text-slate-400 uppercase mr-1">Types:</span>
-                  {sourceTypeOptions.map((sourceType) => {
-                    const isEnabled = enabledSourceTypes.has(sourceType.id);
-                    const count = sourceTypeCounts[sourceType.id] || 0;
-                    if (count === 0 && !isEnabled) return null; // Hide types with no items
-                    return (
-                      <button
-                        key={sourceType.id}
-                        onClick={() => {
-                          const newSet = new Set(enabledSourceTypes);
-                          if (isEnabled) {
-                            newSet.delete(sourceType.id);
-                          } else {
-                            newSet.add(sourceType.id);
-                          }
-                          setEnabledSourceTypes(newSet);
-                        }}
-                        className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                          isEnabled
-                            ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                            : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600 opacity-60'
-                        }`}
-                      >
-                        <span>{sourceType.label}</span>
-                        <span className="text-2xs opacity-75">({count})</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Quick actions */}
-                <div className="flex items-center gap-2 pt-1 border-t border-slate-200 dark:border-slate-700">
-                  <button
-                    onClick={() => {
-                      setEnabledPlatforms(new Set(ALL_PLATFORMS));
-                      setEnabledSourceTypes(new Set(ALL_SOURCE_TYPES));
-                    }}
-                    className="text-2xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    Select All
-                  </button>
-                  <span className="text-slate-300 dark:text-slate-600">|</span>
-                  <span className="text-2xs text-slate-500 dark:text-slate-400">
-                    {filteredItems.length} posts showing
-                  </span>
-                </div>
-              </div>
             )}
           </div>
         </div>
@@ -770,9 +586,21 @@ export function NewsFeed({
 
         <div className="flex flex-col gap-4 px-3 sm:px-4 pt-4 pb-3 sm:pb-4 news-feed-list">
           {/* AI Briefing Card - appears at top of feed */}
-          {!isLoading && sortedItems.length > 0 && (
-            <BriefingCard region={selectedTab} />
-          )}
+          {!isLoading && sortedItems.length > 0 && (() => {
+            // Build filter description for regional views
+            const filterDesc = selectedTab !== 'all'
+              ? allTabs.find(t => t.id === selectedTab)?.label || selectedTab
+              : undefined;
+
+            return (
+              <BriefingCard
+                region={selectedTab}
+                autoGenerate={selectedTab === 'all'}
+                postCount={sortedItems.length}
+                filterDescription={filterDesc}
+              />
+            );
+          })()}
 
           {sortedItems.map((item, index) => (
             <div key={item.id}>

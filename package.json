@@ -4,9 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true; open http://localhost:3000; next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -23,6 +27,7 @@
     "react-simple-maps": "^3.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -31,7 +36,7 @@
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
-    "playwright": "^1.57.0",
+    "playwright": "^1.58.1",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"

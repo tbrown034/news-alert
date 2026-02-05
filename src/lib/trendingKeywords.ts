@@ -59,11 +59,12 @@ export function extractKeywordsFromItem(item: NewsItem): string[] {
 
 /**
  * Count keyword occurrences across all items
+ * Preserves original casing from first occurrence
  */
 export function countKeywords(
   items: NewsItem[]
-): Map<string, { count: number; regions: Set<string> }> {
-  const counts = new Map<string, { count: number; regions: Set<string> }>();
+): Map<string, { count: number; regions: Set<string>; displayName: string }> {
+  const counts = new Map<string, { count: number; regions: Set<string>; displayName: string }>();
 
   for (const item of items) {
     const keywords = extractKeywordsFromItem(item);
@@ -83,9 +84,12 @@ export function countKeywords(
         existing.count++;
         existing.regions.add(item.region);
       } else {
+        // Preserve original casing from first occurrence, with first letter capitalized
+        const displayName = keyword.trim().charAt(0).toUpperCase() + keyword.trim().slice(1).toLowerCase();
         counts.set(normalized, {
           count: 1,
           regions: new Set([item.region]),
+          displayName,
         });
       }
     }
@@ -108,9 +112,10 @@ export function getTrendingKeywords(
   const counts = countKeywords(items);
 
   // Convert to array and sort by count
+  // Use displayName (properly cased) instead of normalized key
   const keywords: TrendingKeyword[] = Array.from(counts.entries())
-    .map(([keyword, data]) => ({
-      keyword,
+    .map(([_normalized, data]) => ({
+      keyword: data.displayName,
       count: data.count,
       regions: Array.from(data.regions),
     }))
