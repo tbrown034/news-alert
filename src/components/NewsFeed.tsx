@@ -206,12 +206,12 @@ export function NewsFeed({
     );
   }, [filteredItems]);
 
-  // Get top trending keywords for display (informational only)
+  // Get top trending keywords for display (only for "All" view)
   const trendingKeywords = useMemo(() => {
-    if (filteredItems.length === 0) return [];
-    const result = getTrendingKeywords(filteredItems, 5);
-    return result.keywords.map(k => k.keyword);
-  }, [filteredItems]);
+    if (selectedTab !== 'all' || items.length === 0) return [];
+    const result = getTrendingKeywords(items, 4);
+    return result.keywords; // Keep full objects with count
+  }, [items, selectedTab]);
 
   // Track new items for animation
   useEffect(() => {
@@ -416,16 +416,25 @@ export function NewsFeed({
                     })()}
                   </div>
                 )}
-                {/* Trending keywords */}
+                {/* Trending keywords - only for All view */}
                 {trendingKeywords.length > 0 && (
                   <div className="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-slate-700/30">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">
                         <FireIcon className="w-3 h-3 text-amber-500" />
                         <span>Trending</span>
                       </div>
                       <span className="text-slate-300 dark:text-slate-600">|</span>
-                      <span className="text-sm text-slate-600 dark:text-slate-300">{trendingKeywords.join('  ·  ')}</span>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">
+                        {trendingKeywords.map((kw, i) => (
+                          <span key={kw.keyword}>
+                            {i > 0 && '  ·  '}
+                            <span className="text-slate-400 dark:text-slate-500">#{i + 1}</span>{' '}
+                            {kw.keyword}{' '}
+                            <span className="text-slate-400 dark:text-slate-500">({kw.count})</span>
+                          </span>
+                        ))}
+                      </span>
                     </div>
                   </div>
                 )}
