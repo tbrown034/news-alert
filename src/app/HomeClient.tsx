@@ -497,10 +497,16 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 Feed
               </a>
               <a
-                href="/threats"
+                href="/news"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
               >
-                Threats
+                News
+              </a>
+              <a
+                href="/conditions"
+                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
+              >
+                Conditions
               </a>
               <a
                 href="/about"
@@ -575,11 +581,18 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     Feed
                   </a>
                   <a
-                    href="/threats"
+                    href="/news"
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
-                    Threats
+                    News
+                  </a>
+                  <a
+                    href="/conditions"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  >
+                    Conditions
                   </a>
                   <a
                     href="/about"

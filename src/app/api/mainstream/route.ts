@@ -83,9 +83,9 @@ function setCachedMainstream(cacheKey: string, data: MainstreamSourceGroup[]): v
  */
 function getMainstreamSources(region: WatchpointId): TieredSource[] {
   return allTieredSources.filter(source => {
-    // Filter: must be news-org AND RSS platform
+    // Filter: must be news-org on RSS or Bluesky
     if (source.sourceType !== 'news-org') return false;
-    if (source.platform !== 'rss') return false;
+    if (source.platform !== 'rss' && source.platform !== 'bluesky') return false;
 
     // Filter by region
     if (region === 'all') return true;

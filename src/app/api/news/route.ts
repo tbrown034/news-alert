@@ -15,6 +15,7 @@ import { checkRateLimit, getClientIp, rateLimitHeaders } from '@/lib/rateLimit';
 import { getActiveEditorialPosts } from '@/lib/editorial';
 import { EditorialPost } from '@/types/editorial';
 import { logActivitySnapshot } from '@/lib/activityLogging';
+import { calculateSourceActivity, attachSourceActivity } from '@/lib/sourceActivity';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -356,9 +357,14 @@ export async function GET(request: Request) {
     // Calculate activity levels - O(n)
     const activity = calculateRegionActivity(filtered);
 
+    // Calculate per-source activity (surge detection)
+    const sourceActivity = calculateSourceActivity(filtered);
+    attachSourceActivity(limited, sourceActivity);
+
     return NextResponse.json({
       items: limited,
       activity,
+      sourceActivity,
       fetchedAt: new Date().toISOString(),
       totalItems: filtered.length,
       editorialCount,

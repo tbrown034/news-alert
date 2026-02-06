@@ -76,7 +76,7 @@ const HIGHLIGHT_LOCATIONS = [
   'Iran', 'Tehran', 'Syria', 'Damascus', 'Yemen', 'Houthi',
   'China', 'Taiwan', 'Beijing', 'Taipei', 'North Korea', 'Pyongyang', 'South Korea', 'Seoul',
   'Philippines', 'South China Sea', 'Japan', 'Tokyo',
-  'United States', 'U.S.', 'US', 'Washington', 'Mexico', 'Venezuela', 'Cuba',
+  'United States', 'U.S.', 'US', 'ICE', 'Washington', 'Mexico', 'Venezuela', 'Cuba',
   'NATO', 'EU', 'European Union', 'Germany', 'France', 'UK', 'Britain', 'Poland', 'Belarus', 'Moldova',
   'Sudan', 'Ethiopia', 'Myanmar', 'Afghanistan', 'Pakistan', 'India', 'Kashmir',
 ];
@@ -149,7 +149,7 @@ function highlightLocations(text: string): React.ReactNode {
       }
 
       return (
-        <span key={i} className="font-semibold text-[var(--foreground)]">
+        <span key={i} className="font-semibold text-gray-900 dark:text-white dark:underline dark:decoration-white/20 dark:underline-offset-2">
           {part}
         </span>
       );
