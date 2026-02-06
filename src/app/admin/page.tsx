@@ -3,12 +3,85 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSession } from '@/lib/auth-client';
 import { tier1Sources, tier2Sources, tier3Sources, TieredSource } from '@/lib/sources-clean';
-import { ArrowLeftIcon, MagnifyingGlassIcon, FunnelIcon, ChevronUpDownIcon, ChartBarIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, MagnifyingGlassIcon, FunnelIcon, ChevronUpDownIcon, ChartBarIcon, PencilSquareIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 // Combine all sources
 const allSources: TieredSource[] = [...tier1Sources, ...tier2Sources, ...tier3Sources];
+
+// Feed platforms (power the live wire + activity detection)
+const FEED_PLATFORMS = new Set(['bluesky', 'telegram', 'mastodon']);
+// News platforms (mainstream news area)
+const NEWS_PLATFORMS = new Set(['rss', 'reddit', 'youtube']);
+
+// Platform badge colors
+function platformBadgeClass(platform: string): string {
+  switch (platform) {
+    case 'bluesky': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400';
+    case 'telegram': return 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400';
+    case 'mastodon': return 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400';
+    case 'rss': return 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400';
+    case 'reddit': return 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400';
+    case 'youtube': return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
+    default: return 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400';
+  }
+}
+
+// Mirror activityDetection.ts baseline logic client-side
+const CONSERVATIVE_DEFAULT = 3;
+function isMeasuredValue(n: number): boolean {
+  return n !== Math.floor(n);
+}
+
+interface RegionBaseline {
+  region: string;
+  feedSources: number;
+  totalPpd: number;
+  trustedPpd: number;
+  baseline6h: number;
+}
+
+function calculateRegionBaselines(): RegionBaseline[] {
+  const feedSources = allSources.filter(s => FEED_PLATFORMS.has(s.platform));
+  const regionMap = new Map<string, { count: number; totalPpd: number; trustedPpd: number }>();
+
+  for (const s of feedSources) {
+    const r = s.region;
+    if (!regionMap.has(r)) regionMap.set(r, { count: 0, totalPpd: 0, trustedPpd: 0 });
+    const entry = regionMap.get(r)!;
+    entry.count++;
+    entry.totalPpd += s.postsPerDay || 0;
+    entry.trustedPpd += isMeasuredValue(s.postsPerDay) ? s.postsPerDay : CONSERVATIVE_DEFAULT;
+  }
+
+  const results: RegionBaseline[] = [];
+  const order = ['us', 'middle-east', 'europe-russia', 'latam', 'asia', 'all', 'seismic'];
+
+  for (const region of order) {
+    const entry = regionMap.get(region);
+    if (!entry) continue;
+    results.push({
+      region,
+      feedSources: entry.count,
+      totalPpd: Math.round(entry.totalPpd * 10) / 10,
+      trustedPpd: Math.round(entry.trustedPpd * 10) / 10,
+      baseline6h: Math.round(entry.trustedPpd / 4),
+    });
+  }
+
+  return results;
+}
+
+const regionDisplayNames: Record<string, string> = {
+  'us': 'United States',
+  'middle-east': 'Middle East',
+  'europe-russia': 'Europe & Russia',
+  'latam': 'Latin America',
+  'asia': 'Asia-Pacific',
+  'all': 'Global',
+  'seismic': 'Seismic',
+};
 
 type SortField = 'name' | 'platform' | 'sourceType' | 'fetchTier' | 'confidence' | 'region' | 'postsPerDay';
 type SortDirection = 'asc' | 'desc';
@@ -27,6 +100,11 @@ export default function AdminPage() {
   // Sort states
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  // Source detail panel
+  const [selectedSource, setSelectedSource] = useState<TieredSource | null>(null);
+  const [liveStats, setLiveStats] = useState<any>(null);
+  const [liveStatsLoading, setLiveStatsLoading] = useState(false);
 
   // Test source states
   const [testHandle, setTestHandle] = useState('');
@@ -47,11 +125,13 @@ export default function AdminPage() {
   const tiers = ['T1', 'T2', 'T3'];
   const regions = useMemo(() => [...new Set(allSources.map(s => s.region))], []);
 
+  // Regional baselines
+  const regionBaselines = useMemo(() => calculateRegionBaselines(), []);
+
   // Filter and sort sources
   const filteredSources = useMemo(() => {
     let result = allSources;
 
-    // Search filter
     if (search) {
       const searchLower = search.toLowerCase();
       result = result.filter(s =>
@@ -61,27 +141,28 @@ export default function AdminPage() {
       );
     }
 
-    // Platform filter
     if (platformFilter !== 'all') {
-      result = result.filter(s => s.platform === platformFilter);
+      if (platformFilter === '_feed') {
+        result = result.filter(s => FEED_PLATFORMS.has(s.platform));
+      } else if (platformFilter === '_news') {
+        result = result.filter(s => NEWS_PLATFORMS.has(s.platform));
+      } else {
+        result = result.filter(s => s.platform === platformFilter);
+      }
     }
 
-    // Type filter
     if (typeFilter !== 'all') {
       result = result.filter(s => s.sourceType === typeFilter);
     }
 
-    // Tier filter
     if (tierFilter !== 'all') {
       result = result.filter(s => s.fetchTier === tierFilter);
     }
 
-    // Region filter
     if (regionFilter !== 'all') {
       result = result.filter(s => s.region === regionFilter);
     }
 
-    // Sort
     result = [...result].sort((a, b) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
@@ -108,8 +189,10 @@ export default function AdminPage() {
     }
   };
 
-  const handleTestSource = async () => {
-    if (!testHandle.trim()) return;
+  const handleTestSource = async (handle?: string, platform?: string) => {
+    const h = handle || testHandle.trim();
+    const p = platform || testPlatform;
+    if (!h) return;
     setTestLoading(true);
     setTestError(null);
     setTestResult(null);
@@ -117,7 +200,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/source-stats', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ handle: testHandle.trim(), platform: testPlatform }),
+        body: JSON.stringify({ handle: h, platform: p }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -129,6 +212,26 @@ export default function AdminPage() {
       setTestError(err instanceof Error ? err.message : 'Failed to test source');
     } finally {
       setTestLoading(false);
+    }
+  };
+
+  const handleTestLive = async (source: TieredSource) => {
+    if (!FEED_PLATFORMS.has(source.platform)) return;
+    setLiveStatsLoading(true);
+    setLiveStats(null);
+    try {
+      const res = await fetch('/api/admin/source-stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handle: source.handle, platform: source.platform }),
+      });
+      if (res.ok) {
+        setLiveStats(await res.json());
+      }
+    } catch {
+      // silent fail for live test
+    } finally {
+      setLiveStatsLoading(false);
     }
   };
 
@@ -145,12 +248,15 @@ export default function AdminPage() {
   }
 
   // Stats
+  const feedSources = allSources.filter(s => FEED_PLATFORMS.has(s.platform));
+  const newsSources = allSources.filter(s => NEWS_PLATFORMS.has(s.platform));
   const blueskyCount = allSources.filter(s => s.platform === 'bluesky').length;
+  const telegramCount = allSources.filter(s => s.platform === 'telegram').length;
+  const mastodonCount = allSources.filter(s => s.platform === 'mastodon').length;
   const rssCount = allSources.filter(s => s.platform === 'rss').length;
-  const t1Count = allSources.filter(s => s.fetchTier === 'T1').length;
-  const t2Count = allSources.filter(s => s.fetchTier === 'T2').length;
-  const t3Count = allSources.filter(s => s.fetchTier === 'T3').length;
-  const measuredCount = allSources.filter(s => s.baselineMeasuredAt).length;
+  const redditCount = allSources.filter(s => s.platform === 'reddit').length;
+  const youtubeCount = allSources.filter(s => s.platform === 'youtube').length;
+  const measuredCount = feedSources.filter(s => s.baselineMeasuredAt).length;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
@@ -165,13 +271,12 @@ export default function AdminPage() {
               <ArrowLeftIcon className="w-5 h-5" />
               <span className="text-sm font-medium">Back</span>
             </Link>
-            <h1 className="text-lg font-semibold">News Pulse Admin</h1>
-            <div className="w-16" /> {/* Spacer for centering */}
+            <h1 className="text-lg font-semibold">Pulse Admin</h1>
+            <div className="w-16" />
           </div>
         </div>
       </header>
 
-      {/* Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Quick Nav */}
         <div className="flex gap-3 mb-6">
@@ -191,35 +296,91 @@ export default function AdminPage() {
           </Link>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">{allSources.length}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Sources</p>
+        {/* Feed Sources (OSINT) */}
+        <div className="mb-4">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+            Feed Sources <span className="text-slate-400 dark:text-slate-500 font-normal">— powers Live Wire + activity detection</span>
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{feedSources.length}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Feed</p>
+            </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-blue-200 dark:border-blue-800/50 p-4">
+              <p className="text-2xl font-bold text-blue-600">{blueskyCount}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bluesky</p>
+            </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-violet-200 dark:border-violet-800/50 p-4">
+              <p className="text-2xl font-bold text-violet-600">{telegramCount}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Telegram</p>
+            </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-teal-200 dark:border-teal-800/50 p-4">
+              <p className="text-2xl font-bold text-teal-600">{mastodonCount}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mastodon</p>
+            </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-emerald-200 dark:border-emerald-800/50 p-4">
+              <p className="text-2xl font-bold text-emerald-600">{measuredCount}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Measured</p>
+            </div>
           </div>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <p className="text-2xl font-bold text-blue-600">{blueskyCount}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bluesky</p>
+        </div>
+
+        {/* News Sources (Mainstream) */}
+        <div className="mb-6">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+            News Sources <span className="text-slate-400 dark:text-slate-500 font-normal">— mainstream wire services + news orgs</span>
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+              <p className="text-2xl font-bold text-slate-900 dark:text-white">{newsSources.length}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total News</p>
+            </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-orange-200 dark:border-orange-800/50 p-4">
+              <p className="text-2xl font-bold text-orange-600">{rssCount}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">RSS</p>
+            </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-rose-200 dark:border-rose-800/50 p-4">
+              <p className="text-2xl font-bold text-rose-600">{redditCount}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Reddit</p>
+            </div>
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-red-200 dark:border-red-800/50 p-4">
+              <p className="text-2xl font-bold text-red-600">{youtubeCount}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">YouTube</p>
+            </div>
           </div>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <p className="text-2xl font-bold text-orange-600">{rssCount}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">RSS</p>
-          </div>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <p className="text-2xl font-bold text-red-600">{t1Count}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tier 1</p>
-          </div>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <p className="text-2xl font-bold text-amber-600">{t2Count}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tier 2</p>
-          </div>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <p className="text-2xl font-bold text-slate-600">{t3Count}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tier 3</p>
-          </div>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-            <p className="text-2xl font-bold text-emerald-600">{measuredCount}</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Measured</p>
+        </div>
+
+        {/* Regional Baselines */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 mb-6">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Regional Activity Baselines</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+            Computed from feed source postsPerDay. Measured values trusted; round guesses use conservative default ({CONSERVATIVE_DEFAULT} ppd).
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                  <th className="text-left py-2 pr-4">Region</th>
+                  <th className="text-right py-2 px-3">Feed Sources</th>
+                  <th className="text-right py-2 px-3">Raw PPD</th>
+                  <th className="text-right py-2 px-3">Trusted PPD</th>
+                  <th className="text-right py-2 pl-3">6h Baseline</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {regionBaselines.map(rb => (
+                  <tr key={rb.region}>
+                    <td className="py-2 pr-4 font-medium text-slate-900 dark:text-white">
+                      {regionDisplayNames[rb.region] || rb.region}
+                    </td>
+                    <td className="py-2 px-3 text-right font-mono text-slate-600 dark:text-slate-300">{rb.feedSources}</td>
+                    <td className="py-2 px-3 text-right font-mono text-slate-400 dark:text-slate-500">{rb.totalPpd}</td>
+                    <td className="py-2 px-3 text-right font-mono text-slate-600 dark:text-slate-300">{rb.trustedPpd}</td>
+                    <td className="py-2 pl-3 text-right font-mono font-bold text-slate-900 dark:text-white">{rb.baseline6h}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -245,7 +406,7 @@ export default function AdminPage() {
               <option value="telegram">Telegram</option>
             </select>
             <button
-              onClick={handleTestSource}
+              onClick={() => handleTestSource()}
               disabled={testLoading || !testHandle.trim()}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg transition-colors"
             >
@@ -313,7 +474,6 @@ export default function AdminPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            {/* Search */}
             <div className="relative lg:col-span-1">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -325,19 +485,19 @@ export default function AdminPage() {
               />
             </div>
 
-            {/* Platform */}
             <select
               value={platformFilter}
               onChange={(e) => setPlatformFilter(e.target.value)}
               className="px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
             >
               <option value="all">All Platforms</option>
+              <option value="_feed">-- Feed Only --</option>
+              <option value="_news">-- News Only --</option>
               {platforms.map(p => (
                 <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
               ))}
             </select>
 
-            {/* Source Type */}
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
@@ -349,7 +509,6 @@ export default function AdminPage() {
               ))}
             </select>
 
-            {/* Tier */}
             <select
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value)}
@@ -361,7 +520,6 @@ export default function AdminPage() {
               ))}
             </select>
 
-            {/* Region */}
             <select
               value={regionFilter}
               onChange={(e) => setRegionFilter(e.target.value)}
@@ -369,7 +527,7 @@ export default function AdminPage() {
             >
               <option value="all">All Regions</option>
               {regions.map(r => (
-                <option key={r} value={r}>{r.toUpperCase()}</option>
+                <option key={r} value={r}>{regionDisplayNames[r] || r.toUpperCase()}</option>
               ))}
             </select>
           </div>
@@ -417,15 +575,6 @@ export default function AdminPage() {
                   </th>
                   <th className="text-left px-4 py-3">
                     <button
-                      onClick={() => handleSort('fetchTier')}
-                      className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    >
-                      Tier
-                      <ChevronUpDownIcon className="w-4 h-4" />
-                    </button>
-                  </th>
-                  <th className="text-left px-4 py-3">
-                    <button
                       onClick={() => handleSort('region')}
                       className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     >
@@ -455,7 +604,14 @@ export default function AdminPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filteredSources.map((source) => (
-                  <tr key={source.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <tr
+                    key={source.id}
+                    onClick={() => {
+                      setSelectedSource(selectedSource?.id === source.id ? null : source);
+                      setLiveStats(null);
+                    }}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                  >
                     <td className="px-4 py-3">
                       <div>
                         <p className="text-sm font-medium text-slate-900 dark:text-white">{source.name}</p>
@@ -463,11 +619,7 @@ export default function AdminPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md ${
-                        source.platform === 'bluesky'
-                          ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                          : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
-                      }`}>
+                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md ${platformBadgeClass(source.platform)}`}>
                         {source.platform}
                       </span>
                     </td>
@@ -477,19 +629,8 @@ export default function AdminPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-1 text-xs font-bold rounded-md ${
-                        source.fetchTier === 'T1'
-                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                          : source.fetchTier === 'T2'
-                          ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                      }`}>
-                        {source.fetchTier}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs text-slate-600 dark:text-slate-300 uppercase">
-                        {source.region}
+                      <span className="text-xs text-slate-600 dark:text-slate-300">
+                        {regionDisplayNames[source.region] || source.region}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -529,6 +670,168 @@ export default function AdminPage() {
           )}
         </div>
       </main>
+
+      {/* Source Detail Slide-over */}
+      {selectedSource && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-black/30" onClick={() => setSelectedSource(null)} />
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-xl overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                {selectedSource.name}
+              </h2>
+              <button
+                onClick={() => setSelectedSource(null)}
+                className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {/* Platform + Type badges */}
+              <div className="flex gap-2 flex-wrap">
+                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md ${platformBadgeClass(selectedSource.platform)}`}>
+                  {selectedSource.platform}
+                </span>
+                <span className="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 uppercase">
+                  {selectedSource.sourceType}
+                </span>
+                <span className={`inline-flex px-2 py-1 text-xs font-bold rounded-md ${
+                  selectedSource.fetchTier === 'T1'
+                    ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                    : selectedSource.fetchTier === 'T2'
+                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                }`}>
+                  {selectedSource.fetchTier}
+                </span>
+                {FEED_PLATFORMS.has(selectedSource.platform) && (
+                  <span className="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                    FEED
+                  </span>
+                )}
+                {NEWS_PLATFORMS.has(selectedSource.platform) && (
+                  <span className="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400">
+                    NEWS
+                  </span>
+                )}
+              </div>
+
+              {/* Details grid */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">ID</p>
+                  <p className="font-mono text-slate-700 dark:text-slate-300 text-xs break-all">{selectedSource.id}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Handle</p>
+                  <p className="font-mono text-slate-700 dark:text-slate-300 text-xs break-all">{selectedSource.handle || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Region</p>
+                  <p className="text-slate-700 dark:text-slate-300">{regionDisplayNames[selectedSource.region] || selectedSource.region}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Confidence</p>
+                  <p className="text-slate-700 dark:text-slate-300">{selectedSource.confidence}%</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Posts/Day</p>
+                  <p className="font-mono font-bold text-slate-900 dark:text-white">{selectedSource.postsPerDay}</p>
+                  {selectedSource.baselineMeasuredAt && (
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400">measured {selectedSource.baselineMeasuredAt}</p>
+                  )}
+                  {!selectedSource.baselineMeasuredAt && (
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400">estimated (not measured)</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Tier</p>
+                  <p className="text-slate-700 dark:text-slate-300">{selectedSource.fetchTier}</p>
+                </div>
+              </div>
+
+              {/* Feed URL */}
+              <div>
+                <p className="text-xs text-slate-500 uppercase mb-1">Feed URL</p>
+                <a
+                  href={selectedSource.feedUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline break-all"
+                >
+                  {selectedSource.feedUrl}
+                </a>
+              </div>
+
+              {/* Source URL */}
+              {selectedSource.url && (
+                <div>
+                  <p className="text-xs text-slate-500 uppercase mb-1">Source URL</p>
+                  <a
+                    href={selectedSource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline break-all"
+                  >
+                    {selectedSource.url}
+                  </a>
+                </div>
+              )}
+
+              {/* Live Test (feed sources only) */}
+              {FEED_PLATFORMS.has(selectedSource.platform) && (
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Live Stats</h3>
+                    <button
+                      onClick={() => handleTestLive(selectedSource)}
+                      disabled={liveStatsLoading}
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg transition-colors"
+                    >
+                      {liveStatsLoading ? 'Testing...' : 'Test Live'}
+                    </button>
+                  </div>
+
+                  {liveStats && !liveStats.error && (
+                    <div className="grid grid-cols-2 gap-3 text-sm bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase">Posts/Day</p>
+                        <p className="font-mono font-bold text-slate-900 dark:text-white">{liveStats.postsPerDay}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase">Last Posted</p>
+                        <p className="font-mono text-slate-700 dark:text-slate-300">{liveStats.lastPostedAgo}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase">Sampled</p>
+                        <p className="font-mono text-slate-700 dark:text-slate-300">{liveStats.totalPosts} / {liveStats.spanDays}d</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase">Avg Gap</p>
+                        <p className="font-mono text-slate-700 dark:text-slate-300">{liveStats.gapHoursAvg}h</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase">Last 6h</p>
+                        <p className="font-mono text-slate-700 dark:text-slate-300">{liveStats.postsLast6h}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase">Last 24h</p>
+                        <p className="font-mono text-slate-700 dark:text-slate-300">{liveStats.postsLast24h}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {liveStats?.error && (
+                    <p className="text-xs text-red-500">{liveStats.error}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
