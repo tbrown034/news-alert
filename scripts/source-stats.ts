@@ -16,160 +16,19 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { getStats, type SourceStats } from '../src/lib/sourceStats';
 
-const API_BASE = 'https://public.api.bsky.app/xrpc';
 const SOURCES_FILE = path.join(__dirname, '..', 'src', 'lib', 'sources-clean.ts');
 
-interface PostTimestamp {
-  timestamp: Date;
-  text?: string;
-}
-
-// ── Bluesky ──────────────────────────────────────────────────────────────────
-
-async function fetchBlueskyPosts(handle: string, limit = 100): Promise<PostTimestamp[]> {
-  // Strip leading @ if present
-  const cleanHandle = handle.replace(/^@/, '');
-  const url = `${API_BASE}/app.bsky.feed.getAuthorFeed?actor=${cleanHandle}&limit=${limit}&filter=posts_no_replies`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`Bluesky ${res.status}: ${body.slice(0, 200)}`);
-  }
-  const data = await res.json();
-  return (data.feed || [])
-    .filter((item: any) => !item.reason) // skip reposts
-    .map((item: any) => ({
-      timestamp: new Date(item.post.record.createdAt),
-      text: item.post.record.text?.slice(0, 120),
-    }));
-}
-
-// ── Mastodon ─────────────────────────────────────────────────────────────────
-
-async function fetchMastodonPosts(handle: string, limit = 100): Promise<PostTimestamp[]> {
-  // handle format: @user@instance or user@instance
-  const clean = handle.replace(/^@/, '');
-  const parts = clean.split('@');
-  if (parts.length !== 2) throw new Error(`Mastodon handle must be user@instance, got: ${handle}`);
-  const [user, instance] = parts;
-
-  const lookupUrl = `https://${instance}/api/v1/accounts/lookup?acct=${user}`;
-  const lookupRes = await fetch(lookupUrl, { signal: AbortSignal.timeout(8000) });
-  if (!lookupRes.ok) throw new Error(`Mastodon lookup ${lookupRes.status} for ${handle}`);
-  const account = await lookupRes.json();
-
-  const statusUrl = `https://${instance}/api/v1/accounts/${account.id}/statuses?limit=${limit}&exclude_replies=true&exclude_reblogs=true`;
-  const statusRes = await fetch(statusUrl, { signal: AbortSignal.timeout(8000) });
-  if (!statusRes.ok) throw new Error(`Mastodon statuses ${statusRes.status} for ${handle}`);
-  const statuses = await statusRes.json();
-
-  return statuses.map((s: any) => ({
-    timestamp: new Date(s.created_at),
-    text: (s.content || '').replace(/<[^>]*>/g, '').slice(0, 120),
-  }));
-}
-
-// ── Telegram ─────────────────────────────────────────────────────────────────
-
-async function fetchTelegramPosts(channel: string, limit = 40): Promise<PostTimestamp[]> {
-  const clean = channel.replace(/^@/, '');
-  const url = `https://t.me/s/${clean}`;
-  const res = await fetch(url, {
-    signal: AbortSignal.timeout(8000),
-    headers: { 'User-Agent': 'Mozilla/5.0' },
-  });
-  if (!res.ok) throw new Error(`Telegram ${res.status} for ${channel}`);
-  const html = await res.text();
-
-  const posts: PostTimestamp[] = [];
-  const timeRegex = /<time[^>]*datetime="([^"]+)"[^>]*>/g;
-  let match;
-  while ((match = timeRegex.exec(html)) !== null) {
-    posts.push({ timestamp: new Date(match[1]) });
-  }
-  return posts.slice(-limit);
-}
-
-// ── Stats calculation ────────────────────────────────────────────────────────
-
-interface SourceStats {
-  id?: string;        // source id from sources-clean.ts
-  handle: string;
-  platform: string;
-  totalPosts: number;
-  lastPosted: string;
-  lastPostedAgo: string;
-  spanDays: number;
-  postsPerDay: number;
-  postsLast6h: number;
-  postsLast12h: number;
-  postsLast24h: number;
-  postsLast48h: number;
-  gapHoursAvg: number;
-  gapHoursMax: number;
-  oldPostsPerDay?: number; // previous value from file
-  error?: string;
-}
-
-function calculateStats(handle: string, platform: string, posts: PostTimestamp[]): SourceStats {
-  const now = new Date();
-
-  if (posts.length === 0) {
-    return {
-      handle, platform, totalPosts: 0,
-      lastPosted: 'never', lastPostedAgo: 'n/a', spanDays: 0,
-      postsPerDay: 0, postsLast6h: 0, postsLast12h: 0,
-      postsLast24h: 0, postsLast48h: 0, gapHoursAvg: 0, gapHoursMax: 0,
-    };
-  }
-
-  posts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-  const newest = posts[0].timestamp;
-  const oldest = posts[posts.length - 1].timestamp;
-  const spanMs = newest.getTime() - oldest.getTime();
-  const spanDays = spanMs / (1000 * 60 * 60 * 24);
-
-  const agoMs = now.getTime() - newest.getTime();
-  const agoHours = agoMs / (1000 * 60 * 60);
-
-  let lastPostedAgo: string;
-  if (agoHours < 1) lastPostedAgo = `${Math.round(agoHours * 60)}m ago`;
-  else if (agoHours < 24) lastPostedAgo = `${agoHours.toFixed(1)}h ago`;
-  else lastPostedAgo = `${(agoHours / 24).toFixed(1)}d ago`;
-
-  const cutoff = (hours: number) => new Date(now.getTime() - hours * 60 * 60 * 1000);
-  const postsLast6h = posts.filter(p => p.timestamp >= cutoff(6)).length;
-  const postsLast12h = posts.filter(p => p.timestamp >= cutoff(12)).length;
-  const postsLast24h = posts.filter(p => p.timestamp >= cutoff(24)).length;
-  const postsLast48h = posts.filter(p => p.timestamp >= cutoff(48)).length;
-
-  const postsPerDay = spanDays > 0 ? posts.length / spanDays : posts.length;
-
-  const gaps: number[] = [];
-  for (let i = 0; i < posts.length - 1; i++) {
-    const gapMs = posts[i].timestamp.getTime() - posts[i + 1].timestamp.getTime();
-    gaps.push(gapMs / (1000 * 60 * 60));
-  }
-  const gapHoursAvg = gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
-  const gapHoursMax = gaps.length > 0 ? Math.max(...gaps) : 0;
-
-  return {
-    handle, platform, totalPosts: posts.length,
-    lastPosted: newest.toISOString(),
-    lastPostedAgo,
-    spanDays: Math.round(spanDays * 10) / 10,
-    postsPerDay: Math.round(postsPerDay * 10) / 10,
-    postsLast6h, postsLast12h, postsLast24h, postsLast48h,
-    gapHoursAvg: Math.round(gapHoursAvg * 10) / 10,
-    gapHoursMax: Math.round(gapHoursMax * 10) / 10,
-  };
+// Extended stats with CLI-only fields
+interface CLISourceStats extends SourceStats {
+  id?: string;
+  oldPostsPerDay?: number;
 }
 
 // ── Display ──────────────────────────────────────────────────────────────────
 
-function printStats(stats: SourceStats) {
+function printStats(stats: CLISourceStats) {
   if (stats.error) {
     console.log(`\n❌ ${stats.handle} (${stats.platform}): ${stats.error}`);
     return;
@@ -189,7 +48,7 @@ function printStats(stats: SourceStats) {
   console.log(`  Max gap:         ${stats.gapHoursMax}h (longest silence)`);
 }
 
-function printTable(allStats: SourceStats[]) {
+function printTable(allStats: CLISourceStats[]) {
   allStats.sort((a, b) => b.postsPerDay - a.postsPerDay);
 
   console.log(`\n${'═'.repeat(100)}`);
@@ -209,38 +68,9 @@ function printTable(allStats: SourceStats[]) {
   console.log(`  Total: ${allStats.length} sources | Errors: ${allStats.filter(s => s.error).length}`);
 }
 
-// ── Fetch dispatcher ─────────────────────────────────────────────────────────
-
-async function getStats(handle: string, platform: string): Promise<SourceStats> {
-  try {
-    let posts: PostTimestamp[];
-    switch (platform) {
-      case 'bluesky':
-        posts = await fetchBlueskyPosts(handle);
-        break;
-      case 'mastodon':
-        posts = await fetchMastodonPosts(handle);
-        break;
-      case 'telegram':
-        posts = await fetchTelegramPosts(handle);
-        break;
-      default:
-        throw new Error(`Unsupported platform: ${platform}`);
-    }
-    return calculateStats(handle, platform, posts);
-  } catch (err: any) {
-    return {
-      handle, platform, totalPosts: 0, lastPosted: '', lastPostedAgo: '',
-      spanDays: 0, postsPerDay: 0, postsLast6h: 0, postsLast12h: 0,
-      postsLast24h: 0, postsLast48h: 0, gapHoursAvg: 0, gapHoursMax: 0,
-      error: err.message?.slice(0, 200),
-    };
-  }
-}
-
 // ── File update logic ────────────────────────────────────────────────────────
 
-function updateSourcesFile(statsMap: Map<string, SourceStats>, dryRun: boolean): { updated: number; skipped: number; notFound: number } {
+function updateSourcesFile(statsMap: Map<string, CLISourceStats>, dryRun: boolean): { updated: number; skipped: number; notFound: number } {
   let content = fs.readFileSync(SOURCES_FILE, 'utf-8');
   const today = new Date().toISOString().split('T')[0]; // e.g. '2026-02-06'
 
@@ -324,7 +154,7 @@ function escapeRegex(str: string): string {
 
 // ── Batch fetcher (shared by --all and --update) ─────────────────────────────
 
-async function fetchAllStats(sources: any[], platformFilter?: string): Promise<SourceStats[]> {
+async function fetchAllStats(sources: any[], platformFilter?: string): Promise<CLISourceStats[]> {
   let filtered = sources.filter((s: any) =>
     ['bluesky', 'mastodon', 'telegram'].includes(s.platform)
   );
@@ -334,7 +164,7 @@ async function fetchAllStats(sources: any[], platformFilter?: string): Promise<S
 
   console.log(`\nFetching stats for ${filtered.length} sources...\n`);
 
-  const allStats: SourceStats[] = [];
+  const allStats: CLISourceStats[] = [];
 
   // Group by platform for appropriate rate limiting
   const byPlatform = new Map<string, any[]>();
@@ -361,9 +191,8 @@ async function fetchAllStats(sources: any[], platformFilter?: string): Promise<S
       const results = await Promise.all(
         batch.map((s: any) => {
           return getStats(s.handle, s.platform).then(stats => {
-            stats.id = s.id;
-            stats.oldPostsPerDay = s.postsPerDay;
-            return stats;
+            const cliStats: CLISourceStats = { ...stats, id: s.id, oldPostsPerDay: s.postsPerDay };
+            return cliStats;
           });
         })
       );
@@ -404,7 +233,7 @@ async function main() {
     const allStats = await fetchAllStats(allTieredSources, platformFilter);
 
     // Build map of sourceId → stats
-    const statsMap = new Map<string, SourceStats>();
+    const statsMap = new Map<string, CLISourceStats>();
     for (const stats of allStats) {
       if (stats.id) statsMap.set(stats.id, stats);
     }

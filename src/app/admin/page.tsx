@@ -28,6 +28,13 @@ export default function AdminPage() {
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
+  // Test source states
+  const [testHandle, setTestHandle] = useState('');
+  const [testPlatform, setTestPlatform] = useState('bluesky');
+  const [testResult, setTestResult] = useState<any>(null);
+  const [testLoading, setTestLoading] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isPending && !session?.user) {
       router.push('/');
@@ -101,6 +108,30 @@ export default function AdminPage() {
     }
   };
 
+  const handleTestSource = async () => {
+    if (!testHandle.trim()) return;
+    setTestLoading(true);
+    setTestError(null);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/admin/source-stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handle: testHandle.trim(), platform: testPlatform }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setTestResult(data);
+    } catch (err) {
+      setTestError(err instanceof Error ? err.message : 'Failed to test source');
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
   if (isPending) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-black flex items-center justify-center">
@@ -119,6 +150,7 @@ export default function AdminPage() {
   const t1Count = allSources.filter(s => s.fetchTier === 'T1').length;
   const t2Count = allSources.filter(s => s.fetchTier === 'T2').length;
   const t3Count = allSources.filter(s => s.fetchTier === 'T3').length;
+  const measuredCount = allSources.filter(s => s.baselineMeasuredAt).length;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
@@ -160,7 +192,7 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
             <p className="text-2xl font-bold text-slate-900 dark:text-white">{allSources.length}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Sources</p>
@@ -185,6 +217,92 @@ export default function AdminPage() {
             <p className="text-2xl font-bold text-slate-600">{t3Count}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tier 3</p>
           </div>
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+            <p className="text-2xl font-bold text-emerald-600">{measuredCount}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Measured</p>
+          </div>
+        </div>
+
+        {/* Test Source */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 mb-6">
+          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Test Source</h3>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              placeholder="handle.bsky.social or @channel"
+              value={testHandle}
+              onChange={(e) => setTestHandle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleTestSource()}
+              className="flex-1 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white placeholder-slate-400"
+            />
+            <select
+              value={testPlatform}
+              onChange={(e) => setTestPlatform(e.target.value)}
+              className="px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-white"
+            >
+              <option value="bluesky">Bluesky</option>
+              <option value="mastodon">Mastodon</option>
+              <option value="telegram">Telegram</option>
+            </select>
+            <button
+              onClick={handleTestSource}
+              disabled={testLoading || !testHandle.trim()}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg transition-colors"
+            >
+              {testLoading ? 'Testing...' : 'Test'}
+            </button>
+          </div>
+
+          {testError && (
+            <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{testError}</p>
+            </div>
+          )}
+
+          {testResult && !testResult.error && (
+            <div className="mt-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Posts/Day</p>
+                  <p className="font-mono font-bold text-slate-900 dark:text-white">{testResult.postsPerDay}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Last Posted</p>
+                  <p className="font-mono text-slate-700 dark:text-slate-300">{testResult.lastPostedAgo}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Sampled</p>
+                  <p className="font-mono text-slate-700 dark:text-slate-300">{testResult.totalPosts} posts / {testResult.spanDays}d</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Avg Gap</p>
+                  <p className="font-mono text-slate-700 dark:text-slate-300">{testResult.gapHoursAvg}h</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Last 6h</p>
+                  <p className="font-mono text-slate-700 dark:text-slate-300">{testResult.postsLast6h}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Last 12h</p>
+                  <p className="font-mono text-slate-700 dark:text-slate-300">{testResult.postsLast12h}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Last 24h</p>
+                  <p className="font-mono text-slate-700 dark:text-slate-300">{testResult.postsLast24h}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Last 48h</p>
+                  <p className="font-mono text-slate-700 dark:text-slate-300">{testResult.postsLast48h}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {testResult?.error && (
+            <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">{testResult.error}</p>
+            </div>
+          )}
         </div>
 
         {/* Filters */}
@@ -392,6 +510,11 @@ export default function AdminPage() {
                       <span className="text-sm font-mono text-slate-600 dark:text-slate-300">
                         {source.postsPerDay}
                       </span>
+                      {source.baselineMeasuredAt && (
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                          {source.baselineMeasuredAt}
+                        </p>
+                      )}
                     </td>
                   </tr>
                 ))}
