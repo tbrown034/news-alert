@@ -237,7 +237,7 @@ export function AuthButton({ variant = 'default', onNavigate }: AuthButtonProps)
       <button
         onClick={() => {
           onNavigate?.();
-          signIn.social({ provider: 'google' });
+          signIn.social({ provider: 'google', callbackURL: '/admin' });
         }}
         className="block w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
       >
@@ -251,7 +251,7 @@ export function AuthButton({ variant = 'default', onNavigate }: AuthButtonProps)
       <button
         onClick={() => {
           onNavigate?.();
-          signIn.social({ provider: 'google' });
+          signIn.social({ provider: 'google', callbackURL: '/admin' });
         }}
         className="flex items-center justify-center gap-2 mx-2 px-4 py-3 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl transition-all shadow-sm hover:shadow-md"
       >
@@ -268,7 +268,7 @@ export function AuthButton({ variant = 'default', onNavigate }: AuthButtonProps)
 
   return (
     <button
-      onClick={() => signIn.social({ provider: 'google' })}
+      onClick={() => signIn.social({ provider: 'google', callbackURL: '/admin' })}
       className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black"
     >
       Sign In
