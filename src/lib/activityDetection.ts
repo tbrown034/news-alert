@@ -40,8 +40,9 @@ function calculateDynamicBaselines(): Record<WatchpointId, number> {
 
   for (const source of allSources) {
     const rawValue = source.postsPerDay || 0;
-    // Trust measured decimals, use conservative default for round guesses
-    const postsPerDay = isMeasuredValue(rawValue) ? rawValue : CONSERVATIVE_DEFAULT;
+    // Trust measured values (decimals or has baselineMeasuredAt), use conservative default for round guesses
+    const measured = isMeasuredValue(rawValue) || source.baselineMeasuredAt;
+    const postsPerDay = measured ? rawValue : CONSERVATIVE_DEFAULT;
     const region = source.region;
 
     // Add to specific region

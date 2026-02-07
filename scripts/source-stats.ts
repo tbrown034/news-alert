@@ -85,13 +85,9 @@ function updateSourcesFile(statsMap: Map<string, CLISourceStats>, dryRun: boolea
       continue;
     }
 
-    // Require at least 1 day of data span for reliable daily averages.
-    // With API limits (100 posts max), high-volume sources may only span
-    // a few hours, giving wildly inflated extrapolations.
-    if (stats.spanDays < 1) {
-      skipped++;
-      continue;
-    }
+    // For short-span sources (< 7 days), the span-based PPD is the best
+    // we have. High-volume sources naturally have short spans due to API
+    // limits but their rates are consistent enough to extrapolate.
 
     // Find the source block by its id
     const idPattern = new RegExp(`id:\\s*'${escapeRegex(sourceId)}'`);
@@ -241,13 +237,8 @@ async function main() {
 
     // Show what would change (applying same filters as the file write)
     const changes: { id: string; old: number; new_: number; handle: string }[] = [];
-    const shortSpan: { handle: string; spanDays: number; postsPerDay: number }[] = [];
     for (const [id, stats] of statsMap) {
       if (stats.error || stats.totalPosts === 0) continue;
-      if (stats.spanDays < 1) {
-        shortSpan.push({ handle: stats.handle, spanDays: stats.spanDays, postsPerDay: stats.postsPerDay });
-        continue;
-      }
       if (stats.oldPostsPerDay !== undefined && stats.oldPostsPerDay !== stats.postsPerDay) {
         changes.push({ id, old: stats.oldPostsPerDay, new_: stats.postsPerDay, handle: stats.handle });
       }
@@ -272,13 +263,6 @@ async function main() {
         const pct = c.old > 0 ? ((diff / c.old) * 100).toFixed(0) : 'new';
         const sign = diff > 0 ? '+' : '';
         console.log(`  ${c.handle.slice(0, 39).padEnd(40)} ${String(c.old).padStart(8)} ${String(c.new_).padStart(8)} ${(sign + pct + '%').padStart(10)}`);
-      }
-    }
-
-    if (shortSpan.length > 0) {
-      console.log(`\n  ⏭️  Skipped (< 1 day span, unreliable average):`);
-      for (const s of shortSpan) {
-        console.log(`     ${s.handle.padEnd(35)} ${s.spanDays}d span, ${s.postsPerDay} ppd measured`);
       }
     }
 

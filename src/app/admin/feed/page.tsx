@@ -220,8 +220,12 @@ export default function FeedSourcesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm font-mono text-slate-600 dark:text-slate-300">{source.postsPerDay}</span>
-                      {source.baselineMeasuredAt && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{source.baselineMeasuredAt}</p>}
+                      {source.postsPerDay > 0 ? (
+                        <span className="text-sm font-mono text-slate-600 dark:text-slate-300">{source.postsPerDay}</span>
+                      ) : (
+                        <span className="text-xs text-slate-400 dark:text-slate-500">{source.baselineMeasuredAt ? 'inactive' : '–'}</span>
+                      )}
+                      {source.baselineMeasuredAt && source.postsPerDay > 0 && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{source.baselineMeasuredAt}</p>}
                     </td>
                   </tr>
                 ))}
@@ -255,8 +259,12 @@ export default function FeedSourcesPage() {
                 <div><p className="text-xs text-slate-500 uppercase">Confidence</p><p className="text-slate-700 dark:text-slate-300">{selectedSource.confidence}%</p></div>
                 <div>
                   <p className="text-xs text-slate-500 uppercase">Posts/Day</p>
-                  <p className="font-mono font-bold text-slate-900 dark:text-white">{selectedSource.postsPerDay}</p>
-                  {selectedSource.baselineMeasuredAt ? <p className="text-[10px] text-emerald-600 dark:text-emerald-400">measured {selectedSource.baselineMeasuredAt}</p> : <p className="text-[10px] text-amber-600 dark:text-amber-400">estimated</p>}
+                  {selectedSource.postsPerDay > 0 ? (
+                    <p className="font-mono font-bold text-slate-900 dark:text-white">{selectedSource.postsPerDay}</p>
+                  ) : (
+                    <p className="text-sm text-slate-400 dark:text-slate-500">{selectedSource.baselineMeasuredAt ? 'inactive' : '–'}</p>
+                  )}
+                  {selectedSource.baselineMeasuredAt ? <p className="text-[10px] text-slate-500 dark:text-slate-400">measured {selectedSource.baselineMeasuredAt}</p> : <p className="text-[10px] text-slate-400 dark:text-slate-500">estimated</p>}
                 </div>
                 <div><p className="text-xs text-slate-500 uppercase">Tier</p><p className="text-slate-700 dark:text-slate-300">{selectedSource.fetchTier}</p></div>
               </div>
