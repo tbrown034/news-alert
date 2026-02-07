@@ -50,8 +50,8 @@ export default function AdminPage() {
     },
     {
       href: '/admin/activity',
-      label: 'Activity Monitor',
-      detail: 'Regional activity levels + logging',
+      label: 'Post Log',
+      detail: 'Historical post fetch logs',
     },
     {
       href: '/admin/editorial',

@@ -114,7 +114,7 @@ export default function ActivityPage() {
             </Link>
             <div className="flex items-center gap-3">
               <ChartBarIcon className="w-5 h-5 text-blue-500" />
-              <h1 className="text-lg font-semibold">Activity Monitor</h1>
+              <h1 className="text-lg font-semibold">Post Log</h1>
             </div>
             <button
               onClick={fetchData}
