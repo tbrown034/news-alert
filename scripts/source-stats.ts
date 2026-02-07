@@ -39,11 +39,12 @@ function printStats(stats: CLISourceStats) {
   console.log(`${'─'.repeat(60)}`);
   console.log(`  Last posted:     ${stats.lastPostedAgo} (${stats.lastPosted})`);
   console.log(`  Posts sampled:   ${stats.totalPosts} over ${stats.spanDays} days`);
-  console.log(`  Avg posts/day:   ${stats.postsPerDay}`);
+  console.log(`  Avg posts/day:   ${stats.postsPerDay}${stats.spanDays >= 7 ? ' (7d window)' : ` (${stats.spanDays}d span)`}`);
   console.log(`  ┌─ Last 6h:      ${stats.postsLast6h}`);
   console.log(`  ├─ Last 12h:     ${stats.postsLast12h}`);
   console.log(`  ├─ Last 24h:     ${stats.postsLast24h}`);
-  console.log(`  └─ Last 48h:     ${stats.postsLast48h}`);
+  console.log(`  ├─ Last 48h:     ${stats.postsLast48h}`);
+  console.log(`  └─ Last 7d:      ${stats.postsLast7d}`);
   console.log(`  Avg gap:         ${stats.gapHoursAvg}h between posts`);
   console.log(`  Max gap:         ${stats.gapHoursMax}h (longest silence)`);
 }
