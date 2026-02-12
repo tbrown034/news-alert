@@ -74,6 +74,7 @@ const regionMarkers: Record<string, { coordinates: [number, number]; label: stri
   'middle-east': { coordinates: [51.39, 35.69], label: 'Middle East', city: 'Tehran', zoom: 2.5 },
   'europe-russia': { coordinates: [30.52, 50.45], label: 'Europe-Russia', city: 'Kyiv', zoom: 2.2 },
   'asia': { coordinates: [116.40, 39.90], label: 'Asia-Pacific', city: 'Beijing', zoom: 1.6 },
+  'africa': { coordinates: [17.11, 1.66], label: 'Africa', city: 'Kinshasa', zoom: 1.6 },
 };
 
 // Default zoom settings - zoomed in for tighter view while showing all regions

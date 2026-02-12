@@ -199,7 +199,24 @@ function extractRisks(desc: string): string[] {
   return risks;
 }
 
+// In-memory cache (travel advisories change at most once per day)
+let cachedResponse: { advisories: TravelAdvisory[]; stats: object; fetchedAt: string } | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
 export async function GET() {
+  const now = Date.now();
+
+  // Return cached response if still valid
+  if (cachedResponse && (now - cacheTimestamp) < CACHE_TTL) {
+    return NextResponse.json(cachedResponse, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+        'X-Cache': 'HIT',
+      },
+    });
+  }
+
   const advisories: TravelAdvisory[] = [];
 
   try {
@@ -279,9 +296,20 @@ export async function GET() {
     level1: advisories.filter(a => a.level === 1).length,
   };
 
-  return NextResponse.json({
+  const response = {
     advisories,
     stats,
     fetchedAt: new Date().toISOString(),
+  };
+
+  // Update cache
+  cachedResponse = response;
+  cacheTimestamp = Date.now();
+
+  return NextResponse.json(response, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=3600',
+      'X-Cache': 'MISS',
+    },
   });
 }

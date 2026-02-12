@@ -11,6 +11,7 @@
 
 import { TelegramClient } from 'telegram';
 import { StringSession } from 'telegram/sessions';
+import type { Entity } from 'telegram/define';
 
 const API_ID = parseInt(process.env.TELEGRAM_API_ID || '0', 10);
 const API_HASH = process.env.TELEGRAM_API_HASH || '';
@@ -79,6 +80,43 @@ async function doConnect(): Promise<TelegramClient | null> {
     disabled = true;
     return null;
   }
+}
+
+/**
+ * Entity cache — avoids repeated contacts.ResolveUsername RPCs.
+ * Maps channel handle -> resolved Entity with TTL.
+ */
+const entityCache = new Map<string, { entity: Entity; timestamp: number }>();
+const ENTITY_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+/**
+ * Resolve a Telegram channel handle to an Entity, using cache.
+ * This avoids triggering FloodWait on contacts.ResolveUsername
+ * by caching resolved entities for 30 minutes.
+ *
+ * Returns the resolved entity, or null if resolution fails.
+ */
+export async function resolveEntity(
+  telegramClient: TelegramClient,
+  handle: string
+): Promise<Entity | null> {
+  const cached = entityCache.get(handle);
+  if (cached && Date.now() - cached.timestamp < ENTITY_CACHE_TTL) {
+    return cached.entity;
+  }
+
+  try {
+    const entity = await telegramClient.getEntity(handle);
+    entityCache.set(handle, { entity, timestamp: Date.now() });
+    return entity;
+  } catch {
+    return null;
+  }
+}
+
+/** Get entity cache size (for diagnostics) */
+export function getEntityCacheSize(): number {
+  return entityCache.size;
 }
 
 /** Disconnect the shared client (for cleanup) */

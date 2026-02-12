@@ -6,6 +6,7 @@ import { ArrowTopRightOnSquareIcon, ShareIcon, BuildingLibraryIcon } from '@hero
 import { CheckBadgeIcon as CheckBadgeSolid } from '@heroicons/react/24/solid';
 import { NewsItem, WatchpointId, MediaAttachment } from '@/types';
 import { PlatformIcon, platformColors } from './PlatformIcon';
+import { formatTimeAgo, regionBadges } from '@/lib/formatUtils';
 
 interface NewsCardProps {
   item: NewsItem;
@@ -240,46 +241,6 @@ function SourceAvatar({
   );
 }
 
-// Region badge colors - neutral, muted to avoid color overload
-// Color only for semantic meaning (breaking/elevated), not categorization
-const regionBadges: Record<WatchpointId, { label: string; color: string }> = {
-  'us': { label: 'US', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'latam': { label: 'AMERICAS', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'middle-east': { label: 'MIDEAST', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'europe-russia': { label: 'EUR', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'asia': { label: 'ASIA', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'seismic': { label: 'SEISMIC', color: 'bg-[var(--color-elevated-muted)] text-[var(--color-elevated)]' },
-  'all': { label: 'GLOBAL', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-};
-
-function formatTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const seconds = Math.floor(diffMs / 1000);
-
-  // Handle future timestamps (clock drift, timezone issues)
-  // If post appears to be in the future, show "just now" -
-  // this is common with RSS feeds that have timezone parsing issues
-  if (seconds < 0) {
-    // If more than 5 minutes in the future, something is wrong - still show "just now"
-    // to avoid confusing negative time displays
-    return 'just now';
-  }
-
-  if (seconds < 60) return 'just now';
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d`;
-
-  // For older items, show the date
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 
 export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);

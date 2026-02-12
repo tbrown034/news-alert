@@ -118,7 +118,24 @@ function hasOutageKeywords(text: string): boolean {
   return OUTAGE_KEYWORDS.some(keyword => lowerText.includes(keyword));
 }
 
+// In-memory cache (outage data from flaky Nitter instances — cache to avoid repeated timeouts)
+let cachedResponse: { outages: CountryOutage[]; stats: object; fetchedAt: string } | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
 export async function GET() {
+  const nowMs = Date.now();
+
+  // Return cached response if still valid
+  if (cachedResponse && (nowMs - cacheTimestamp) < CACHE_TTL) {
+    return NextResponse.json(cachedResponse, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
+        'X-Cache': 'HIT',
+      },
+    });
+  }
+
   const outages: CountryOutage[] = [];
   const now = new Date();
 
@@ -227,9 +244,20 @@ export async function GET() {
     moderate: uniqueOutages.filter(o => o.severity === 'moderate').length,
   };
 
-  return NextResponse.json({
+  const response = {
     outages: uniqueOutages,
     stats,
     fetchedAt: new Date().toISOString(),
+  };
+
+  // Update cache
+  cachedResponse = response;
+  cacheTimestamp = Date.now();
+
+  return NextResponse.json(response, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
+      'X-Cache': 'MISS',
+    },
   });
 }

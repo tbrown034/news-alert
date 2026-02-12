@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback, useTransition } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, useTransition, memo } from 'react';
 import { NewsItem, WatchpointId } from '@/types';
 import { NewsCard } from './NewsCard';
 import { EditorialCard, isEditorialItem } from './EditorialCard';
@@ -114,6 +114,7 @@ const primaryTabs: TabConfig[] = [
 const secondaryTabs: TabConfig[] = [
   { id: 'latam', label: 'Latin America' },
   { id: 'asia', label: 'Asia-Pacific' },
+  { id: 'africa', label: 'Africa' },
 ];
 
 const allTabs: TabConfig[] = [...primaryTabs, ...secondaryTabs];
@@ -129,7 +130,7 @@ function formatActualTime(isoString: string | null | undefined): string {
   });
 }
 
-export function NewsFeed({
+export const NewsFeed = memo(function NewsFeed({
   items,
   selectedWatchpoint,
   onSelectWatchpoint,
@@ -304,18 +305,10 @@ export function NewsFeed({
   }, [itemsForCounts]);
 
   // Get count for a tab (use full item counts, not paginated)
-  const getTabCount = (tabId: TabId): number => {
+  const getTabCount = useCallback((tabId: TabId): number => {
     if (tabId === 'all') return itemsForCounts.length;
     return regionCounts[tabId] || 0;
-  };
-
-  // Check if a tab is in the More dropdown (not visible inline)
-  const isInMoreDropdown = (tab: TabConfig): boolean => {
-    if (tab.alwaysVisible) return false;
-    // Without JS media queries, we'll put non-alwaysVisible tabs in More
-    // The responsive classes will show/hide them appropriately
-    return !tab.minScreen;
-  };
+  }, [itemsForCounts.length, regionCounts]);
 
   // Tabs that always show inline
   const inlineTabs = allTabs.filter(t => t.alwaysVisible || t.minScreen);
@@ -725,4 +718,4 @@ export function NewsFeed({
       </div>
     </div>
   );
-}
+});

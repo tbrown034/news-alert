@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { NewsItem, WatchpointId } from '@/types';
 import Image from 'next/image';
+import { formatTimeAgo, editorialRegionBadges } from '@/lib/formatUtils';
 
 // Extended NewsItem type for editorial posts
 interface EditorialNewsItem extends NewsItem {
@@ -23,16 +24,6 @@ interface EditorialCardProps {
   onDismiss?: (id: string) => void;
 }
 
-// Region badge colors
-const regionBadges: Record<WatchpointId, { label: string; color: string }> = {
-  'us': { label: 'US', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },
-  'latam': { label: 'AMERICAS', color: 'bg-green-500/10 text-green-600 dark:text-green-400' },
-  'middle-east': { label: 'MIDEAST', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400' },
-  'europe-russia': { label: 'EUR', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400' },
-  'asia': { label: 'ASIA', color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400' },
-  'seismic': { label: 'SEISMIC', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
-  'all': { label: 'GLOBAL', color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400' },
-};
 
 // Style config per editorial type
 const editorialStyles = {
@@ -70,25 +61,6 @@ const editorialStyles = {
   },
 };
 
-function formatTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const seconds = Math.floor(diffMs / 1000);
-
-  if (seconds < 0) return 'just now';
-  if (seconds < 60) return 'just now';
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d`;
-
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 
 // Countdown timer for events
 function useCountdown(targetDate?: Date): string | null {
@@ -131,7 +103,7 @@ function useCountdown(targetDate?: Date): string | null {
 export function EditorialCard({ item, onDismiss }: EditorialCardProps) {
   const style = editorialStyles[item.editorialType];
   const Icon = style.icon;
-  const regionBadge = regionBadges[item.region] || regionBadges['all'];
+  const regionBadge = editorialRegionBadges[item.region] || editorialRegionBadges['all'];
 
   // For events, show countdown (using timestamp as the event time for now)
   // In reality, this would use startsAt from the editorial post

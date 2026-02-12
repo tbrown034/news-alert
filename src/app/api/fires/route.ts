@@ -105,7 +105,24 @@ function clusterFirmsPoints(points: any[]): any[] {
   });
 }
 
+// In-memory cache (FIRMS updates every ~12h, EONET/GDACS even less)
+let cachedResponse: { fires: FireEvent[]; stats: object; fetchedAt: string } | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export async function GET() {
+  const now = Date.now();
+
+  // Return cached response if still valid
+  if (cachedResponse && (now - cacheTimestamp) < CACHE_TTL) {
+    return NextResponse.json(cachedResponse, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'X-Cache': 'HIT',
+      },
+    });
+  }
+
   const fires: FireEvent[] = [];
 
   // Fetch from NASA FIRMS (satellite fire detections)
@@ -322,9 +339,20 @@ export async function GET() {
     },
   };
 
-  return NextResponse.json({
+  const response = {
     fires: significantFires,
     stats,
     fetchedAt: new Date().toISOString(),
+  };
+
+  // Update cache
+  cachedResponse = response;
+  cacheTimestamp = Date.now();
+
+  return NextResponse.json(response, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      'X-Cache': 'MISS',
+    },
   });
 }

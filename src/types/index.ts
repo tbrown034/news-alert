@@ -5,6 +5,7 @@ export type WatchpointId =
   | 'middle-east'  // Middle East
   | 'europe-russia' // Europe & Russia (including Ukraine conflict)
   | 'asia'         // Asia-Pacific (China, Taiwan, Korea, etc.)
+  | 'africa'       // Sub-Saharan Africa + North Africa
   | 'seismic'
   | 'all';
 

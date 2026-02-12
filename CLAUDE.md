@@ -156,21 +156,62 @@ Track searches to avoid duplicating effort:
 
 ## Activity Detection
 
-### Activity Levels (Frequency-Based)
-```
-Posts in last hour / Regional baseline = Multiplier
+Two separate systems. **Do not cross-wire them.**
 
-Multiplier >= 4.0 → CRITICAL (4x normal)
-Multiplier >= 2.0 → ELEVATED (2x normal)
-Multiplier <  2.0 → NORMAL
+### System 1: Detection (live, per-request)
+
+**Files:** `activityDetection.ts` (region-level), `sourceActivity.ts` (per-source)
+
+Compares actual post count in a 6-hour window against time-adjusted baselines.
+
+```
+Raw Baseline = sum of postsPerDay for region ÷ 4 (flat 6h average)
+Adjusted Baseline = Raw Baseline × Time-of-Day Multiplier
+
+Time-of-Day Multipliers (4 UTC slots, sum = 4.0):
+  00:00–06:00 UTC → 0.4  (US night, EU night — trough)
+  06:00–12:00 UTC → 0.8  (US sleeping, EU morning peak)
+  12:00–18:00 UTC → 1.5  (US morning + EU afternoon — peak)
+  18:00–24:00 UTC → 1.3  (US afternoon, EU evening)
+
+Region-level thresholds (against adjusted baseline):
+  Multiplier >= 5.0 AND count >= 50 → CRITICAL
+  Multiplier >= 2.5 AND count >= 25 → ELEVATED
+  Otherwise → NORMAL
+
+Source-level thresholds:
+  Multiplier >= 2.5 AND count >= 3 → ANOMALOUS
 ```
 
-**Regional Baselines:**
-- US: 10 posts/hour
-- LATAM: 6 posts/hour
-- Middle East: 15 posts/hour
-- Europe-Russia: 18 posts/hour
-- Asia: 10 posts/hour
+**Baselines come from `postsPerDay` values in `sources-clean.ts`.** These are static numbers baked into the source file. Decimal values (e.g., 37.2) were measured from real data and are trusted. Round numbers (e.g., 50) were guessed and get replaced with a conservative default of 3 PPD.
+
+**Time-of-day ratios** are based on the source composition (~70% US, ~20% EU, ~10% Middle East). The multipliers redistribute the daily expectation across slots so nighttime doesn't read as "below normal" and daytime surges aren't muted. The sum of 4.0 ensures the total daily expectation is unchanged.
+
+Excluded regions (always NORMAL): LATAM, Asia, Africa — insufficient source coverage.
+
+### System 2: Observability Logging (live, write-only)
+
+**Files:** `activityLogging.ts`, DB table `post_activity_logs`
+
+Writes 6-hour-bucketed snapshots (post counts, region/platform breakdowns, fetch duration) to the database on every fetch. Buckets align to 00:00/06:00/12:00/18:00 UTC.
+
+**This data is NOT used by the detection system.** It exists for the admin dashboard (`getRollingAverages()`, `getActivityTrend()`) to let you visually inspect trends and spot-check whether baselines are still accurate.
+
+### Keeping Baselines Fresh
+
+Run periodically (monthly, or after adding/removing sources):
+```bash
+npx tsx scripts/measure-source-baselines.ts           # Update all platforms
+npx tsx scripts/measure-source-baselines.ts --dry-run  # Preview without writing
+npx tsx scripts/measure-source-baselines.ts --platform bluesky  # One platform only
+```
+
+This script paginates 30 days of post history via each platform's API (Bluesky xRPC, Mastodon REST, Telegram MTProto) and writes measured decimal `postsPerDay` values back into `sources-clean.ts`.
+
+### Design Decisions
+
+- **Time-of-day adjusted baseline** — divides postsPerDay by 4 for a flat 6h average, then multiplies by a UTC slot factor (0.4/0.8/1.5/1.3). This prevents false "below normal" at night and muted surge detection during peak hours. Ratios derived from source composition (US/EU/ME timezone mix). If ratios need tuning, adjust `TIME_OF_DAY_MULTIPLIERS` in `activityDetection.ts` — they must sum to 4.0.
+- **Per-source anomaly data is computed but not yet displayed in the UI** — attached to each NewsItem as `sourceActivity` but NewsCard/NewsFeed don't render it.
 
 ---
 
@@ -179,6 +220,7 @@ Multiplier <  2.0 → NORMAL
 ### Active (Keep)
 | Script | Purpose |
 |--------|---------|
+| `measure-source-baselines.ts` | Measure postsPerDay for all sources (run monthly) |
 | `test-new-sources.ts` | Test newly added sources |
 | `audit-sources.ts` | Validate all sources, find 404s/inactive |
 | `generate-clean-sources.ts` | Generate tiered source file |

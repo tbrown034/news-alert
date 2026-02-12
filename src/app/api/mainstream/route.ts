@@ -9,12 +9,13 @@ export const revalidate = 0;
 export const maxDuration = 60;
 
 // Valid regions
-const VALID_REGIONS: WatchpointId[] = ['all', 'us', 'latam', 'middle-east', 'europe-russia', 'asia'];
+const VALID_REGIONS: WatchpointId[] = ['all', 'us', 'latam', 'middle-east', 'europe-russia', 'asia', 'africa'];
 
 // =============================================================================
 // MAINSTREAM NEWS CACHE
 // =============================================================================
-// Longer cache TTL (15 minutes) - mainstream news updates slower than OSINT feeds
+// Cache key = region only. topN/hours filtering applied after cache read.
+// Longer TTL (15 minutes) - mainstream news updates slower than OSINT feeds.
 
 interface MainstreamCacheEntry {
   data: MainstreamSourceGroup[];
@@ -27,7 +28,7 @@ interface MainstreamSourceGroup {
   sourceRegion: WatchpointId;
   articles: NewsItem[];
   mostRecentTimestamp: string;
-  articleCount24h: number;
+  articleCountInWindow: number;
 }
 
 // Global cache for mainstream news
@@ -74,18 +75,23 @@ function setCachedMainstream(cacheKey: string, data: MainstreamSourceGroup[]): v
   });
 }
 
+// Track in-flight fetches to prevent duplicate requests
+const inFlightFetches = new Map<string, Promise<MainstreamSourceGroup[]>>();
+
 // =============================================================================
 // FILTERING & FETCHING
 // =============================================================================
 
 /**
- * Get mainstream news sources (news-org + RSS only)
+ * Get mainstream news sources (news-org RSS/Bluesky + Reddit subreddits)
  */
 function getMainstreamSources(region: WatchpointId): TieredSource[] {
   return allTieredSources.filter(source => {
-    // Filter: must be news-org on RSS or Bluesky
-    if (source.sourceType !== 'news-org') return false;
-    if (source.platform !== 'rss' && source.platform !== 'bluesky') return false;
+    const isNewsOrg = source.sourceType === 'news-org' &&
+      (source.platform === 'rss' || source.platform === 'bluesky');
+    const isReddit = source.platform === 'reddit';
+
+    if (!isNewsOrg && !isReddit) return false;
 
     // Filter by region
     if (region === 'all') return true;
@@ -101,64 +107,87 @@ function filterByTimeWindow(items: NewsItem[], hours: number): NewsItem[] {
   return items.filter(item => item.timestamp.getTime() > cutoff);
 }
 
-/**
- * Fetch all mainstream sources and group by source
- */
-async function fetchMainstreamNews(
-  sources: TieredSource[],
-  topN: number,
-  hours: number
-): Promise<MainstreamSourceGroup[]> {
-  const groups: MainstreamSourceGroup[] = [];
+// Platform type helpers (used for batching)
+function isBlueskySource(source: TieredSource): boolean {
+  return source.platform === 'bluesky';
+}
 
-  // Fetch all sources in parallel with batching
-  const batchSize = 20;
-  const batchDelay = 100;
+function isRedditSource(source: TieredSource): boolean {
+  return source.platform === 'reddit';
+}
+
+/**
+ * Fetch sources in batches for a single platform
+ */
+async function fetchPlatformSources(
+  sources: TieredSource[],
+  batchSize: number,
+  batchDelay: number
+): Promise<{ source: TieredSource; items: NewsItem[] }[]> {
+  const results: { source: TieredSource; items: NewsItem[] }[] = [];
 
   for (let i = 0; i < sources.length; i += batchSize) {
     const batch = sources.slice(i, i + batchSize);
 
-    const batchResults = await Promise.allSettled(
+    const batchResults = await Promise.all(
       batch.map(async (source) => {
         try {
           const items = await fetchRssFeed(source);
           return { source, items };
         } catch {
-          return { source, items: [] };
+          return { source, items: [] as NewsItem[] };
         }
       })
     );
 
-    for (const result of batchResults) {
-      if (result.status === 'fulfilled' && result.value.items.length > 0) {
-        const { source, items } = result.value;
+    results.push(...batchResults);
 
-        // Filter by time window
-        const filtered = filterByTimeWindow(items, hours);
-
-        if (filtered.length === 0) continue;
-
-        // Sort by timestamp (newest first)
-        filtered.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-        // Take top N articles
-        const topArticles = filtered.slice(0, topN);
-
-        groups.push({
-          sourceId: source.id,
-          sourceName: source.name,
-          sourceRegion: source.region,
-          articles: topArticles,
-          mostRecentTimestamp: topArticles[0].timestamp.toISOString(),
-          articleCount24h: filtered.length,
-        });
-      }
-    }
-
-    // Delay between batches (but not after the last batch)
     if (i + batchSize < sources.length) {
       await new Promise(r => setTimeout(r, batchDelay));
     }
+  }
+
+  return results;
+}
+
+/**
+ * Fetch all mainstream sources — unfiltered (no topN/hours).
+ * Groups results by source. Platforms fetched in parallel with appropriate batching.
+ */
+async function fetchMainstreamNews(
+  sources: TieredSource[]
+): Promise<MainstreamSourceGroup[]> {
+  // Separate sources by platform for appropriate batching
+  const blueskySources = sources.filter(isBlueskySource);
+  const redditSources = sources.filter(isRedditSource);
+  const rssSources = sources.filter(s => !isBlueskySource(s) && !isRedditSource(s));
+
+  // Fetch all platforms in parallel (each platform batches internally)
+  const [rssResults, bskyResults, redditResults] = await Promise.all([
+    fetchPlatformSources(rssSources, 30, 50),      // RSS: tolerant of parallelism
+    fetchPlatformSources(blueskySources, 30, 100),  // Bluesky: moderate limits
+    fetchPlatformSources(redditSources, 3, 300),    // Reddit: strict rate limiting
+  ]);
+
+  const allResults = [...rssResults, ...bskyResults, ...redditResults];
+
+  // Group by source
+  const groups: MainstreamSourceGroup[] = [];
+
+  for (const { source, items } of allResults) {
+    if (items.length === 0) continue;
+
+    // Sort by timestamp (newest first)
+    items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+    groups.push({
+      sourceId: source.id,
+      sourceName: source.name,
+      sourceRegion: source.region,
+      articles: items,
+      mostRecentTimestamp: items[0].timestamp.toISOString(),
+      articleCountInWindow: items.length,
+    });
   }
 
   // Sort groups by most recent article (sources with newest content first)
@@ -167,6 +196,61 @@ async function fetchMainstreamNews(
   );
 
   return groups;
+}
+
+/**
+ * Fetch mainstream news with caching and in-flight deduplication.
+ * Cache key = region only. topN/hours applied after cache read.
+ */
+async function fetchMainstreamWithCache(region: WatchpointId): Promise<MainstreamSourceGroup[]> {
+  const cacheKey = region;
+
+  // Check for in-flight fetch
+  const inFlight = inFlightFetches.get(cacheKey);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const sources = getMainstreamSources(region);
+
+  const fetchPromise = (async () => {
+    try {
+      console.log(`[Mainstream API] Fetching ${region} (${sources.length} sources)`);
+      const groups = await fetchMainstreamNews(sources);
+      setCachedMainstream(cacheKey, groups);
+      return groups;
+    } finally {
+      inFlightFetches.delete(cacheKey);
+    }
+  })();
+
+  inFlightFetches.set(cacheKey, fetchPromise);
+  return fetchPromise;
+}
+
+/**
+ * Apply topN and hours filtering to cached source groups.
+ * Returns new array with filtered/sliced articles per group.
+ */
+function applyFilters(
+  groups: MainstreamSourceGroup[],
+  topN: number,
+  hours: number
+): MainstreamSourceGroup[] {
+  const filtered: MainstreamSourceGroup[] = [];
+
+  for (const group of groups) {
+    const timeFiltered = filterByTimeWindow(group.articles, hours);
+    if (timeFiltered.length === 0) continue;
+
+    filtered.push({
+      ...group,
+      articles: timeFiltered.slice(0, topN),
+      articleCountInWindow: timeFiltered.length,
+    });
+  }
+
+  return filtered;
 }
 
 // =============================================================================
@@ -209,7 +293,8 @@ export async function GET(request: Request) {
   const topN = Math.min(Math.max(1, isNaN(topNParam) ? 3 : topNParam), 10); // 1-10
   const hours = Math.min(Math.max(1, isNaN(hoursParam) ? 24 : hoursParam), 72); // 1-72
 
-  const cacheKey = `${region}:${topN}:${hours}`;
+  // Cache key = region only (topN/hours are cheap post-processing)
+  const cacheKey = region;
 
   try {
     let sourceGroups: MainstreamSourceGroup[];
@@ -222,32 +307,28 @@ export async function GET(request: Request) {
       sourceGroups = cached.data;
       fromCache = true;
     } else if (!forceRefresh && cached) {
-      // Stale cache - return immediately, refresh in background
+      // Stale cache - return immediately, refresh in background (deduped)
       sourceGroups = cached.data;
       fromCache = true;
       console.log(`[Mainstream API] Stale cache for ${cacheKey}, refreshing in background`);
-
-      // Background refresh
-      const sources = getMainstreamSources(region);
-      fetchMainstreamNews(sources, topN, hours)
-        .then(data => setCachedMainstream(cacheKey, data))
-        .catch(err => console.error('[Mainstream API] Background refresh error:', err));
+      fetchMainstreamWithCache(region).catch(err =>
+        console.error('[Mainstream API] Background refresh error:', err)
+      );
     } else {
-      // Cache miss - fetch fresh data
+      // Cache miss - fetch fresh data (deduped)
       console.log(`[Mainstream API] Fetching fresh data for ${cacheKey}...`);
-      const sources = getMainstreamSources(region);
-      console.log(`[Mainstream API] Found ${sources.length} mainstream RSS sources for region: ${region}`);
-
-      sourceGroups = await fetchMainstreamNews(sources, topN, hours);
-      setCachedMainstream(cacheKey, sourceGroups);
+      sourceGroups = await fetchMainstreamWithCache(region);
     }
 
+    // Apply topN and hours filtering after cache read
+    const filtered = applyFilters(sourceGroups, topN, hours);
+
     // Calculate totals
-    const totalSources = sourceGroups.length;
-    const totalArticles = sourceGroups.reduce((sum, g) => sum + g.articles.length, 0);
+    const totalSources = filtered.length;
+    const totalArticles = filtered.reduce((sum, g) => sum + g.articles.length, 0);
 
     return NextResponse.json({
-      sources: sourceGroups,
+      sources: filtered,
       totalSources,
       totalArticles,
       fetchedAt: new Date().toISOString(),
@@ -265,10 +346,11 @@ export async function GET(request: Request) {
     const cached = getCachedMainstream(cacheKey);
     if (cached) {
       console.log('[Mainstream API] Returning stale cache due to error');
+      const filtered = applyFilters(cached.data, topN, hours);
       return NextResponse.json({
-        sources: cached.data,
-        totalSources: cached.data.length,
-        totalArticles: cached.data.reduce((sum, g) => sum + g.articles.length, 0),
+        sources: filtered,
+        totalSources: filtered.length,
+        totalArticles: filtered.reduce((sum, g) => sum + g.articles.length, 0),
         fetchedAt: new Date().toISOString(),
         fromCache: true,
         error: 'Partial data - refresh failed',

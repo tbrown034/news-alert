@@ -71,6 +71,8 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\bdesantis(?:'s)?\b/i,
       /\baoc\b/i,
       /\bocasio.cortez\b/i,
+      /\brfk\b/i,
+      /\bkennedy\s+jr\b/i,
       // Specific US events
       /\bcapitol\b/i,
       /\bjanuary\s+6\b/i,
@@ -130,9 +132,43 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\bwest\s+virginia(?:'s)?\b/i,
       /\bwisconsin(?:'s)?\b/i,
       /\bwyoming(?:'s)?\b/i,
+      // US federal agencies
+      /\bepa\b/i,
+      /\bfda\b/i,
+      /\bjustice\s+department\b/i,
+      // US law enforcement / border agencies
+      /\bborder\s+patrol\b/i,
+      /\bcbp\b/i,
+      /\bnypd\b/i,
+      /\bnyc\b/i,
+      /\bDEA\b/,
+      /\bATF\b/,
       // US abbreviations - high confidence since definitive
-      /\bU\.S\.\b/,
+      /\bU\.S\./,
       /(?:^|[\s"'])US(?:[\s"',.;:!?]|$)/,
+      // US cities - unambiguous for a US-audience platform
+      /\bnew\s+york\b/i,
+      /\blos\s+angeles\b/i,
+      /\bchicago\b/i,
+      /\bhouston\b/i,
+      /\bphoenix\b/i,
+      /\bphiladelphia\b/i,
+      /\bsan\s+antonio\b/i,
+      /\bsan\s+diego\b/i,
+      /\bdallas\b/i,
+      /\bsan\s+francisco\b/i,
+      /\baustin\b/i,
+      /\bseattle\b/i,
+      /\bdenver\b/i,
+      /\batlanta\b/i,
+      /\bmiami\b/i,
+      /\bboston\b/i,
+      /\bminneapolis\b/i,
+      /\bdetroit\b/i,
+      /\bportland\b/i,
+      /\blas\s+vegas\b/i,
+      /\bpittsburgh\b/i,
+      /\bbaltimore\b/i,
       // US geographic regions
       /\beast\s+coast\b/i,
       /\bwest\s+coast\b/i,
@@ -151,23 +187,6 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\brepublican/i,
       /\bdemocrat/i,
       /\bgop\b/i,
-      // US Cities
-      /\bnew\s+york\b/i,
-      /\blos\s+angeles\b/i,
-      /\bchicago\b/i,
-      /\bhouston\b/i,
-      /\bphoenix\b/i,
-      /\bphiladelphia\b/i,
-      /\bsan\s+antonio\b/i,
-      /\bsan\s+diego\b/i,
-      /\bdallas\b/i,
-      /\bsan\s+francisco\b/i,
-      /\baustin\b/i,
-      /\bseattle\b/i,
-      /\bdenver\b/i,
-      /\batlanta\b/i,
-      /\bmiami\b/i,
-      /\bboston\b/i,
     ],
     low: [
       /\bdomestic\b/i,
@@ -180,7 +199,7 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
   'latam': {
     high: [
       // Venezuela
-      /\bvenezuela(?:n)?\b/i,
+      /\bvenezuela(?:ns?)?\b/i,
       /\bcaracas\b/i,
       /\bmaduro\b/i,
       /\bguaid[oóò]/i,
@@ -250,7 +269,7 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\bhonduras\b/i,
       /\bel\s+salvador\b/i,
       /\bbukele\b/i,
-      /\bguatemala\b/i,
+      /\bguatemala(?:n)?\b/i,
       /\bbahamas\b/i,
       /\btrinidad\b/i,
       /\bbarbados\b/i,
@@ -347,7 +366,7 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\bukrain(?:e|ian)\b/i,
       /\bkyiv\b/i,
       /\bkharkiv\b/i,
-      /\bodesa\b/i,
+      /\bodes+a\b/i,
       /\bzelensky\b/i,
       /\bzelenskyy\b/i,
       /\bazov\b/i,
@@ -383,20 +402,37 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\blukashenko\b/i,
       /\bminsk\b/i,
       // European countries
-      /\bgermany\b/i,
+      /\bgerman(?:y)?\b/i,
       /\bberlin\b/i,
       /\bfrance\b/i,
       /\bfrench\b/i,
       /\bparis\b/i,
       /\bmacron\b/i,
       /\bbritain\b/i,
+      /\bbritish\b/i,
       /\blondon\b/i,
+      /\bstarmer\b/i,
       /\bpoland\b/i,
       /\bwarsaw\b/i,
       /\bnato\b/i,
       /\beuropean\s+union\b/i,
       /\beu\b/i,
       /\bbrussels\b/i,
+      // UK
+      /\bU\.?K\.?\b/,
+      // Hungary
+      /\bhungary\b/i,
+      /\bhungarian\b/i,
+      /\borb[aá]n\b/i,
+      /\bbudapest\b/i,
+      // Italy
+      /\bital(?:y|ian)\b/i,
+      /\brome\b/i,
+      /\bmilan\b/i,
+      // Norway
+      /\bnorway\b/i,
+      /\bnorwegian\b/i,
+      /\boslo\b/i,
     ],
     medium: [
       /\bblack\s+sea\b/i,
@@ -421,9 +457,8 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\bkursk\b/i,
       /\bbryansk\b/i,
       // Other European
-      /\bitaly\b/i,
-      /\brome\b/i,
       /\bspain\b/i,
+      /\bspanish\b/i,
       /\bmadrid\b/i,
       /\bnetherlands\b/i,
       /\bamsterdam\b/i,
@@ -453,9 +488,9 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\bchinese\b/i,
       /\bbeijing\b/i,
       /\bxi\s+jinping\b/i,
-      /\bpla\b/i,
-      /\bplan\b/i,
-      /\bplaaf\b/i,
+      /\bPLA\b/,
+      /\bPLAN\b/,
+      /\bPLAAF\b/,
       /\bccp\b/i,
       /\bcommunist\s+party\b/i,
       // China Regions
@@ -487,12 +522,22 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\bmalaysia\b/i,
       /\bphilippine/i,
       /\bmanila\b/i,
+      // Myanmar
+      /\bmyanmar\b/i,
+      /\bburma\b/i,
+      /\brangoon\b/i,
+      /\byangon\b/i,
+      /\bnaypyidaw\b/i,
       // South Asia
-      /\bindia\b/i,
+      /\bindia(?:n)?\b/i,
       /\bnew\s+delhi\b/i,
       /\bmodi\b/i,
-      /\bpakistan\b/i,
+      /\bpakistan(?:i)?\b/i,
       /\bislamabad\b/i,
+      /\bbangladesh(?:i)?\b/i,
+      /\bdhaka\b/i,
+      /\bafghanistan\b/i,
+      /\bkabul\b/i,
     ],
     medium: [
       /\bsouth\s+china\s+sea\b/i,
@@ -508,15 +553,10 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\b7th\s+fleet\b/i,
       /\bindopacific\b/i,
       /\basean\b/i,
-      /\bmyanmar\b/i,
-      /\bburma\b/i,
       /\bcambodia\b/i,
       /\blaos\b/i,
-      /\bbangladesh\b/i,
       /\bsri\s+lanka\b/i,
       /\bnepal\b/i,
-      /\bafghanistan\b/i,
-      /\bkabul\b/i,
     ],
     low: [
       /\bsemiconductor/i,
@@ -525,6 +565,101 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\bsanctions\b.*\bchina\b/i,
       /\basia\b/i,
       /\bpacific\b/i,
+    ],
+  },
+
+  'africa': {
+    high: [
+      // Major countries
+      /\bnigeria(?:n)?\b/i,
+      /\bkenya(?:n)?\b/i,
+      /\bethiopia(?:n)?\b/i,
+      /\bsudan(?:ese)?\b/i,
+      /\bsouth\s+sudan\b/i,
+      /\bsomalia(?:n)?\b/i,
+      /\bcongo(?:lese)?\b/i,
+      /\bdrc\b/i,
+      /\bsouth\s+africa(?:n)?\b/i,
+      /\bcameroon(?:ian)?\b/i,
+      /\bghana(?:ian)?\b/i,
+      /\btanzania(?:n)?\b/i,
+      /\buganda(?:n)?\b/i,
+      /\brwanda(?:n)?\b/i,
+      /\bmozambique\b/i,
+      /\bmali(?:an)?\b/i,
+      /\bniger\b/i,
+      /\bburkina\s+faso\b/i,
+      /\bchad(?:ian)?\b/i,
+      /\bsenegal(?:ese)?\b/i,
+      /\beritrea(?:n)?\b/i,
+      /\blibya(?:n)?\b/i,
+      /\btunisia(?:n)?\b/i,
+      /\balgeria(?:n)?\b/i,
+      /\bmorocco\b/i,
+      /\bmoroccan\b/i,
+      /\bzimabawe\b/i,
+      /\bzimbabwe(?:an)?\b/i,
+      /\bangola(?:n)?\b/i,
+      // Major cities
+      /\blagos\b/i,
+      /\bnairobi\b/i,
+      /\baddis\s+ababa\b/i,
+      /\bkhartoum\b/i,
+      /\bpretoria\b/i,
+      /\bcape\s+town\b/i,
+      /\bjohannesburg\b/i,
+      /\bdar\s+es\s+salaam\b/i,
+      /\bkinshasa\b/i,
+      /\bmogadishu\b/i,
+      /\babuja\b/i,
+      /\baccra\b/i,
+      /\bkampala\b/i,
+      /\bkigali\b/i,
+      /\btripoli\b/i,
+      /\bluanda\b/i,
+      /\bdakar\b/i,
+      // Key organizations and groups
+      /\bafrican\s+union\b/i,
+      /\becowas\b/i,
+      /\bboko\s+haram\b/i,
+      /\bal.?shabaab\b/i,
+      /\bmadagascar\b/i,
+    ],
+    medium: [
+      /\bsahel\b/i,
+      /\bsub.saharan\b/i,
+      /\bhorn\s+of\s+africa\b/i,
+      /\bmaghreb\b/i,
+      /\bwest\s+africa\b/i,
+      /\beast\s+africa\b/i,
+      /\bsouthern\s+africa\b/i,
+      /\bcentral\s+africa\b/i,
+      /\bnorth\s+africa\b/i,
+      /\bbenin\b/i,
+      /\btogo\b/i,
+      /\bgabon\b/i,
+      /\bguinea\b/i,
+      /\bsierra\s+leone\b/i,
+      /\bliberia(?:n)?\b/i,
+      /\bivory\s+coast\b/i,
+      /\bcote\s+d.ivoire\b/i,
+      /\bmalawi\b/i,
+      /\bzambia(?:n)?\b/i,
+      /\bbotswana\b/i,
+      /\bnamibia(?:n)?\b/i,
+      /\bswaziland\b/i,
+      /\beswatini\b/i,
+      /\blesotho\b/i,
+      /\bdjibouti\b/i,
+      /\bmauritania\b/i,
+      /\bcentral\s+african\s+republic\b/i,
+      /\bequatorial\s+guinea\b/i,
+      /\bcabo\s+verde\b/i,
+    ],
+    low: [
+      /\bafrica\b/i,
+      /\bafrican\b/i,
+      /\bA\.?U\.?\b/,
     ],
   },
 
@@ -605,6 +740,7 @@ export function detectRegion(
     'middle-east',
     'europe-russia',
     'asia',
+    'africa',
   ];
 
   // Score all regions
@@ -623,7 +759,23 @@ export function detectRegion(
     // Only use detection if it's reasonably confident
     // Require at least score of 3 or a high-confidence keyword
     if (topMatch.score >= 3 || topMatch.confidence === 'high') {
-      detectedRegion = topMatch.region;
+      // US-audience tiebreaker: when a post mentions both US and foreign
+      // entities, the foreign angle is typically the news for a US audience.
+      // e.g. "Congress approves Ukraine aid" → the news is about Ukraine.
+      // Only prefer foreign when its score is at least as high as US score.
+      // When US score is strictly higher, it's domestic-focused (keep US).
+      if (topMatch.region === 'us' && allMatches.length > 1) {
+        const bestForeign = allMatches.find(
+          m => m.region !== 'us' && (m.score >= 3 || m.confidence === 'high')
+        );
+        if (bestForeign && bestForeign.score >= topMatch.score) {
+          detectedRegion = bestForeign.region;
+        } else {
+          detectedRegion = topMatch.region;
+        }
+      } else {
+        detectedRegion = topMatch.region;
+      }
     }
   }
 
@@ -676,6 +828,7 @@ export const regionDisplayNames: Record<WatchpointId, string> = {
   'middle-east': 'Middle East',
   'europe-russia': 'Europe-Russia',
   'asia': 'Asia',
+  'africa': 'Africa',
   'seismic': 'Seismic Activity',
   'all': 'All Regions',
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { NewsFeed, Legend, WorldMap, SeismicMap, WeatherMap, OutagesMap, TravelMap, FiresMap, AuthButton } from '@/components';
 import { EditorialFAB } from '@/components/EditorialFAB';
 import { ErrorBoundary, FeedSkeleton, MapSkeleton } from '@/components/ErrorBoundary';
@@ -25,6 +25,20 @@ interface ApiResponse {
 }
 
 type HeroView = 'main' | 'seismic' | 'weather' | 'outages' | 'travel' | 'fires';
+
+const HERO_MAIN_TABS = [
+  { id: 'main', label: 'Main', icon: GlobeAltIcon, color: 'blue' },
+  { id: 'seismic', label: 'Seismic', icon: MapPinIcon, color: 'amber' },
+] as const;
+
+const HERO_SECONDARY_TABS = [
+  { id: 'weather', label: 'Weather', icon: CloudIcon, color: 'cyan' },
+  { id: 'outages', label: 'Outages', icon: SignalIcon, color: 'purple' },
+  { id: 'travel', label: 'Travel', icon: ExclamationTriangleIcon, color: 'rose' },
+  { id: 'fires', label: 'Fires', icon: FireIcon, color: 'orange' },
+] as const;
+
+const HERO_ALL_TABS = [...HERO_MAIN_TABS, ...HERO_SECONDARY_TABS];
 
 interface HomeClientProps {
   initialData: ApiResponse | null;
@@ -430,24 +444,12 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const regionCounts = newsItems.reduce((acc, item) => {
+  const regionCounts = useMemo(() => newsItems.reduce((acc, item) => {
     acc[item.region] = (acc[item.region] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>), [newsItems]);
 
-  const mainTabs = [
-    { id: 'main', label: 'Main', icon: GlobeAltIcon, color: 'blue' },
-    { id: 'seismic', label: 'Seismic', icon: MapPinIcon, color: 'amber' },
-  ] as const;
-
-  const secondaryTabs = [
-    { id: 'weather', label: 'Weather', icon: CloudIcon, color: 'cyan' },
-    { id: 'outages', label: 'Outages', icon: SignalIcon, color: 'purple' },
-    { id: 'travel', label: 'Travel', icon: ExclamationTriangleIcon, color: 'rose' },
-    { id: 'fires', label: 'Fires', icon: FireIcon, color: 'orange' },
-  ] as const;
-
-  const allTabs = [...mainTabs, ...secondaryTabs];
+  const uniqueSources = useMemo(() => new Set(newsItems.map(i => i.source.id)).size, [newsItems]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
@@ -696,7 +698,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 {/* Tabs - right side: Main + Seismic visible, rest in More dropdown */}
                 <div className="flex items-center gap-1">
                   <div className="flex items-center gap-1">
-                    {mainTabs.map((tab) => (
+                    {HERO_MAIN_TABS.map((tab) => (
                       <button
                         key={tab.id}
                         onClick={() => handleHeroViewChange(tab.id)}
@@ -718,7 +720,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                         onClick={() => setShowMoreTabs(!showMoreTabs)}
                         className={`
                           flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors
-                          ${secondaryTabs.some(t => t.id === heroView)
+                          ${HERO_SECONDARY_TABS.some(t => t.id === heroView)
                             ? 'bg-blue-600 text-white'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
                           }
@@ -730,7 +732,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                       </button>
                       {showMoreTabs && (
                         <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-50">
-                          {secondaryTabs.map((tab) => (
+                          {HERO_SECONDARY_TABS.map((tab) => (
                             <button
                               key={tab.id}
                               onClick={() => {
@@ -903,6 +905,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 'europe-russia': 'Europe',
                 'asia': 'Asia',
                 'latam': 'LatAm',
+                'africa': 'Africa',
               };
 
               // Show loading state until activity is confirmed from client fetch
@@ -1004,7 +1007,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             <div>
               <div className="text-2xs text-slate-400 dark:text-slate-500 mb-1.5 font-medium">Views</div>
               <div className="flex flex-wrap gap-2">
-                {allTabs.map((tab) => {
+                {HERO_ALL_TABS.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = heroView === tab.id;
                   return (
@@ -1216,24 +1219,31 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             autoUpdate={autoUpdate}
             onToggleAutoUpdate={toggleAutoUpdate}
             totalPosts={newsItems.length}
-            uniqueSources={new Set(newsItems.map(i => i.source.id)).size}
+            uniqueSources={uniqueSources}
             hoursWindow={hoursWindow}
             allItemsForTrending={newsItems}
             allItems={newsItems}
           />
 
           {/* Load more button - shows when there are more items beyond displayLimit */}
-          {newsItems.length > displayLimit && (
-            <div className="px-4 py-4 border-t border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30">
-              <button
-                onClick={() => setDisplayLimit(prev => prev + 50)}
-                className="w-full py-3 px-4 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                <ChevronDownIcon className="w-4 h-4" />
-                Load more ({newsItems.length - displayLimit} remaining)
-              </button>
-            </div>
-          )}
+          {(() => {
+            const filteredTotal = selectedWatchpoint === 'all'
+              ? newsItems.length
+              : newsItems.filter(i => i.region === selectedWatchpoint).length;
+            const remaining = filteredTotal - displayLimit;
+            if (remaining <= 0) return null;
+            return (
+              <div className="px-4 py-4 border-t border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30">
+                <button
+                  onClick={() => setDisplayLimit(prev => prev + 50)}
+                  className="w-full py-3 px-4 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <ChevronDownIcon className="w-4 h-4" />
+                  Load more ({remaining} remaining)
+                </button>
+              </div>
+            );
+          })()}
         </div>
         </ErrorBoundary>
       </main>

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { WatchpointId } from '@/types';
 import { regionDisplayNames } from '@/lib/regionDetection';
+import { formatTimeAgo, regionBadges } from '@/lib/formatUtils';
 import {
   SparklesIcon,
   MapPinIcon,
@@ -219,36 +220,6 @@ function getLoadingMessage(elapsedSec: number, tier: ModelTier): string {
   return phases[0].message;
 }
 
-// Region badge colors - matching NewsCard
-const regionBadges: Record<WatchpointId, { label: string; color: string }> = {
-  'us': { label: 'US', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'latam': { label: 'AMERICAS', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'middle-east': { label: 'MIDEAST', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'europe-russia': { label: 'EUR', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'asia': { label: 'ASIA', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'seismic': { label: 'SEISMIC', color: 'bg-[var(--color-elevated-muted)] text-[var(--color-elevated)]' },
-  'all': { label: 'GLOBAL', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-};
-
-function formatTimeAgo(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const seconds = Math.floor(diffMs / 1000);
-
-  if (seconds < 0) return 'just now';
-  if (seconds < 60) return 'just now';
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d`;
-
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
 
 // Pulse Logo Avatar component - matches header brand
 function PulseAvatar() {

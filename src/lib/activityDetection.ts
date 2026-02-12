@@ -4,20 +4,33 @@ import { tier1Sources, tier2Sources, tier3Sources, TieredSource } from './source
 // =============================================================================
 // DYNAMIC ACTIVITY DETECTION
 // =============================================================================
-// Baselines are calculated from source postsPerDay values.
+// Baselines are calculated from source postsPerDay values, then adjusted for
+// time-of-day using a 4-slot UTC multiplier.
 //
 // TRUST LEVELS:
 // - Decimal values (37.9, 16.6) = measured from actual data → trust these
 // - Round numbers (50, 30, 15) = guessed/estimated → use conservative default
 //
-// This prevents inflated guesses from skewing the baseline.
+// TIME-OF-DAY ADJUSTMENT:
+// Sources are ~70% US, ~20% EU, ~10% Middle East. Posting follows their
+// business hours. A flat baseline would under-expect daytime and over-expect
+// nighttime, causing false "below normal" at night and muted surge detection
+// during peak hours. The multipliers redistribute the daily expectation:
+//
+//   UTC Slot       | US Time         | EU Time         | Multiplier
+//   00:00–06:00    | 7pm–1am EST     | 1am–7am CET     | 0.4 (trough)
+//   06:00–12:00    | 1am–7am EST     | 7am–1pm CET     | 0.8 (EU morning)
+//   12:00–18:00    | 7am–1pm EST     | 1pm–7pm CET     | 1.5 (peak overlap)
+//   18:00–24:00    | 1pm–7pm EST     | 7pm–1am CET     | 1.3 (US afternoon)
+//
+// Sum = 4.0 → daily total expectation unchanged.
 // =============================================================================
 
 const CONSERVATIVE_DEFAULT = 3; // posts/day for guessed sources
 
 // Regions excluded from activity scoring due to insufficient source coverage.
 // These always show NORMAL level regardless of post frequency.
-const SCORING_EXCLUDED_REGIONS: WatchpointId[] = ['latam', 'asia'];
+const SCORING_EXCLUDED_REGIONS: WatchpointId[] = ['latam', 'asia', 'africa'];
 
 // Check if a number was likely measured (has decimals) vs guessed (round)
 function isMeasuredValue(n: number): boolean {
@@ -34,6 +47,7 @@ function calculateDynamicBaselines(): Record<WatchpointId, number> {
     'middle-east': 0,
     'europe-russia': 0,
     'asia': 0,
+    'africa': 0,
     'all': 0,
     'seismic': 0,
   };
@@ -66,6 +80,27 @@ function calculateDynamicBaselines(): Record<WatchpointId, number> {
 // Calculate once at module load
 const REGION_BASELINES_6H = calculateDynamicBaselines();
 
+// Time-of-day multipliers for 6h UTC slots.
+// Adjusts the flat baseline to match expected posting patterns.
+// Must sum to 4.0 so daily total is preserved.
+const TIME_OF_DAY_MULTIPLIERS: [number, number, number, number] = [
+  0.4, // 00:00–06:00 UTC — US evening/night, EU night (trough)
+  0.8, // 06:00–12:00 UTC — US sleeping, EU morning peak
+  1.5, // 12:00–18:00 UTC — US morning + EU afternoon (peak)
+  1.3, // 18:00–24:00 UTC — US afternoon, EU evening
+];
+
+/**
+ * Get the time-of-day multiplier for the current UTC hour.
+ * Returns a value that adjusts the flat 6h baseline to account for
+ * natural posting rhythms (peak during US+EU overlap, trough at night).
+ */
+function getTimeOfDayMultiplier(now?: Date): number {
+  const hour = (now || new Date()).getUTCHours();
+  const slot = Math.floor(hour / 6); // 0-3
+  return TIME_OF_DAY_MULTIPLIERS[slot];
+}
+
 export interface RegionActivity {
   level: 'critical' | 'elevated' | 'normal';
   count: number;
@@ -88,6 +123,7 @@ export function calculateRegionActivity(
     'middle-east',
     'europe-russia',
     'asia',
+    'africa',
   ];
 
   // Count ALL posts per region (items are already 6h filtered by API)
@@ -96,12 +132,16 @@ export function calculateRegionActivity(
     counts[item.region] = (counts[item.region] || 0) + 1;
   }
 
+  // Time-of-day adjusted baseline: flat 6h baseline × time slot multiplier
+  const todMultiplier = getTimeOfDayMultiplier();
+
   // Calculate activity levels
   const activity = {} as Record<WatchpointId, RegionActivity>;
 
   for (const region of regions) {
     const count = counts[region] || 0;
-    const baseline = REGION_BASELINES_6H[region] || 30;
+    const rawBaseline = REGION_BASELINES_6H[region] || 30;
+    const baseline = Math.max(1, Math.round(rawBaseline * todMultiplier));
     const multiplier = baseline > 0 ? Math.round((count / baseline) * 10) / 10 : 0;
     const percentChange = baseline > 0 ? Math.round(((count - baseline) / baseline) * 100) : 0;
 

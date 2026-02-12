@@ -43,6 +43,14 @@ export const watchpoints: Watchpoint[] = [
     activityLevel: 'normal',
     color: '#6366f1',
   },
+  {
+    id: 'africa',
+    name: 'Africa',
+    shortName: 'Africa',
+    priority: 6,
+    activityLevel: 'normal',
+    color: '#f97316',
+  },
 ];
 
 // Mock sources based on our sources.md

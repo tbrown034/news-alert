@@ -56,7 +56,7 @@ export function calculateRegionBaselines(allSources: TieredSource[]): RegionBase
   }
 
   const results: RegionBaseline[] = [];
-  const order = ['us', 'middle-east', 'europe-russia', 'latam', 'asia', 'all', 'seismic'];
+  const order = ['us', 'middle-east', 'europe-russia', 'latam', 'asia', 'africa', 'all', 'seismic'];
 
   for (const region of order) {
     const entry = regionMap.get(region);

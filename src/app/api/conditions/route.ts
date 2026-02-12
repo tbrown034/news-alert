@@ -427,7 +427,7 @@ export async function GET() {
   };
 
   // Initialize region structure
-  const regions: WatchpointId[] = ['us', 'latam', 'middle-east', 'europe-russia', 'asia', 'all'];
+  const regions: WatchpointId[] = ['us', 'latam', 'middle-east', 'europe-russia', 'asia', 'africa', 'all'];
   const byRegion: Record<WatchpointId, RegionThreats> = {} as Record<WatchpointId, RegionThreats>;
 
   for (const region of regions) {

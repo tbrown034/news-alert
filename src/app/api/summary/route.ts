@@ -8,7 +8,7 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 
 // Valid regions for validation
-const VALID_REGIONS: WatchpointId[] = ['all', 'us', 'latam', 'middle-east', 'europe-russia', 'asia', 'seismic'];
+const VALID_REGIONS: WatchpointId[] = ['all', 'us', 'latam', 'middle-east', 'europe-russia', 'asia', 'africa', 'seismic'];
 
 // Model tiers
 type ModelTier = 'quick' | 'advanced' | 'pro';

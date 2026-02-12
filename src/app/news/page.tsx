@@ -22,7 +22,7 @@ interface MainstreamSourceGroup {
   sourceRegion: WatchpointId;
   articles: NewsItem[];
   mostRecentTimestamp: string;
-  articleCount24h: number;
+  articleCountInWindow: number;
 }
 
 interface MainstreamResponse {

@@ -22,7 +22,7 @@ export const revalidate = 0;
 export const maxDuration = 60;
 
 // Valid regions
-const VALID_REGIONS: WatchpointId[] = ['all', 'us', 'latam', 'middle-east', 'europe-russia', 'asia', 'seismic'];
+const VALID_REGIONS: WatchpointId[] = ['all', 'us', 'latam', 'middle-east', 'europe-russia', 'asia', 'africa', 'seismic'];
 
 // =============================================================================
 // ENABLED PLATFORMS
@@ -151,7 +151,7 @@ async function fetchAllSources(
   // Fetch all platforms in parallel (each platform batches internally)
   const [bskyItems, tgItems, mastoItems] = await Promise.all([
     fetchPlatformSources(blueskySources, 30, 100),  // Bluesky: 30 at a time
-    fetchPlatformSources(telegramSources, 10, 200), // Telegram: 10 at a time (MTProto API)
+    fetchPlatformSources(telegramSources, 5, 300),  // Telegram: 5 at a time, 300ms delay (reduce FloodWait)
     fetchPlatformSources(mastodonSources, 20, 100), // Mastodon: 20 at a time
   ]);
 

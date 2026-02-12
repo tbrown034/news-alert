@@ -1,7 +1,7 @@
 import { NewsItem, Source, VerificationStatus, MediaAttachment, ReplyContext, RepostContext } from '@/types';
 import { classifyRegion } from './sourceUtils';
 import { createHash } from 'crypto';
-import { getTelegramClient, isTelegramApiAvailable } from './telegramClient';
+import { getTelegramClient, isTelegramApiAvailable, resolveEntity } from './telegramClient';
 
 /**
  * Parse a pubDate string into a Date object with timezone normalization.
@@ -129,8 +129,9 @@ function parseRssXml(xml: string): RssItem[] {
     }
   }
 
-  // If no RSS items found, try Atom format (uses <entry> tags) - used by Bluesky
+  // If no RSS items found, try Atom format (uses <entry> tags) - used by Bluesky, Reddit
   if (items.length === 0) {
+    const isRedditFeed = xml.includes('reddit.com/r/');
     const entryRegex = /<entry>([\s\S]*?)<\/entry>/g;
 
     while ((match = entryRegex.exec(xml)) !== null) {
@@ -140,10 +141,32 @@ function parseRssXml(xml: string): RssItem[] {
       // Atom uses <content> or <summary> instead of <description>
       const content = extractTag(entryXml, 'content') || extractTag(entryXml, 'summary') || extractTag(entryXml, 'description');
       // Atom uses <link href="..."> attribute instead of <link>text</link>
-      const link = extractAtomLink(entryXml);
+      let link = extractAtomLink(entryXml);
       // Atom uses <published> or <updated> instead of <pubDate>
       const pubDate = extractTag(entryXml, 'published') || extractTag(entryXml, 'updated');
       const guid = extractTag(entryXml, 'id');
+
+      // Reddit Atom feeds: extract external article URL and thumbnail from content HTML
+      let media: MediaAttachment[] | undefined;
+      let description = '';
+      if (isRedditFeed && content) {
+        // Decode HTML entities in content to extract URLs
+        const decoded = content.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#32;/g, ' ');
+        // Extract [link] href — this is the external article URL
+        const linkMatch = decoded.match(/<a href="([^"]+)">\[link\]<\/a>/);
+        if (linkMatch) {
+          link = linkMatch[1];
+        }
+        // Extract media:thumbnail from the entry XML (not the content)
+        const thumbMatch = entryXml.match(/<media:thumbnail[^>]*url=["']([^"']+)["']/i);
+        if (thumbMatch) {
+          const thumbUrl = thumbMatch[1].replace(/&amp;/g, '&');
+          media = [{ type: 'image', url: thumbUrl, thumbnail: thumbUrl, alt: title || '' }];
+        }
+        description = title || '';
+      } else {
+        description = decodeHtmlEntities(stripHtml(content || ''));
+      }
 
       // Link is required, but title can fall back to content (for social media feeds)
       if (link && (title || content)) {
@@ -151,10 +174,11 @@ function parseRssXml(xml: string): RssItem[] {
         const itemTitle = title || stripHtml(content || '');
         items.push({
           title: decodeHtmlEntities(itemTitle),
-          description: decodeHtmlEntities(stripHtml(content || '')),
+          description,
           link,
           pubDate: pubDate || new Date().toISOString(),
           guid: guid || link,
+          media,
         });
       }
     }
@@ -406,25 +430,17 @@ async function fetchTelegramFeed(source: Source & { feedUrl: string }): Promise<
       return fetchTelegramFeedScraper(source);
     }
 
-    const messages = await client.getMessages(handle, { limit: 20 });
+    // Resolve entity via cache to avoid repeated ResolveUsername RPCs
+    const entity = await resolveEntity(client, handle);
+    if (!entity) {
+      console.warn(`[Telegram MTProto] Could not resolve @${handle}, falling back to scraper`);
+      return fetchTelegramFeedScraper(source);
+    }
+
+    const messages = await client.getMessages(entity, { limit: 20 });
 
     if (!messages || messages.length === 0) {
       return { items: [] };
-    }
-
-    // Extract channel avatar from entity
-    let channelAvatar: string | undefined;
-    try {
-      const entity = await client.getEntity(handle);
-      if (entity && 'photo' in entity && entity.photo) {
-        // For channels, the photo is accessible via the entity
-        // We can construct a placeholder or skip (avatar not critical)
-        // The web preview URL pattern: https://cdn4.telegram-cdn.org/file/...
-        // GramJS doesn't give direct URLs for photos without downloading
-        // Fall back to channel page avatar if needed
-      }
-    } catch {
-      // Avatar extraction is optional, don't fail on it
     }
 
     const items: RssItem[] = [];
@@ -495,7 +511,7 @@ async function fetchTelegramFeed(source: Source & { feedUrl: string }): Promise<
       console.log(`[Telegram MTProto] @${handle}: ${items.length} posts`);
     }
 
-    return { items, channelAvatar };
+    return { items };
   } catch (error: unknown) {
     // Handle FloodWait - cache the channel and fall back to scraper
     if (error instanceof Error && error.message.includes('FloodWait')) {
@@ -746,349 +762,10 @@ export function clearInvalidMastodonCache(): void {
 }
 
 // =============================================================================
-// REDDIT JSON FETCHING
+// REDDIT
 // =============================================================================
-// Reddit has public JSON API - append .json to any URL
-
-interface RedditPost {
-  kind: string;
-  data: {
-    id: string;
-    title: string;
-    selftext: string;
-    author: string;
-    url: string;
-    permalink: string;
-    created_utc: number;
-    score: number;
-    num_comments: number;
-    subreddit: string;
-    stickied?: boolean;
-    link_flair_text?: string;
-    thumbnail?: string;
-    preview?: {
-      images?: Array<{
-        source: { url: string; width: number; height: number };
-        resolutions?: Array<{ url: string; width: number; height: number }>;
-      }>;
-    };
-    is_video?: boolean;
-    media?: {
-      reddit_video?: {
-        fallback_url: string;
-        duration: number;
-      };
-    };
-  };
-}
-
-interface RedditListing {
-  kind: string;
-  data: {
-    children: RedditPost[];
-    after?: string;
-  };
-}
-
-interface RedditFeedItem extends RssItem {
-  isMegathread: boolean;
-  commentCount: number;
-  upvotes: number;
-  subreddit: string;
-}
-
-interface RedditFeedResult {
-  items: RedditFeedItem[];
-  subredditIcon?: string;
-}
-
-// Cache for invalid Reddit subreddits
-const invalidRedditCache = new Map<string, { error: string; timestamp: number }>();
-const INVALID_REDDIT_CACHE_TTL = 60 * 60 * 1000; // 1 hour
-
-// Minimum upvote threshold for quality filtering
-const REDDIT_MIN_SCORE = 100;
-
-// Megathread detection patterns (case-insensitive)
-const MEGATHREAD_PATTERNS = [
-  /megathread/i,
-  /live\s*thread/i,
-  /\[live\]/i,
-  /breaking:/i,
-  /breaking\s*news/i,
-  /developing:/i,
-  /discussion\s*thread/i,
-  /official\s*thread/i,
-  /\bofficial\b/i,
-];
-
-// Extract subreddit from feedUrl
-function extractSubreddit(feedUrl: string): string | null {
-  const match = feedUrl.match(/reddit\.com\/r\/([^\/\?\s]+)/i);
-  return match ? match[1] : null;
-}
-
-// Check if source is a Reddit source
-function isRedditSource(source: Source & { feedUrl: string }): boolean {
-  return source.platform === 'reddit' || source.feedUrl.includes('reddit.com/r/');
-}
-
-// Check if Reddit subreddit is cached as invalid
-function isRedditSubredditCachedAsInvalid(subreddit: string): boolean {
-  const cached = invalidRedditCache.get(subreddit);
-  if (!cached) return false;
-  if (Date.now() - cached.timestamp > INVALID_REDDIT_CACHE_TTL) {
-    invalidRedditCache.delete(subreddit);
-    return false;
-  }
-  return true;
-}
-
-// Decode Reddit's HTML-encoded URLs (they encode & as &amp;)
-function decodeRedditUrl(url: string): string {
-  return url.replace(/&amp;/g, '&');
-}
-
-// Fetch posts from Reddit using JSON API (megathreads only)
-async function fetchRedditFeed(source: Source & { feedUrl: string }): Promise<RedditFeedResult> {
-  const subreddit = extractSubreddit(source.feedUrl);
-  if (!subreddit) {
-    console.error(`[Reddit] Invalid feedUrl format: ${source.feedUrl}`);
-    return { items: [] };
-  }
-
-  // Skip if subreddit is cached as invalid
-  if (isRedditSubredditCachedAsInvalid(subreddit)) {
-    return { items: [] };
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for Reddit
-
-  try {
-    const jsonUrl = `https://www.reddit.com/r/${subreddit}/hot.json?limit=50`;
-    const response = await fetch(jsonUrl, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; PulseAlert/1.0)',
-        'Accept': 'application/json',
-      },
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      if (response.status === 404 || response.status === 403) {
-        invalidRedditCache.set(subreddit, { error: 'NotFoundOrPrivate', timestamp: Date.now() });
-        console.warn(`[Reddit] Subreddit r/${subreddit} not found or private. Cached for 1 hour.`);
-      } else if (response.status === 429) {
-        console.warn(`[Reddit] Rate limited. Consider reducing request frequency.`);
-      } else {
-        console.error(`[Reddit] ${source.name}: HTTP ${response.status}`);
-      }
-      return { items: [] };
-    }
-
-    const listing: RedditListing | null = await response.json().catch(() => {
-      console.error(`[Reddit] ${source.name}: Failed to parse JSON`);
-      return null;
-    });
-    if (!listing) return { items: [] };
-
-    // Check if post is a megathread (stickied or matches pattern)
-    const checkIsMegathread = (post: RedditPost): boolean => {
-      const title = post.data.title;
-      const isStickied = post.data.stickied === true;
-      const matchesPattern = MEGATHREAD_PATTERNS.some(pattern => pattern.test(title));
-      return isStickied || matchesPattern;
-    };
-
-    // Only show megathreads from news subreddits (skip regular posts)
-    const megathreads = listing.data.children.filter(post => checkIsMegathread(post));
-
-    const items: RedditFeedItem[] = megathreads
-      .map(post => {
-        const data = post.data;
-        const link = `https://www.reddit.com${data.permalink}`;
-
-        // Build title with subreddit prefix
-        const title = data.title;
-
-        // For link posts, use the external URL; for self posts, use Reddit link
-        const externalUrl = data.url && !data.url.includes('reddit.com') ? data.url : link;
-
-        // Extract thumbnail/preview image
-        const media: MediaAttachment[] = [];
-
-        if (data.preview?.images?.[0]) {
-          const preview = data.preview.images[0];
-          // Use medium resolution if available, otherwise source
-          const imageUrl = preview.resolutions?.find(r => r.width >= 320)?.url || preview.source.url;
-          media.push({
-            type: 'image',
-            url: decodeRedditUrl(preview.source.url),
-            thumbnail: decodeRedditUrl(imageUrl),
-            alt: data.title,
-          });
-        } else if (data.is_video && data.media?.reddit_video) {
-          media.push({
-            type: 'video',
-            url: data.media.reddit_video.fallback_url,
-            thumbnail: data.thumbnail && data.thumbnail !== 'self' ? data.thumbnail : undefined,
-          });
-        } else if (data.thumbnail && !['self', 'default', 'nsfw', 'spoiler'].includes(data.thumbnail)) {
-          media.push({
-            type: 'image',
-            url: data.thumbnail,
-            thumbnail: data.thumbnail,
-            alt: data.title,
-          });
-        }
-
-        // Build description with score and comments
-        const description = data.selftext
-          ? data.selftext.slice(0, 500)
-          : `${data.score.toLocaleString()} upvotes | ${data.num_comments.toLocaleString()} comments`;
-
-        return {
-          title,
-          description,
-          link: externalUrl,
-          pubDate: new Date(data.created_utc * 1000).toISOString(),
-          guid: `reddit-${data.id}`,
-          media: media.length > 0 ? media : undefined,
-          isMegathread: checkIsMegathread(post),
-          commentCount: data.num_comments,
-          upvotes: data.score,
-          subreddit: data.subreddit,
-        };
-      });
-
-    return { items };
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.warn(`[Reddit] ${source.name} (r/${subreddit}): Request timeout (10s)`);
-    } else if (error instanceof Error) {
-      console.error(`[Reddit] ${source.name} (r/${subreddit}): ${error.message}`);
-    }
-    return { items: [] };
-  }
-}
-
-// Get count of cached invalid Reddit subreddits (for diagnostics)
-export function getInvalidRedditCacheSize(): number {
-  return invalidRedditCache.size;
-}
-
-// Clear invalid Reddit cache (for testing/maintenance)
-export function clearInvalidRedditCache(): void {
-  invalidRedditCache.clear();
-}
-
-// Megathread result type for the dedicated megathread fetcher
-export interface RedditMegathread {
-  title: string;
-  url: string;
-  commentCount: number;
-  upvotes: number;
-  createdAt: Date;
-  subreddit: string;
-  isStickied: boolean;
-}
-
-// Default subreddits to check for megathreads
-const DEFAULT_MEGATHREAD_SUBREDDITS = ['news', 'worldnews', 'politics'];
-
-/**
- * Fetch megathreads and breaking news threads from multiple subreddits.
- * Returns only stickied posts or posts matching megathread patterns.
- *
- * @param subreddits - Array of subreddit names to check (defaults to news, worldnews, politics)
- * @returns Array of megathreads sorted by upvotes (highest first)
- */
-export async function fetchRedditMegathreads(
-  subreddits: string[] = DEFAULT_MEGATHREAD_SUBREDDITS
-): Promise<RedditMegathread[]> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for multiple requests
-
-  const allMegathreads: RedditMegathread[] = [];
-
-  try {
-    // Fetch all subreddits in parallel
-    const results = await Promise.allSettled(
-      subreddits.map(async (subreddit) => {
-        // Skip if subreddit is cached as invalid
-        if (isRedditSubredditCachedAsInvalid(subreddit)) {
-          return [];
-        }
-
-        const jsonUrl = `https://www.reddit.com/r/${subreddit}/hot.json?limit=25`;
-        const response = await fetch(jsonUrl, {
-          signal: controller.signal,
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; PulseAlert/1.0)',
-            'Accept': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          if (response.status === 404 || response.status === 403) {
-            invalidRedditCache.set(subreddit, { error: 'NotFoundOrPrivate', timestamp: Date.now() });
-            console.warn(`[Reddit] Subreddit r/${subreddit} not found or private. Cached for 1 hour.`);
-          } else if (response.status === 429) {
-            console.warn(`[Reddit] Rate limited on r/${subreddit}. Consider reducing request frequency.`);
-          } else {
-            console.error(`[Reddit] r/${subreddit}: HTTP ${response.status}`);
-          }
-          return [];
-        }
-
-        const listing: RedditListing | null = await response.json().catch(() => null);
-        if (!listing) return [];
-
-        // Filter for megathreads (stickied or matching patterns)
-        const megathreads = listing.data.children.filter(post => {
-          const title = post.data.title;
-          const isStickied = post.data.stickied === true;
-          const matchesPattern = MEGATHREAD_PATTERNS.some(pattern => pattern.test(title));
-          return isStickied || matchesPattern;
-        });
-
-        return megathreads.map(post => ({
-          title: post.data.title,
-          url: `https://www.reddit.com${post.data.permalink}`,
-          commentCount: post.data.num_comments,
-          upvotes: post.data.score,
-          createdAt: new Date(post.data.created_utc * 1000),
-          subreddit: post.data.subreddit,
-          isStickied: post.data.stickied === true,
-        }));
-      })
-    );
-
-    clearTimeout(timeoutId);
-
-    // Combine results from all subreddits
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        allMegathreads.push(...result.value);
-      }
-    }
-
-    // Sort by upvotes (highest first) to surface most popular megathreads
-    return allMegathreads.sort((a, b) => b.upvotes - a.upvotes);
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.warn(`[Reddit] Megathread fetch timeout (15s)`);
-    } else if (error instanceof Error) {
-      console.error(`[Reddit] Megathread fetch error: ${error.message}`);
-    }
-    return allMegathreads; // Return whatever we collected before the error
-  }
-}
+// Reddit sources use the public RSS/Atom feed (/.rss endpoint).
+// They are handled by the standard RSS parser below — no special fetcher needed.
 
 // =============================================================================
 // YOUTUBE RSS HANDLING
@@ -1605,27 +1282,7 @@ export async function fetchRssFeed(
     });
   }
 
-  // Use Reddit JSON API for Reddit sources (megathreads only)
-  if (isRedditSource(source)) {
-    const { items } = await fetchRedditFeed(source);
-
-    return items.map((item) => {
-      const { region, sourceRegion } = classifyRegion(item.title, item.description, source.region);
-
-      return {
-        id: `${source.id}-${hashString(item.guid || item.link)}`,
-        title: item.title,
-        content: item.description || item.title,
-        source,
-        timestamp: parsePubDate(item.pubDate),
-        region,
-        sourceRegion,
-        verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
-        url: item.link,
-        media: item.media,
-      };
-    });
-  }
+  // Reddit sources use RSS feeds (/.rss endpoint) — handled by standard RSS parser below
 
   // Use Bluesky API for Bluesky sources (they don't have native RSS)
   if (isBlueskySource(source)) {
@@ -1807,6 +1464,7 @@ export async function fetchRssFeed(
         sourceRegion,
         verificationStatus: getVerificationStatus(source.sourceType, source.confidence),
         url: item.link,
+        media: item.media,
       };
     });
   } catch (error) {
