@@ -88,6 +88,22 @@ function formatTimeAgo(dateStr: string): string {
   return `${diffDays}d ago`;
 }
 
+function getTimeBucket(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 5) return 'just-now';
+  if (diffMins < 60) return 'minutes';
+  if (diffMins < 360) return 'hours';
+  return 'older';
+}
+
+const BUCKET_LABELS: Record<string, string> = {
+  'just-now': 'Just Now',
+  'minutes': 'Minutes Ago',
+  'hours': 'Earlier Today',
+  'older': 'Yesterday & Older',
+};
+
 function getThumbnail(article: ArticleWithSource): string | null {
   if (!article.media || article.media.length === 0) return null;
   for (const m of article.media) {
@@ -197,6 +213,9 @@ export default function NewsPage() {
   const visible = filtered.slice(0, displayLimit);
   const hasMore = filtered.length > displayLimit;
 
+  // Group articles by time bucket for section dividers
+  let lastBucket = '';
+
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       {/* Header */}
@@ -211,7 +230,12 @@ export default function NewsPage() {
               <span className="text-sm font-medium hidden sm:inline">Pulse</span>
             </Link>
             <div className="flex items-center gap-2.5">
-              <NewspaperIcon className="w-5 h-5 text-[var(--foreground-muted)]" />
+              <div className="relative">
+                <NewspaperIcon className="w-5 h-5 text-[var(--foreground-muted)]" />
+                {!isLoading && articles.length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full animate-[pulse-soft_3s_ease-in-out_infinite]" />
+                )}
+              </div>
               <h1 className="text-base font-serif font-semibold text-[var(--foreground)] tracking-tight">News Wire</h1>
             </div>
             <button
@@ -234,10 +258,10 @@ export default function NewsPage() {
               <button
                 key={r.id}
                 onClick={() => { setSelectedRegion(r.id); setDisplayLimit(PAGE_SIZE); }}
-                className={`px-3 py-1.5 text-[13px] font-medium rounded-lg whitespace-nowrap transition-all cursor-pointer ${
+                className={`px-3 py-1.5 text-[13px] font-medium rounded-lg whitespace-nowrap transition-all duration-200 cursor-pointer ${
                   selectedRegion === r.id
-                    ? 'bg-[var(--foreground)] text-[var(--background)]'
-                    : 'text-[var(--foreground-light)] hover:text-[var(--foreground-muted)] hover:bg-[var(--foreground)]/[0.04]'
+                    ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
+                    : 'text-[var(--foreground-light)] hover:text-[var(--foreground-muted)] hover:bg-[var(--foreground)]/[0.06]'
                 }`}
               >
                 {r.label}
@@ -246,10 +270,16 @@ export default function NewsPage() {
           </div>
 
           {fetchedAt && !isLoading && (
-            <div className="flex items-center gap-4 text-[12px] text-[var(--foreground-light)] shrink-0 px-0.5">
-              <span><span className="text-[var(--foreground-muted)]">{filtered.length}</span> articles</span>
-              <span><span className="text-[var(--foreground-muted)]">{totalSources}</span> sources</span>
-              <span>{formatTimeAgo(fetchedAt)}</span>
+            <div className="flex items-center gap-3 text-[12px] text-[var(--foreground-light)] shrink-0 px-0.5">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-[var(--foreground-light)]" />
+                <span className="text-[var(--foreground-muted)] tabular-nums">{filtered.length}</span> articles
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-1 h-1 rounded-full bg-[var(--foreground-light)]" />
+                <span className="text-[var(--foreground-muted)] tabular-nums">{totalSources}</span> sources
+              </span>
+              <span className="text-[var(--foreground-light)]">{formatTimeAgo(fetchedAt)}</span>
             </div>
           )}
         </div>
@@ -258,19 +288,36 @@ export default function NewsPage() {
         {pendingArticles.length > 0 && (
           <button
             onClick={showPending}
-            className="w-full mb-4 py-2.5 text-sm font-medium text-blue-400 bg-blue-500/8 border border-blue-500/15 rounded-xl hover:bg-blue-500/12 transition-colors cursor-pointer"
+            className="w-full mb-4 py-2.5 text-sm font-medium text-emerald-400 bg-emerald-500/8 border border-emerald-500/15 rounded-xl hover:bg-emerald-500/12 transition-all duration-200 cursor-pointer group"
           >
-            {pendingArticles.length} new {pendingArticles.length === 1 ? 'article' : 'articles'} available
+            <span className="inline-flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover:animate-ping" />
+              {pendingArticles.length} new {pendingArticles.length === 1 ? 'article' : 'articles'} available
+            </span>
           </button>
         )}
 
-        {/* Loading */}
+        {/* Loading skeleton */}
         {isLoading && articles.length === 0 && (
-          <div className="flex items-center justify-center py-24">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-6 h-6 border-2 border-[var(--border)] border-t-[var(--foreground-muted)] rounded-full animate-spin" />
-              <span className="text-sm text-[var(--foreground-light)]">Loading news wire...</span>
-            </div>
+          <div className="space-y-2">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="flex gap-4 bg-[var(--background-card)] border border-[var(--border-card)] rounded-xl p-4 sm:px-5"
+                style={{ opacity: 1 - i * 0.08, animationDelay: `${i * 60}ms` }}
+              >
+                <div className="flex-1 min-w-0 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[var(--border)] animate-pulse" />
+                    <div className="h-3 w-24 rounded bg-[var(--border)] animate-pulse" />
+                    <div className="h-3 w-12 rounded bg-[var(--border-light)] animate-pulse" />
+                  </div>
+                  <div className="h-4 w-full rounded bg-[var(--border)] animate-pulse" />
+                  <div className="h-4 w-3/4 rounded bg-[var(--border-light)] animate-pulse" />
+                </div>
+                <div className="hidden sm:block w-28 h-20 rounded-lg bg-[var(--border-light)] animate-pulse shrink-0" />
+              </div>
+            ))}
           </div>
         )}
 
@@ -293,20 +340,40 @@ export default function NewsPage() {
           </div>
         )}
 
-        {/* Articles */}
+        {/* Articles with time bucket dividers */}
         {visible.length > 0 && (
           <div className="space-y-2">
-            {visible.map((article) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
+            {visible.map((article, index) => {
+              const bucket = getTimeBucket(article.timestamp);
+              const showDivider = bucket !== lastBucket;
+              lastBucket = bucket;
+
+              return (
+                <div key={article.id}>
+                  {showDivider && index > 0 && (
+                    <div className="flex items-center gap-3 py-3 mt-1">
+                      <div className="h-px flex-1 bg-gradient-to-r from-[var(--border-light)] to-transparent" />
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--foreground-light)]">
+                        {BUCKET_LABELS[bucket] || bucket}
+                      </span>
+                      <div className="h-px flex-1 bg-gradient-to-l from-[var(--border-light)] to-transparent" />
+                    </div>
+                  )}
+                  <ArticleCard article={article} index={index} />
+                </div>
+              );
+            })}
           </div>
         )}
 
         {/* Empty state */}
         {!isLoading && !error && filtered.length === 0 && (
           <div className="text-center py-24">
-            <NewspaperIcon className="w-10 h-10 text-[var(--border)] mx-auto mb-3" />
-            <p className="text-[var(--foreground-light)] text-sm">No articles found for this region</p>
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--background-secondary)] mb-4">
+              <NewspaperIcon className="w-8 h-8 text-[var(--foreground-light)]" />
+            </div>
+            <p className="text-[var(--foreground-muted)] text-sm font-medium">No articles found</p>
+            <p className="text-[var(--foreground-light)] text-xs mt-1">Try selecting a different region</p>
           </div>
         )}
 
@@ -314,7 +381,7 @@ export default function NewsPage() {
         {hasMore && (
           <button
             onClick={() => setDisplayLimit(prev => prev + PAGE_SIZE)}
-            className="w-full mt-4 py-3 text-sm font-medium text-[var(--foreground-light)] bg-[var(--background-secondary)]/50 border border-[var(--border-light)] rounded-xl hover:bg-[var(--background-secondary)] hover:text-[var(--foreground-muted)] transition-colors cursor-pointer"
+            className="w-full mt-4 py-3 text-sm font-medium text-[var(--foreground-light)] bg-[var(--background-secondary)]/50 border border-[var(--border-light)] rounded-xl hover:bg-[var(--background-secondary)] hover:text-[var(--foreground-muted)] hover:border-[var(--border)] transition-all duration-200 cursor-pointer"
           >
             Load more ({filtered.length - displayLimit} remaining)
           </button>
@@ -328,7 +395,7 @@ export default function NewsPage() {
 // ARTICLE CARD
 // =============================================================================
 
-function ArticleCard({ article }: { article: ArticleWithSource }) {
+function ArticleCard({ article, index }: { article: ArticleWithSource; index: number }) {
   const title = stripHtml(article.title || article.content?.slice(0, 120) || 'Untitled');
   const rawSnippet = article.content && article.content !== article.title
     ? stripHtml(article.content)
@@ -338,14 +405,21 @@ function ArticleCard({ article }: { article: ArticleWithSource }) {
     : null;
   const thumb = getThumbnail(article);
   const platform = article._sourcePlatform || 'rss';
+  const isRecent = Date.now() - new Date(article.timestamp).getTime() < 5 * 60 * 1000;
 
   return (
     <a
       href={article.url || '#'}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex gap-4 bg-[var(--background-card)] border border-[var(--border-card)] rounded-xl hover:border-[var(--border)] transition-all group p-4 sm:px-5"
+      className="flex gap-4 bg-[var(--background-card)] border border-[var(--border-card)] rounded-xl hover:border-[var(--border)] hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.2)] transition-all duration-200 group p-4 sm:px-5 nw-card-enter"
+      style={{ animationDelay: `${Math.min(index, 15) * 30}ms` }}
     >
+      {/* Left accent for very recent articles */}
+      {isRecent && (
+        <div className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-emerald-500/60" />
+      )}
+
       {/* Text content */}
       <div className="flex-1 min-w-0">
         {/* Source row */}
@@ -356,7 +430,7 @@ function ArticleCard({ article }: { article: ArticleWithSource }) {
           <span className="text-[12px] font-semibold text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] transition-colors truncate">
             {article._sourceName}
           </span>
-          <span className="text-[11px] text-[var(--foreground-light)] shrink-0">
+          <span className="text-[11px] text-[var(--foreground-light)] shrink-0 tabular-nums">
             {formatTimeAgo(article.timestamp)}
           </span>
           <RegionBadge region={article._sourceRegion} />
@@ -375,7 +449,7 @@ function ArticleCard({ article }: { article: ArticleWithSource }) {
         )}
 
         {/* External link indicator */}
-        <div className="mt-2 flex items-center gap-1 text-[11px] text-[var(--foreground-light)] opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="mt-2 flex items-center gap-1 text-[11px] text-[var(--foreground-light)] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <ArrowTopRightOnSquareIcon className="w-3 h-3" />
           <span>Read article</span>
         </div>
@@ -388,7 +462,7 @@ function ArticleCard({ article }: { article: ArticleWithSource }) {
           <img
             src={thumb}
             alt=""
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
             onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
           />
@@ -402,12 +476,13 @@ function ArticleCard({ article }: { article: ArticleWithSource }) {
 // REGION BADGE
 // =============================================================================
 
-const regionColors: Record<string, string> = {
-  'us': 'text-indigo-500 dark:text-indigo-400',
-  'latam': 'text-emerald-500 dark:text-emerald-400',
-  'middle-east': 'text-amber-500 dark:text-amber-400',
-  'europe-russia': 'text-sky-500 dark:text-sky-400',
-  'asia': 'text-rose-500 dark:text-rose-400',
+const regionBadgeStyles: Record<string, string> = {
+  'us': 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
+  'latam': 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+  'middle-east': 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+  'europe-russia': 'text-sky-400 bg-sky-500/10 border-sky-500/20',
+  'asia': 'text-rose-400 bg-rose-500/10 border-rose-500/20',
+  'africa': 'text-orange-400 bg-orange-500/10 border-orange-500/20',
 };
 
 const regionLabels: Record<string, string> = {
@@ -416,12 +491,13 @@ const regionLabels: Record<string, string> = {
   'middle-east': 'Mideast',
   'europe-russia': 'Europe',
   'asia': 'Asia',
+  'africa': 'Africa',
 };
 
 function RegionBadge({ region }: { region: WatchpointId }) {
   if (region === 'all' || region === 'seismic') return null;
   return (
-    <span className={`ml-auto text-[10px] font-semibold uppercase tracking-wide ${regionColors[region] || 'text-[var(--foreground-light)]'}`}>
+    <span className={`ml-auto text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border ${regionBadgeStyles[region] || 'text-[var(--foreground-light)] bg-[var(--foreground)]/5 border-[var(--border-light)]'}`}>
       {regionLabels[region] || region}
     </span>
   );
