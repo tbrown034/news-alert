@@ -7,7 +7,7 @@ import { ErrorBoundary, FeedSkeleton, MapSkeleton } from '@/components/ErrorBoun
 import { watchpoints as defaultWatchpoints } from '@/lib/mockData';
 import { NewsItem, WatchpointId, Watchpoint, Earthquake } from '@/types';
 import { useClock } from '@/hooks/useClock';
-import { GlobeAltIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon, EllipsisHorizontalIcon, Bars3Icon, XMarkIcon, ChevronDownIcon, SunIcon, MoonIcon, InformationCircleIcon, Cog6ToothIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { GlobeAltIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon, EllipsisHorizontalIcon, Bars3Icon, XMarkIcon, ChevronDownIcon, SunIcon, MoonIcon, InformationCircleIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { useSession } from '@/lib/auth-client';
 import { MapPinIcon } from '@heroicons/react/24/solid';
 import { RegionActivity } from '@/lib/activityDetection';
