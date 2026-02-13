@@ -7,7 +7,7 @@ import { ErrorBoundary, FeedSkeleton, MapSkeleton } from '@/components/ErrorBoun
 import { watchpoints as defaultWatchpoints } from '@/lib/mockData';
 import { NewsItem, WatchpointId, Watchpoint, Earthquake } from '@/types';
 import { useClock } from '@/hooks/useClock';
-import { GlobeAltIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon, EllipsisHorizontalIcon, Bars3Icon, XMarkIcon, ChevronDownIcon, SunIcon, MoonIcon, InformationCircleIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { GlobeAltIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon, EllipsisHorizontalIcon, Bars3Icon, XMarkIcon, ChevronDownIcon, SunIcon, MoonIcon, InformationCircleIcon, Cog6ToothIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { useSession } from '@/lib/auth-client';
 import { MapPinIcon } from '@heroicons/react/24/solid';
 import { RegionActivity } from '@/lib/activityDetection';
@@ -92,7 +92,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const [seismicLoading, setSeismicLoading] = useState(false);
   const [seismicLastFetched, setSeismicLastFetched] = useState<Date | null>(null);
   const [showMoreTabs, setShowMoreTabs] = useState(false);
-  const [showStats, setShowStats] = useState(false);
+  const [showPanel, setShowPanel] = useState<'activity' | 'info' | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [useUTC, setUseUTC] = useState(false);
@@ -989,19 +989,193 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               </button>
             )}
           </div>
-          {/* More toggle button */}
-          <button
-            onClick={() => setShowStats(!showStats)}
-            className="flex items-center gap-1 px-2 py-1 text-2xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-            aria-expanded={showStats}
-          >
-            More
-            <ChevronDownIcon className={`w-3 h-3 transition-transform ${showStats ? 'rotate-180' : ''}`} />
-          </button>
+          {/* Panel toggle buttons */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowPanel(showPanel === 'activity' ? null : 'activity')}
+              className={`flex items-center gap-1 px-2 py-1 text-2xs font-medium rounded transition-colors ${
+                showPanel === 'activity'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
+              }`}
+              aria-expanded={showPanel === 'activity'}
+            >
+              <ChartBarIcon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Activity</span>
+            </button>
+            <button
+              onClick={() => setShowPanel(showPanel === 'info' ? null : 'info')}
+              className={`flex items-center gap-1 px-2 py-1 text-2xs font-medium rounded transition-colors ${
+                showPanel === 'info'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
+              }`}
+              aria-expanded={showPanel === 'info'}
+            >
+              <InformationCircleIcon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Info</span>
+            </button>
+          </div>
         </div>
 
-        {/* Collapsible more panel */}
-        {showStats && (
+        {/* Activity Thermometer Panel */}
+        {showPanel === 'activity' && (
+          <div className="mt-1 px-3 py-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">Feed Activity Monitor</div>
+                <div className="text-2xs text-slate-400 dark:text-slate-500 mt-0.5">
+                  Posts in the last {hoursWindow}h vs time-adjusted baseline
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-2xs text-slate-400 dark:text-slate-500">
+                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Normal</span>
+                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Elevated</span>
+                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />Critical</span>
+              </div>
+            </div>
+
+            {/* Thermometer bars per region */}
+            {activityData && (() => {
+              const scoredRegions = [
+                { id: 'us', label: 'US' },
+                { id: 'middle-east', label: 'MidEast' },
+                { id: 'europe-russia', label: 'Europe' },
+              ] as const;
+              const excludedRegions = [
+                { id: 'asia', label: 'Asia' },
+                { id: 'latam', label: 'LatAm' },
+                { id: 'africa', label: 'Africa' },
+              ] as const;
+
+              const renderBar = (regionId: string, label: string, excluded: boolean = false) => {
+                const data = activityData[regionId as WatchpointId];
+                if (!data) return null;
+
+                const { count, baseline, multiplier, level } = data;
+                // Scale: bar represents 0 to max(5x baseline, actual count)
+                const maxScale = Math.max(5 * baseline, count, baseline);
+                const fillPct = Math.min((count / maxScale) * 100, 100);
+                const baselinePct = (baseline / maxScale) * 100;
+                const elevatedPct = ((2.5 * baseline) / maxScale) * 100;
+                const criticalPct = ((5 * baseline) / maxScale) * 100;
+
+                const barColor = excluded
+                  ? 'bg-slate-400 dark:bg-slate-500'
+                  : level === 'critical'
+                    ? 'bg-red-500'
+                    : level === 'elevated'
+                      ? 'bg-amber-500'
+                      : multiplier < 0.5
+                        ? 'bg-blue-400 dark:bg-blue-500'
+                        : 'bg-emerald-500';
+
+                const labelColor = excluded
+                  ? 'text-slate-400 dark:text-slate-500'
+                  : level === 'critical'
+                    ? 'text-red-500'
+                    : level === 'elevated'
+                      ? 'text-amber-500'
+                      : 'text-slate-600 dark:text-slate-300';
+
+                return (
+                  <div key={regionId} className="flex items-center gap-2">
+                    {/* Region label */}
+                    <div className={`w-14 text-right text-2xs font-medium ${labelColor} tabular-nums shrink-0`}>
+                      {label}
+                    </div>
+
+                    {/* Thermometer bar */}
+                    <div className="flex-1 relative h-4 bg-slate-200/60 dark:bg-slate-800/80 rounded-full overflow-hidden">
+                      {/* Fill */}
+                      <div
+                        className={`absolute inset-y-0 left-0 rounded-full ${barColor} transition-all duration-700 ease-out`}
+                        style={{ width: `${fillPct}%` }}
+                      />
+
+                      {/* Baseline marker (1x) */}
+                      <div
+                        className="absolute top-0 bottom-0 w-px bg-slate-500 dark:bg-slate-400 z-10"
+                        style={{ left: `${baselinePct}%` }}
+                        title={`Baseline: ${baseline} posts`}
+                      >
+                        <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-slate-500 dark:bg-slate-400" />
+                      </div>
+
+                      {/* Elevated threshold marker (2.5x) — only for scored regions */}
+                      {!excluded && elevatedPct < 98 && (
+                        <div
+                          className="absolute top-0 bottom-0 w-px bg-amber-500/40 z-10"
+                          style={{ left: `${elevatedPct}%` }}
+                          title="Elevated threshold (2.5x)"
+                        />
+                      )}
+
+                      {/* Critical threshold marker (5x) — only for scored regions */}
+                      {!excluded && criticalPct < 98 && (
+                        <div
+                          className="absolute top-0 bottom-0 w-px bg-red-500/40 z-10"
+                          style={{ left: `${criticalPct}%` }}
+                          title="Critical threshold (5x)"
+                        />
+                      )}
+                    </div>
+
+                    {/* Numeric readout */}
+                    <div className="w-24 sm:w-28 flex items-center gap-1.5 shrink-0">
+                      <span className={`text-2xs font-mono tabular-nums ${labelColor}`}>
+                        {count}/{baseline}
+                      </span>
+                      <span className={`text-2xs font-mono tabular-nums ${
+                        excluded ? 'text-slate-400 dark:text-slate-500' :
+                        multiplier >= 5 ? 'text-red-500 font-semibold' :
+                        multiplier >= 2.5 ? 'text-amber-500 font-semibold' :
+                        multiplier < 0.5 ? 'text-blue-400' :
+                        'text-slate-500 dark:text-slate-400'
+                      }`}>
+                        {multiplier.toFixed(1)}x
+                      </span>
+                    </div>
+                  </div>
+                );
+              };
+
+              return (
+                <div className="space-y-1.5">
+                  {scoredRegions.map(r => renderBar(r.id, r.label))}
+                  {/* Divider before excluded regions */}
+                  <div className="border-t border-dashed border-slate-200 dark:border-slate-700/50 my-1" />
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-2xs text-slate-400 dark:text-slate-500 italic">Low coverage — not scored</span>
+                  </div>
+                  {excludedRegions.map(r => renderBar(r.id, r.label, true))}
+                </div>
+              );
+            })()}
+
+            {!activityConfirmed && (
+              <div className="text-2xs text-slate-400 dark:text-slate-500 italic flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" />
+                Waiting for fresh data...
+              </div>
+            )}
+
+            {/* How it works explanation */}
+            <div className="pt-2 border-t border-slate-200/50 dark:border-slate-700/30">
+              <div className="text-2xs text-slate-400 dark:text-slate-500 leading-relaxed">
+                <span className="font-medium text-slate-500 dark:text-slate-400">How it works:</span>{' '}
+                Each bar compares the number of posts collected in the last {hoursWindow} hours against a time-adjusted baseline
+                derived from each source&apos;s historical posting rate. The baseline shifts with time of day
+                (peak at 12-18 UTC, trough at 00-06 UTC) to match natural publishing rhythms.
+                The <span className="inline-flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-slate-500 dark:bg-slate-400 inline-block" /></span> marker shows
+                the expected baseline. Elevated triggers at 2.5x with 25+ posts; critical at 5x with 50+.
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Info Panel (stats, views, map key) */}
+        {showPanel === 'info' && (
           <div className="mt-1 px-3 py-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800 space-y-3">
             {/* Quick links to views */}
             <div>
@@ -1058,7 +1232,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             <div>
               <div className="text-2xs text-slate-400 dark:text-slate-500 mb-1.5 font-medium">Map Key</div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 dark:text-slate-400">
-                {/* Activity levels - Main view */}
                 {heroView === 'main' && (
                   <>
                     <div className="flex items-center gap-2">
@@ -1096,101 +1269,42 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     )}
                   </>
                 )}
-                {/* Seismic magnitude scale */}
                 {heroView === 'seismic' && (
                   <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-green-500" />
-                      <span>M2.5+</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                      <span>M4.5+</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-orange-500" />
-                      <span>M6+</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-red-500" />
-                      <span>M7+</span>
-                    </span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /><span>M2.5+</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>M4.5+</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>M6+</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>M7+</span></span>
                   </div>
                 )}
-                {/* Weather severity */}
                 {heroView === 'weather' && (
                   <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-sky-500" />
-                      <span>Advisory</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                      <span>Watch</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-orange-500" />
-                      <span>Warning</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-red-500" />
-                      <span>Emergency</span>
-                    </span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-500" /><span>Advisory</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>Watch</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Warning</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>Emergency</span></span>
                   </div>
                 )}
-                {/* Outages severity */}
                 {heroView === 'outages' && (
                   <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                      <span>Minor</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-orange-500" />
-                      <span>Significant</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-red-500" />
-                      <span>Major</span>
-                    </span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>Minor</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Significant</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>Major</span></span>
                   </div>
                 )}
-                {/* Travel advisory levels */}
                 {heroView === 'travel' && (
                   <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-blue-500" />
-                      <span>Level 1</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                      <span>Level 2</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-orange-500" />
-                      <span>Level 3</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-red-500" />
-                      <span>Level 4</span>
-                    </span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" /><span>Level 1</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>Level 2</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Level 3</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>Level 4</span></span>
                   </div>
                 )}
-                {/* Fire intensity */}
                 {heroView === 'fires' && (
                   <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                      <span>Low</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-orange-500" />
-                      <span>Moderate</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-red-500" />
-                      <span>High</span>
-                    </span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>Low</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Moderate</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>High</span></span>
                   </div>
                 )}
               </div>
