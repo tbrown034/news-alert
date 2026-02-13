@@ -1053,8 +1053,8 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 if (!data) return null;
 
                 const { count, baseline, multiplier, level } = data;
-                // Scale: bar represents 0 to max(5x baseline, actual count)
-                const maxScale = Math.max(5 * baseline, count, baseline);
+                // Scale: 6x baseline gives room to show critical (5x) marker visibly
+                const maxScale = Math.max(6 * baseline, count * 1.1, baseline);
                 const fillPct = Math.min((count / maxScale) * 100, 100);
                 const baselinePct = (baseline / maxScale) * 100;
                 const elevatedPct = ((2.5 * baseline) / maxScale) * 100;

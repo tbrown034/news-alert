@@ -290,6 +290,9 @@ export async function GET(request: Request) {
     // Apply time window filter
     filtered = filterByTimeWindow(filtered, hours);
 
+    // Snapshot the full 6h window for activity calculation BEFORE since-filtering
+    const fullWindowItems = filtered;
+
     // If 'since' param provided, only return items newer than that timestamp
     // This enables incremental updates - client fetches only new items
     let sinceCutoff: Date | null = null;
@@ -354,8 +357,8 @@ export async function GET(request: Request) {
     // Simple limit - no rebalancing, preserve chronological order
     const limited = finalFeed.slice(0, limit);
 
-    // Calculate activity levels - O(n)
-    const activity = calculateRegionActivity(filtered);
+    // Calculate activity levels from full 6h window (not since-filtered slice)
+    const activity = calculateRegionActivity(fullWindowItems);
 
     // Calculate per-source activity (surge detection)
     const sourceActivity = calculateSourceActivity(filtered);
