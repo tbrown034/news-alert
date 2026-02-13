@@ -669,22 +669,14 @@ export const NewsFeed = memo(function NewsFeed({
         )}
 
         <div className="flex flex-col gap-4 px-3 sm:px-4 pt-4 pb-3 sm:pb-4 news-feed-list">
-          {/* AI Briefing Card - appears at top of feed */}
-          {!isLoading && sortedItems.length > 0 && (() => {
-            // Build filter description for regional views
-            const filterDesc = selectedTab !== 'all'
-              ? allTabs.find(t => t.id === selectedTab)?.label || selectedTab
-              : undefined;
-
-            return (
-              <BriefingCard
-                region={selectedTab}
-                autoGenerate={selectedTab === 'all'}
-                postCount={sortedItems.length}
-                filterDescription={filterDesc}
-              />
-            );
-          })()}
+          {/* AI Briefing Card - always shows global briefing regardless of region filter */}
+          {!isLoading && sortedItems.length > 0 && (
+            <BriefingCard
+              region="all"
+              autoGenerate={true}
+              postCount={totalPosts ?? sortedItems.length}
+            />
+          )}
 
           {sortedItems.map((item, index) => (
             <div key={item.id}>
