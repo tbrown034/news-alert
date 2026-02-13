@@ -28,34 +28,43 @@ export interface TrendingKeywordsResult {
 }
 
 /**
- * Normalize a keyword for consistent counting
- * - Lowercase
- * - Trim whitespace
+ * Normalize a keyword to its canonical form for counting and dedup.
+ * Intentionally lossy — strips periods, lowercases, trims.
+ * "U.S." and "US" both become "us". That's the point.
  */
 function normalizeKeyword(keyword: string): string {
-  return keyword.toLowerCase().trim();
+  return keyword.toLowerCase().replace(/\./g, '').trim();
 }
 
 /**
- * Common abbreviations that should be all uppercase
+ * Canonical display names for normalized keywords.
+ * normalized form → display string
+ *
+ * This is the single source of truth for how a keyword looks in the UI.
+ * normalizeKeyword() decides identity, this map decides presentation.
  */
-const UPPERCASE_ABBREVIATIONS = new Set([
-  'us', 'eu', 'uk', 'un', 'nato', 'who', 'fbi', 'cia', 'doj', 'dhs',
-  'ice', 'nsa', 'cdc', 'fda', 'epa', 'sec', 'ftc', 'dod', 'nyc', 'la',
-  'dc', 'uae', 'isis', 'idf', 'hamas', 'cnn', 'bbc', 'nyt', 'wsj', 'ap',
-  'gop', 'dnc', 'rnc', 'scotus', 'potus', 'flotus', 'opec', 'imf', 'wto',
-]);
+const DISPLAY_NAMES: Record<string, string> = {
+  'us': 'U.S.', 'eu': 'EU', 'uk': 'UK', 'un': 'UN',
+  'nato': 'NATO', 'who': 'WHO', 'fbi': 'FBI', 'cia': 'CIA',
+  'doj': 'DOJ', 'dhs': 'DHS', 'ice': 'ICE', 'nsa': 'NSA',
+  'cdc': 'CDC', 'fda': 'FDA', 'epa': 'EPA', 'sec': 'SEC',
+  'ftc': 'FTC', 'dod': 'DOD', 'nyc': 'NYC', 'la': 'LA',
+  'dc': 'DC', 'uae': 'UAE', 'isis': 'ISIS', 'idf': 'IDF',
+  'hamas': 'Hamas', 'cnn': 'CNN', 'bbc': 'BBC', 'nyt': 'NYT',
+  'wsj': 'WSJ', 'ap': 'AP', 'gop': 'GOP', 'dnc': 'DNC',
+  'rnc': 'RNC', 'scotus': 'SCOTUS', 'potus': 'POTUS',
+  'flotus': 'FLOTUS', 'opec': 'OPEC', 'imf': 'IMF', 'wto': 'WTO',
+  'cbp': 'CBP', 'dea': 'DEA', 'atf': 'ATF', 'nypd': 'NYPD',
+};
 
 /**
- * Format a keyword for display with proper casing
+ * Format a keyword for display.
+ * Calls normalizeKeyword() — never re-derives normalization.
  */
 function formatKeywordDisplay(keyword: string): string {
-  const lower = keyword.toLowerCase();
-  if (UPPERCASE_ABBREVIATIONS.has(lower)) {
-    return keyword.toUpperCase();
-  }
-  // Default: capitalize first letter
-  return keyword.charAt(0).toUpperCase() + keyword.slice(1).toLowerCase();
+  const normalized = normalizeKeyword(keyword);
+  return DISPLAY_NAMES[normalized]
+    ?? keyword.charAt(0).toUpperCase() + keyword.slice(1).toLowerCase();
 }
 
 /**
@@ -81,7 +90,7 @@ export function extractKeywordsFromItem(item: NewsItem): string[] {
 
 /**
  * Count keyword occurrences across all items
- * Preserves original casing from first occurrence
+ * Display names come from DISPLAY_NAMES map, with title-case fallback
  */
 export function countKeywords(
   items: NewsItem[]

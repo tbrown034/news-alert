@@ -58,7 +58,7 @@ async function measureBlueskySource(source: any): Promise<MeasuredBaseline | nul
 
   try {
     while (!reachedCutoff) {
-      const url = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${handle}&limit=100${cursor ? `&cursor=${cursor}` : ''}`;
+      const url = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${handle}&limit=100&filter=posts_no_replies${cursor ? `&cursor=${cursor}` : ''}`;
       const response = await fetch(url);
 
       if (!response.ok) {
