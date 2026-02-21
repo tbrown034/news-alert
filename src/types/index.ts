@@ -147,25 +147,3 @@ export interface NewsItem {
   };
 }
 
-// =============================================================================
-// REGIONAL SURGE DETECTION
-// =============================================================================
-// When multiple sources for a region are posting above baseline
-
-export interface RegionalSurge {
-  region: WatchpointId;
-  anomalousSources: number;     // How many sources are above baseline
-  totalActiveSources: number;   // How many sources are posting at all
-  surgeRatio: number;           // anomalous / total
-  isSurging: boolean;           // True if significant surge detected
-  topContributors: string[];    // Source names driving the surge
-}
-
-// Activity level for watchpoints
-export interface ActivityData {
-  watchpointId: WatchpointId;
-  currentLevel: number; // 0-100
-  baselineLevel: number; // 0-100
-  trend: 'rising' | 'falling' | 'stable';
-  lastUpdated: Date;
-}

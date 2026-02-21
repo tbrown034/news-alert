@@ -225,20 +225,14 @@ This script paginates 30 days of post history via each platform's API (Bluesky x
 | `audit-sources.ts` | Validate all sources, find 404s/inactive |
 | `generate-clean-sources.ts` | Generate tiered source file |
 | `test-bluesky-accounts.ts` | Performance diagnostics |
+| `test-region-detection.ts` | 90-test suite for region detection |
+| `telegram-auth.ts` | Telegram session re-authentication |
+| `test-telegram-session.ts` | Verify Telegram session works |
+| `test-ai-models.ts` | AI model comparison (Sonnet vs Haiku) |
+| `test-tiers.ts` | Source tier testing |
 
 ### Archive (One-time use)
-| Script | Purpose |
-|--------|---------|
-| `comprehensive-source-search.js` | Bluesky account discovery |
-| `search-bluesky-accounts.js` | Keyword search |
-| `verify-*.js` | Source verification |
-| `filter-bluecrawler.js` | Filter scraped accounts |
-
-### Deprecated (Remove)
-| Script | Reason |
-|--------|--------|
-| `telegram_auth*.ts` | Telegram API abandoned for scraping |
-| `telegram_*.py` | Python scripts not used |
+All one-time scripts live in `scripts/archive/`. Check there before creating new utility scripts.
 
 ---
 
@@ -262,8 +256,7 @@ This script paginates 30 days of post history via each platform's API (Bluesky x
 
 ## Known Technical Debt
 
-1. **Duplicate source files** - `sources.ts` (3,357 lines) mostly dead, only helper functions used
-2. **Unused telegram code** - `telegram-reader.ts`, `telegram.ts` not used
+No major debt items. Last cleanup: Feb 2026 (removed dead components, unused exports, archived one-off scripts).
 
 ---
 
@@ -278,7 +271,7 @@ The AI briefing generates a situation summary using Claude. Located in `src/lib/
 3. **Synthesize** - Claude generates overview + 2-3 key developments
 
 ### Model Tiers
-- **Quick** - Claude Haiku 3.5 (fast, economical)
+- **Quick** - Claude Haiku 4.5 (fast, economical)
 - **Advanced** - Claude Sonnet 4 (balanced)
 - **Pro** - Claude Opus 4.5 (most capable)
 

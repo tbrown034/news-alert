@@ -114,18 +114,3 @@ export async function resolveEntity(
   }
 }
 
-/** Get entity cache size (for diagnostics) */
-export function getEntityCacheSize(): number {
-  return entityCache.size;
-}
-
-/** Disconnect the shared client (for cleanup) */
-export async function disconnectTelegram(): Promise<void> {
-  if (client?.connected) {
-    try {
-      await client.disconnect();
-    } catch {
-      // Ignore disconnect errors
-    }
-  }
-}

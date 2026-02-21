@@ -372,11 +372,3 @@ export function canRequestSummary(region: WatchpointId): boolean {
   return Date.now() - lastTime >= MIN_REQUEST_INTERVAL_MS;
 }
 
-export function clearSummaryCache(region?: WatchpointId): void {
-  const cache = getCache();
-  if (region) {
-    cache.data.delete(region);
-  } else {
-    cache.data.clear();
-  }
-}

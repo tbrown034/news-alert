@@ -15,14 +15,14 @@ import { WatchpointId } from '@/types';
 // TYPES
 // =============================================================================
 
-export interface RegionMatch {
+interface RegionMatch {
   region: WatchpointId;
   score: number;
   matchedKeywords: string[];
   confidence: 'high' | 'medium' | 'low';
 }
 
-export interface RegionDetectionResult {
+interface RegionDetectionResult {
   detectedRegion: WatchpointId | null;
   allMatches: RegionMatch[];
   usedFallback: boolean;

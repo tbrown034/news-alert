@@ -549,16 +549,6 @@ async function fetchTelegramFeed(source: Source & { feedUrl: string }): Promise<
   }
 }
 
-// Get count of cached invalid Telegram handles (for diagnostics)
-export function getInvalidTelegramCacheSize(): number {
-  return invalidTelegramCache.size;
-}
-
-// Clear invalid Telegram cache (for testing/maintenance)
-export function clearInvalidTelegramCache(): void {
-  invalidTelegramCache.clear();
-}
-
 // =============================================================================
 // MASTODON API FETCHING
 // =============================================================================
@@ -749,16 +739,6 @@ async function fetchMastodonFeed(source: Source & { feedUrl: string }): Promise<
     }
     return { items: [] };
   }
-}
-
-// Get count of cached invalid Mastodon handles (for diagnostics)
-export function getInvalidMastodonCacheSize(): number {
-  return invalidMastodonCache.size;
-}
-
-// Clear invalid Mastodon cache (for testing/maintenance)
-export function clearInvalidMastodonCache(): void {
-  invalidMastodonCache.clear();
 }
 
 // =============================================================================
@@ -1187,26 +1167,6 @@ async function fetchBlueskyFeed(source: Source & { feedUrl: string }): Promise<B
     }
     return { items: [] };
   }
-}
-
-// Get count of cached invalid handles (for diagnostics)
-export function getInvalidHandleCacheSize(): number {
-  return invalidHandleCache.size;
-}
-
-// Get count of timed-out handles (for diagnostics)
-export function getTimeoutCacheSize(): number {
-  return timeoutCache.size;
-}
-
-// Clear invalid handle cache (for testing/maintenance)
-export function clearInvalidHandleCache(): void {
-  invalidHandleCache.clear();
-}
-
-// Clear timeout cache (for testing/maintenance)
-export function clearTimeoutCache(): void {
-  timeoutCache.clear();
 }
 
 // Extract domain from URL for favicon generation

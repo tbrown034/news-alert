@@ -11,7 +11,7 @@ import { detectRegion } from './regionDetection';
 /**
  * Region classification result with both source and detected regions
  */
-export interface RegionClassification {
+interface RegionClassification {
   region: WatchpointId;           // Effective region to use
   sourceRegion?: WatchpointId;    // Original source region (only set if different from detected)
 }

@@ -8849,18 +8849,7 @@ export const allTieredSources: TieredSource[] = [
   ...tier3Sources,
 ];
 
-export function getSourcesByTier(tier: FetchTier): TieredSource[] {
-  switch (tier) {
-    case 'T1': return tier1Sources;
-    case 'T2': return tier2Sources;
-    case 'T3': return tier3Sources;
-  }
-}
-
 export function getSourcesByRegion(region: WatchpointId): TieredSource[] {
   if (region === 'all') return allTieredSources;
   return allTieredSources.filter(s => s.region === region || s.region === 'all');
 }
-
-// Legacy export for compatibility
-export const allSources = allTieredSources;
