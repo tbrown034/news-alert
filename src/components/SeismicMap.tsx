@@ -273,7 +273,7 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
         <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="text-sm text-slate-700 dark:text-slate-200 bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-lg font-medium shadow-sm border border-slate-200 dark:border-slate-700">
-              {filteredEarthquakes.length} quakes <span className="text-slate-400 dark:text-slate-500">(24h)</span>
+              {filteredEarthquakes.length} quakes {filterMode === 'major' ? 'M5+' : 'M4+'} <span className="text-slate-400 dark:text-slate-500">(24h)</span>
             </div>
             <div className="flex bg-white/90 dark:bg-slate-800/90 rounded-lg overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700">
               <button
@@ -384,17 +384,6 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
                 {selected.tsunami && (
                   <span className="px-2 py-0.5 text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-md">
                     TSUNAMI
-                  </span>
-                )}
-                {selected.alert && (
-                  <span
-                    className="px-2 py-0.5 text-xs font-semibold rounded-md"
-                    style={{
-                      backgroundColor: `${getAlertColor(selected.alert)}15`,
-                      color: getAlertColor(selected.alert),
-                    }}
-                  >
-                    {selected.alert.toUpperCase()} ALERT
                   </span>
                 )}
               </div>

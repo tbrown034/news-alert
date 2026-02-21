@@ -945,10 +945,10 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                           ? 'text-orange-600 dark:text-orange-400'
                           : 'text-slate-700 dark:text-slate-300'
                     }`}>
-                      Feed activity {hasCritical ? 'surging' : hasElevated ? 'elevated' : 'normal'}
+                      Feed Activity: {hasCritical ? 'Surging Across Regions' : hasElevated ? 'Above Typical Levels' : 'Within Normal Range'}
                     </span>
                     {!hasElevated && (
-                      <span className="text-slate-500 dark:text-slate-500 text-xs">(globally)</span>
+                      <span className="text-slate-500 dark:text-slate-500 text-xs">for this time of day</span>
                     )}
                   </div>
 
@@ -968,7 +968,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isCritical ? 'animate-pulse' : ''}`} />
                         <span className={`text-xs ${color} font-medium`}>
-                          {regionNames[regionId] || regionId} {isCritical ? 'surge' : pctText}
+                          {regionNames[regionId] || regionId} {pctText} Vs Typical
                         </span>
                       </button>
                     );
@@ -1025,7 +1025,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               <div>
                 <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">Feed Activity Monitor</div>
                 <div className="text-2xs text-slate-400 dark:text-slate-500 mt-0.5">
-                  Posts in the last {hoursWindow}h vs time-adjusted baseline
+                  How many posts we collected vs how many we&apos;d expect right now
                 </div>
               </div>
               <div className="flex items-center gap-3 text-2xs text-slate-400 dark:text-slate-500">
@@ -1097,7 +1097,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                       <div
                         className="absolute top-0 bottom-0 w-px bg-slate-500 dark:bg-slate-400 z-10"
                         style={{ left: `${baselinePct}%` }}
-                        title={`Baseline: ${baseline} posts`}
+                        title={`Expected: ${baseline} posts for this time of day`}
                       >
                         <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-slate-500 dark:bg-slate-400" />
                       </div>
@@ -1107,7 +1107,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                         <div
                           className="absolute top-0 bottom-0 w-px bg-amber-500/40 z-10"
                           style={{ left: `${elevatedPct}%` }}
-                          title="Elevated threshold (2.5x)"
+                          title="Elevated: 2.5× expected volume"
                         />
                       )}
 
@@ -1116,15 +1116,15 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                         <div
                           className="absolute top-0 bottom-0 w-px bg-red-500/40 z-10"
                           style={{ left: `${criticalPct}%` }}
-                          title="Critical threshold (5x)"
+                          title="Critical: 5× expected volume"
                         />
                       )}
                     </div>
 
                     {/* Numeric readout */}
-                    <div className="w-24 sm:w-28 flex items-center gap-1.5 shrink-0">
+                    <div className="w-28 sm:w-36 flex items-center gap-1 shrink-0">
                       <span className={`text-2xs font-mono tabular-nums ${labelColor}`}>
-                        {count}/{baseline}
+                        {count} <span className="font-sans text-slate-400 dark:text-slate-500">posts</span> / {baseline} <span className="font-sans text-slate-400 dark:text-slate-500">exp</span>
                       </span>
                       <span className={`text-2xs font-mono tabular-nums ${
                         excluded ? 'text-slate-400 dark:text-slate-500' :
@@ -1133,7 +1133,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                         multiplier < 0.5 ? 'text-blue-400' :
                         'text-slate-500 dark:text-slate-400'
                       }`}>
-                        {multiplier.toFixed(1)}x
+                        ({multiplier.toFixed(1)}x)
                       </span>
                     </div>
                   </div>
@@ -1146,7 +1146,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   {/* Divider before excluded regions */}
                   <div className="border-t border-dashed border-slate-200 dark:border-slate-700/50 my-1" />
                   <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-2xs text-slate-400 dark:text-slate-500 italic">Low coverage — not scored</span>
+                    <span className="text-2xs text-slate-400 dark:text-slate-500 italic">Low source coverage — activity levels not assessed</span>
                   </div>
                   {excludedRegions.map(r => renderBar(r.id, r.label, true))}
                 </div>
@@ -1164,11 +1164,11 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             <div className="pt-2 border-t border-slate-200/50 dark:border-slate-700/30">
               <div className="text-2xs text-slate-400 dark:text-slate-500 leading-relaxed">
                 <span className="font-medium text-slate-500 dark:text-slate-400">How it works:</span>{' '}
-                Each bar compares the number of posts collected in the last {hoursWindow} hours against a time-adjusted baseline
-                derived from each source&apos;s historical posting rate. The baseline shifts with time of day
-                (peak at 12-18 UTC, trough at 00-06 UTC) to match natural publishing rhythms.
-                The <span className="inline-flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-slate-500 dark:bg-slate-400 inline-block" /></span> marker shows
-                the expected baseline. Elevated triggers at 2.5x with 25+ posts; critical at 5x with 50+.
+                We track how many posts each source typically publishes per day, then estimate how many
+                we&apos;d expect in the last {hoursWindow} hours given the current time of day (sources post more during
+                US/EU business hours). The <span className="inline-flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-slate-500 dark:bg-slate-400 inline-block" /></span> marker
+                shows that expected count. When actual posts reach 2.5× the expected count (and 25+ posts),
+                activity is elevated. At 5× (and 50+ posts), it&apos;s critical.
               </div>
             </div>
           </div>

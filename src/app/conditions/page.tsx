@@ -11,6 +11,7 @@ import {
   FireIcon,
   MapPinIcon,
   WifiIcon,
+  SignalIcon,
 } from '@heroicons/react/24/outline';
 
 // =============================================================================
@@ -100,6 +101,15 @@ interface RegionThreats {
   criticalCount: number;
 }
 
+interface RegionActivity {
+  level: 'critical' | 'elevated' | 'normal';
+  count: number;
+  baseline: number;
+  multiplier: number;
+  vsNormal: 'above' | 'below' | 'normal';
+  percentChange: number;
+}
+
 interface ConditionsData {
   byRegion: Record<string, RegionThreats>;
   summary: {
@@ -168,6 +178,7 @@ const severityOrder = { critical: 0, severe: 1, moderate: 2, minor: 3 };
 
 export default function ConditionsPage() {
   const [data, setData] = useState<ConditionsData | null>(null);
+  const [activityData, setActivityData] = useState<Record<string, RegionActivity> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -176,10 +187,18 @@ export default function ConditionsPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/conditions');
-      if (!response.ok) throw new Error('Failed to fetch conditions');
-      const result = await response.json();
+      const [conditionsRes, newsRes] = await Promise.all([
+        fetch('/api/conditions'),
+        fetch('/api/news?limit=1').catch(() => null),
+      ]);
+      if (!conditionsRes.ok) throw new Error('Failed to fetch conditions');
+      const result = await conditionsRes.json();
       setData(result);
+
+      if (newsRes?.ok) {
+        const newsData = await newsRes.json();
+        if (newsData.activity) setActivityData(newsData.activity);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -310,6 +329,7 @@ export default function ConditionsPage() {
                     key={region.id}
                     name={region.name}
                     data={rd}
+                    activity={activityData?.[region.id] ?? null}
                     formatTimeAgo={formatTimeAgo}
                   />
                 );
@@ -329,15 +349,42 @@ export default function ConditionsPage() {
 interface RegionCardProps {
   name: string;
   data: RegionThreats;
+  activity: RegionActivity | null;
   formatTimeAgo: (dateStr: string) => string;
 }
 
-function RegionCard({ name, data, formatTimeAgo }: RegionCardProps) {
-  const isEmpty = data.totalCount === 0;
+function RegionCard({ name, data, activity, formatTimeAgo }: RegionCardProps) {
+  const isEmpty = data.totalCount === 0 && (!activity || activity.level === 'normal');
 
   const categories = (['seismic', 'weather', 'fires', 'travel', 'outages'] as CategoryKey[]).filter(
     (cat) => data[cat].length > 0,
   );
+
+  const activityColor = activity?.level === 'critical'
+    ? 'text-red-400'
+    : activity?.level === 'elevated'
+      ? 'text-amber-400'
+      : 'text-emerald-400';
+
+  const activityBadgeColor = activity?.level === 'critical'
+    ? 'bg-red-500/20 text-red-400'
+    : activity?.level === 'elevated'
+      ? 'bg-amber-500/20 text-amber-400'
+      : 'bg-emerald-500/20 text-emerald-400';
+
+  const activityText = activity
+    ? activity.level === 'normal'
+      ? 'Posting at a typical pace for this time of day'
+      : `${activity.count} posts collected vs ${activity.baseline} expected — +${activity.percentChange}% Vs Typical`
+    : null;
+
+  const activityBadgeText = activity
+    ? activity.level === 'critical'
+      ? `+${activity.percentChange}%`
+      : activity.level === 'elevated'
+        ? `+${activity.percentChange}%`
+        : 'Typical'
+    : null;
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
@@ -351,9 +398,6 @@ function RegionCard({ name, data, formatTimeAgo }: RegionCardProps) {
             </span>
           )}
         </div>
-        <span className="text-xs text-slate-500">
-          {data.totalCount} {data.totalCount === 1 ? 'event' : 'events'}
-        </span>
       </div>
 
       {isEmpty ? (
@@ -362,6 +406,22 @@ function RegionCard({ name, data, formatTimeAgo }: RegionCardProps) {
         </div>
       ) : (
         <div className="border-t border-slate-800">
+          {/* Feed Activity section */}
+          {activity && (
+            <div className="px-4 py-2.5 border-b border-slate-800/50">
+              <div className="flex items-center gap-2 mb-2">
+                <SignalIcon className={`w-4 h-4 ${activityColor}`} />
+                <span className={`text-xs font-medium ${activityColor}`}>Feed Activity</span>
+                <span className={`px-1.5 py-0.5 text-[10px] font-semibold uppercase rounded ${activityBadgeColor}`}>
+                  {activityBadgeText}
+                </span>
+              </div>
+              <div className="ml-6">
+                <span className="text-sm text-slate-300">{activityText}</span>
+              </div>
+            </div>
+          )}
+
           {categories.map((cat) => (
             <CategorySection
               key={cat}
