@@ -45,9 +45,9 @@ export interface SituationBriefing {
 
 // Model pricing per 1M tokens
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-  'claude-opus-4-5-20251101': { input: 15.0, output: 75.0 },
+  'claude-opus-4-5-20250131': { input: 15.0, output: 75.0 },
   'claude-sonnet-4-20250514': { input: 3.0, output: 15.0 },
-  'claude-3-5-haiku-20241022': { input: 0.80, output: 4.0 },
+  'claude-haiku-4-5-20251001': { input: 1.0, output: 5.0 },
 };
 
 // =============================================================================
@@ -178,7 +178,7 @@ export async function generateSummary(
   posts: NewsItem[],
   region: WatchpointId,
   timeWindowHours: number = 6,
-  model: string = 'claude-3-5-haiku-20241022'
+  model: string = 'claude-haiku-4-5-20251001'
 ): Promise<SituationBriefing> {
   const startTime = Date.now();
 

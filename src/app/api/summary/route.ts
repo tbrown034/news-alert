@@ -13,9 +13,9 @@ const VALID_REGIONS: WatchpointId[] = ['all', 'us', 'latam', 'middle-east', 'eur
 // Model tiers
 type ModelTier = 'quick' | 'advanced' | 'pro';
 const MODEL_MAP: Record<ModelTier, string> = {
-  quick: 'claude-3-5-haiku-20241022',
+  quick: 'claude-haiku-4-5-20251001',
   advanced: 'claude-sonnet-4-20250514',
-  pro: 'claude-opus-4-5-20251101',
+  pro: 'claude-opus-4-5-20250131',
 };
 
 // Admin emails that can use Pro tier
