@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
@@ -9,8 +9,14 @@ import {
   ExclamationTriangleIcon,
   NewspaperIcon,
 } from '@heroicons/react/24/outline';
-import { WatchpointId, NewsItem } from '@/types';
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from '@heroicons/react/20/solid';
+import { WatchpointId, NewsItem, Watchpoint } from '@/types';
+import type { NewsDigest, DigestStory } from '@/types';
 import { PlatformIcon, platformColors } from '@/components/PlatformIcon';
+import { WorldMap } from '@/components/WorldMap';
 
 // =============================================================================
 // TYPES
@@ -55,6 +61,18 @@ const REGIONS: { id: WatchpointId; label: string }[] = [
 
 const PAGE_SIZE = 50;
 const REFRESH_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+
+// Stub watchpoints for WorldMap (no activity data needed)
+const WATCHPOINTS: Watchpoint[] = REGIONS
+  .filter(r => r.id !== 'all')
+  .map((r, i) => ({
+    id: r.id,
+    name: r.label,
+    shortName: r.label,
+    priority: i,
+    activityLevel: 'normal' as const,
+    color: '#22c55e',
+  }));
 
 // =============================================================================
 // HELPERS
@@ -143,6 +161,7 @@ export default function NewsPage() {
   const [displayLimit, setDisplayLimit] = useState(PAGE_SIZE);
   const [totalSources, setTotalSources] = useState(0);
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
+  const [digest, setDigest] = useState<NewsDigest | null>(null);
   const isInitialFetch = useRef(true);
 
   const fetchNews = useCallback(async (isBackground = false) => {
@@ -196,6 +215,14 @@ export default function NewsPage() {
     return () => clearInterval(timer);
   }, [fetchNews]);
 
+  // Fetch digest (non-blocking, independent of article loading)
+  useEffect(() => {
+    fetch('/api/digest')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.digest) setDigest(data.digest); })
+      .catch(() => {}); // silent fail — digest is supplementary
+  }, []);
+
   const showPending = () => {
     setArticles(prev => {
       const existingIds = new Set(prev.map(a => a.id));
@@ -206,6 +233,23 @@ export default function NewsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Compute region counts from all articles (not filtered)
+  const regionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const a of articles) {
+      const region = a._sourceRegion || a.region;
+      if (region && region !== 'all' && region !== 'seismic') {
+        counts[region] = (counts[region] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [articles]);
+
+  const handleRegionSelect = useCallback((id: WatchpointId) => {
+    setSelectedRegion(id);
+    setDisplayLimit(PAGE_SIZE);
+  }, []);
+
   const filtered = selectedRegion === 'all'
     ? articles
     : articles.filter(a => a._sourceRegion === selectedRegion || a.region === selectedRegion);
@@ -213,14 +257,18 @@ export default function NewsPage() {
   const visible = filtered.slice(0, displayLimit);
   const hasMore = filtered.length > displayLimit;
 
-  // Group articles by time bucket for section dividers
-  let lastBucket = '';
+  // Split hero from rest
+  const heroArticle = visible.length > 0 ? visible[0] : null;
+  const restArticles = visible.slice(1);
+
+  // Group rest articles by time bucket for section dividers
+  let lastBucket = heroArticle ? getTimeBucket(heroArticle.timestamp) : '';
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[var(--background)]/90 backdrop-blur-md border-b border-[var(--border-light)]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <Link
               href="/"
@@ -250,36 +298,51 @@ export default function NewsPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-5 pb-12">
-        {/* Region tabs + stats */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-          <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
-            {REGIONS.map(r => (
-              <button
-                key={r.id}
-                onClick={() => { setSelectedRegion(r.id); setDisplayLimit(PAGE_SIZE); }}
-                className={`px-3 py-1.5 text-[13px] font-medium rounded-lg whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                  selectedRegion === r.id
-                    ? 'bg-[var(--foreground)] text-[var(--background)] shadow-sm'
-                    : 'text-[var(--foreground-light)] hover:text-[var(--foreground-muted)] hover:bg-[var(--foreground)]/[0.06]'
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
+      {/* Map strip */}
+      {!isLoading && articles.length > 0 && (
+        <div className="border-b border-[var(--border-light)]">
+          <div className="max-w-5xl mx-auto overflow-hidden h-[160px] sm:h-[180px]">
+            <WorldMap
+              watchpoints={WATCHPOINTS}
+              selected={selectedRegion}
+              onSelect={handleRegionSelect}
+              regionCounts={regionCounts}
+              showTimes={false}
+              showZoomControls={false}
+            />
+          </div>
+        </div>
+      )}
+
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-5 pb-12">
+        {/* Filter bar + stats */}
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <div className="flex items-center gap-2 text-[13px]">
+            {selectedRegion !== 'all' ? (
+              <>
+                <span className="text-[var(--foreground-muted)] font-medium">
+                  {REGIONS.find(r => r.id === selectedRegion)?.label}
+                </span>
+                <button
+                  onClick={() => handleRegionSelect('all')}
+                  className="text-[var(--foreground-light)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
+                >
+                  &times; Clear
+                </button>
+              </>
+            ) : (
+              <span className="text-[var(--foreground-light)]">All regions</span>
+            )}
           </div>
 
           {fetchedAt && !isLoading && (
-            <div className="flex items-center gap-3 text-[12px] text-[var(--foreground-light)] shrink-0 px-0.5">
+            <div className="flex items-center gap-3 text-[12px] text-[var(--foreground-light)] shrink-0">
               <span className="flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-[var(--foreground-light)]" />
                 <span className="text-[var(--foreground-muted)] tabular-nums">{filtered.length}</span> articles
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-1 h-1 rounded-full bg-[var(--foreground-light)]" />
                 <span className="text-[var(--foreground-muted)] tabular-nums">{totalSources}</span> sources
               </span>
-              <span className="text-[var(--foreground-light)]">{formatTimeAgo(fetchedAt)}</span>
             </div>
           )}
         </div>
@@ -340,18 +403,26 @@ export default function NewsPage() {
           </div>
         )}
 
-        {/* Articles with time bucket dividers */}
-        {visible.length > 0 && (
-          <div className="space-y-2">
-            {visible.map((article, index) => {
+        {/* AI Digest */}
+        {digest && <DigestCard digest={digest} />}
+
+        {/* Hero article */}
+        {heroArticle && (
+          <HeroCard article={heroArticle} />
+        )}
+
+        {/* Article grid with time bucket dividers */}
+        {restArticles.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+            {restArticles.map((article, index) => {
               const bucket = getTimeBucket(article.timestamp);
               const showDivider = bucket !== lastBucket;
               lastBucket = bucket;
 
               return (
-                <div key={article.id}>
+                <div key={article.id} className="contents">
                   {showDivider && index > 0 && (
-                    <div className="flex items-center gap-3 py-3 mt-1">
+                    <div className="col-span-full flex items-center gap-3 py-3 mt-1">
                       <div className="h-px flex-1 bg-gradient-to-r from-[var(--border-light)] to-transparent" />
                       <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--foreground-light)]">
                         {BUCKET_LABELS[bucket] || bucket}
@@ -359,7 +430,7 @@ export default function NewsPage() {
                       <div className="h-px flex-1 bg-gradient-to-l from-[var(--border-light)] to-transparent" />
                     </div>
                   )}
-                  <ArticleCard article={article} index={index} />
+                  <ArticleCard article={article} index={index + 1} />
                 </div>
               );
             })}
@@ -392,7 +463,90 @@ export default function NewsPage() {
 }
 
 // =============================================================================
-// ARTICLE CARD
+// HERO CARD (first article gets prominent treatment)
+// =============================================================================
+
+const regionAccentColors: Record<string, string> = {
+  'us': 'border-l-indigo-500',
+  'latam': 'border-l-emerald-500',
+  'middle-east': 'border-l-amber-500',
+  'europe-russia': 'border-l-sky-500',
+  'asia': 'border-l-rose-500',
+  'africa': 'border-l-orange-500',
+};
+
+function HeroCard({ article }: { article: ArticleWithSource }) {
+  const title = stripHtml(article.title || article.content?.slice(0, 120) || 'Untitled');
+  const rawSnippet = article.content && article.content !== article.title
+    ? stripHtml(article.content)
+    : null;
+  const snippet = rawSnippet && rawSnippet !== title
+    ? rawSnippet.slice(0, 220) + (rawSnippet.length > 220 ? '...' : '')
+    : null;
+  const thumb = getThumbnail(article);
+  const platform = article._sourcePlatform || 'rss';
+  const accent = regionAccentColors[article._sourceRegion] || 'border-l-slate-500';
+
+  return (
+    <a
+      href={article.url || '#'}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`block bg-[var(--background-card)] border border-[var(--border-card)] border-l-[3px] ${accent} rounded-xl hover:border-[var(--border)] hover:shadow-[0_4px_20px_-6px_rgba(0,0,0,0.3)] transition-all duration-200 group overflow-hidden nw-card-enter`}
+    >
+      {/* Thumbnail banner */}
+      {thumb && (
+        <div className="w-full h-36 sm:h-44 overflow-hidden bg-[var(--background-secondary)]">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={thumb}
+            alt=""
+            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+            loading="eager"
+            onError={(e) => { (e.target as HTMLElement).parentElement!.style.display = 'none'; }}
+          />
+        </div>
+      )}
+
+      <div className="p-4 sm:p-5">
+        {/* Source row */}
+        <div className="flex items-center gap-2 mb-2">
+          <span className={`flex-shrink-0 ${platformColors[platform] || platformColors.rss}`}>
+            <PlatformIcon platform={platform} className="w-3.5 h-3.5" />
+          </span>
+          <span className="text-[13px] font-semibold text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] transition-colors">
+            {article._sourceName}
+          </span>
+          <span className="text-[12px] text-[var(--foreground-light)] tabular-nums">
+            {formatTimeAgo(article.timestamp)}
+          </span>
+          <RegionBadge region={article._sourceRegion} />
+        </div>
+
+        {/* Headline */}
+        <h2 className="text-lg sm:text-xl font-serif font-semibold text-[var(--foreground)] leading-snug group-hover:text-[var(--foreground)] transition-colors line-clamp-3">
+          {title}
+        </h2>
+
+        {/* Snippet */}
+        {snippet && (
+          <p className="mt-2 text-[13px] sm:text-sm text-[var(--foreground-light)] leading-relaxed line-clamp-3">
+            {snippet}
+          </p>
+        )}
+
+        {/* Read link */}
+        <div className="mt-3 flex items-center gap-1 text-[12px] text-[var(--foreground-light)] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
+          <span>Read full article</span>
+        </div>
+      </div>
+    </a>
+  );
+}
+
+// =============================================================================
+// ARTICLE CARD (grid items with region accent)
 // =============================================================================
 
 function ArticleCard({ article, index }: { article: ArticleWithSource; index: number }) {
@@ -406,13 +560,14 @@ function ArticleCard({ article, index }: { article: ArticleWithSource; index: nu
   const thumb = getThumbnail(article);
   const platform = article._sourcePlatform || 'rss';
   const isRecent = Date.now() - new Date(article.timestamp).getTime() < 5 * 60 * 1000;
+  const accent = regionAccentColors[article._sourceRegion] || 'border-l-slate-500';
 
   return (
     <a
       href={article.url || '#'}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex gap-4 bg-[var(--background-card)] border border-[var(--border-card)] rounded-xl hover:border-[var(--border)] hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.2)] transition-all duration-200 group p-4 sm:px-5 nw-card-enter"
+      className={`flex gap-4 h-full bg-[var(--background-card)] border border-[var(--border-card)] border-l-[3px] ${accent} rounded-xl hover:border-[var(--border)] hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.2)] transition-all duration-200 group p-4 sm:px-5 nw-card-enter`}
       style={{ animationDelay: `${Math.min(index, 15) * 30}ms` }}
     >
       {/* Left accent for very recent articles */}
@@ -441,18 +596,12 @@ function ArticleCard({ article, index }: { article: ArticleWithSource; index: nu
           {title}
         </h2>
 
-        {/* Snippet */}
+        {/* Snippet - single line in grid */}
         {snippet && (
-          <p className="mt-1 text-[13px] text-[var(--foreground-light)] leading-relaxed line-clamp-2">
+          <p className="mt-1 text-[13px] text-[var(--foreground-light)] leading-relaxed line-clamp-1">
             {snippet}
           </p>
         )}
-
-        {/* External link indicator */}
-        <div className="mt-2 flex items-center gap-1 text-[11px] text-[var(--foreground-light)] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <ArrowTopRightOnSquareIcon className="w-3 h-3" />
-          <span>Read article</span>
-        </div>
       </div>
 
       {/* Thumbnail */}
@@ -500,5 +649,175 @@ function RegionBadge({ region }: { region: WatchpointId }) {
     <span className={`ml-auto text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border ${regionBadgeStyles[region] || 'text-[var(--foreground-light)] bg-[var(--foreground)]/5 border-[var(--border-light)]'}`}>
       {regionLabels[region] || region}
     </span>
+  );
+}
+
+// =============================================================================
+// DIGEST CARD (AI-generated editorial digest, above the fold)
+// =============================================================================
+
+function DigestCard({ digest }: { digest: NewsDigest }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [expandedStories, setExpandedStories] = useState<Set<number>>(new Set());
+
+  const toggleStory = (index: number) => {
+    setExpandedStories(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  const highStories = digest.stories.filter(s => s.importance === 'high');
+  const mediumStories = digest.stories.filter(s => s.importance === 'medium');
+  const sortedStories = [...highStories, ...mediumStories];
+
+  return (
+    <div className="mb-5 bg-[var(--background-card)] border border-[var(--border-card)] rounded-xl overflow-hidden">
+      {/* Top accent bar */}
+      <div className="h-[2px] bg-gradient-to-r from-amber-500/80 via-amber-500/40 to-transparent" />
+
+      <div className="p-4 sm:p-6">
+        {/* Header row: label + collapse toggle */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-500/70">
+              AI Digest
+            </span>
+            <span className="text-[10px] text-[var(--foreground-light)] font-[family-name:var(--font-geist-mono)]">
+              {formatTimeAgo(digest.createdAt)}
+            </span>
+          </div>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="flex items-center gap-1 text-[11px] text-[var(--foreground-light)] hover:text-[var(--foreground-muted)] transition-colors cursor-pointer"
+          >
+            {collapsed ? (
+              <>
+                <span>{sortedStories.length} stories</span>
+                <ChevronDownIcon className="w-3.5 h-3.5" />
+              </>
+            ) : (
+              <ChevronUpIcon className="w-3.5 h-3.5" />
+            )}
+          </button>
+        </div>
+
+        {/* Headline */}
+        <h2 className="text-xl sm:text-2xl font-serif font-bold text-[var(--foreground)] leading-tight tracking-tight">
+          {digest.headline}
+        </h2>
+
+        {/* Collapsed: just headline. Expanded: full content */}
+        {!collapsed && (
+          <>
+            {/* Summary */}
+            <p className="mt-3 text-[14px] sm:text-[15px] text-[var(--foreground-muted)] leading-relaxed">
+              {digest.summary}
+            </p>
+
+            {/* Divider */}
+            <div className="mt-5 mb-4 h-px bg-[var(--border-light)]" />
+
+            {/* Stories */}
+            <div className="space-y-3">
+              {sortedStories.map((story, i) => (
+                <DigestStoryItem
+                  key={i}
+                  story={story}
+                  index={i}
+                  expanded={expandedStories.has(i)}
+                  onToggle={() => toggleStory(i)}
+                />
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-5 pt-3 border-t border-[var(--border-light)] flex items-center gap-2 text-[11px] text-[var(--foreground-light)] font-[family-name:var(--font-geist-mono)]">
+              <span>AI Digest</span>
+              <span className="text-[var(--border)]">/</span>
+              <span>{formatTimeAgo(digest.createdAt)}</span>
+              <span className="text-[var(--border)]">/</span>
+              <span>{digest.articlesAnalyzed} articles analyzed</span>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// DIGEST STORY ITEM (individual story within the digest)
+// =============================================================================
+
+function DigestStoryItem({
+  story,
+  index,
+  expanded,
+  onToggle,
+}: {
+  story: DigestStory;
+  index: number;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const isHigh = story.importance === 'high';
+  // Truncate summary to first sentence for collapsed view
+  const firstSentence = story.summary.split(/(?<=[.!?])\s+/)[0] || story.summary;
+  const hasMore = story.summary.length > firstSentence.length;
+
+  return (
+    <div
+      className={`rounded-lg px-3.5 py-3 transition-colors ${
+        isHigh
+          ? 'bg-amber-500/[0.04] border border-amber-500/10'
+          : 'bg-[var(--background-secondary)]/40'
+      }`}
+    >
+      {/* Story title row */}
+      <div className="flex items-start gap-2">
+        {isHigh && (
+          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500/60 flex-shrink-0" />
+        )}
+        <button
+          onClick={onToggle}
+          className="flex-1 text-left cursor-pointer group"
+        >
+          <h3 className="text-[14px] sm:text-[15px] font-semibold text-[var(--foreground)] leading-snug group-hover:text-[var(--foreground)] transition-colors">
+            {story.title}
+          </h3>
+        </button>
+      </div>
+
+      {/* Summary */}
+      <div className={`mt-1.5 ${isHigh ? 'ml-3.5' : ''}`}>
+        <p className="text-[13px] text-[var(--foreground-light)] leading-relaxed">
+          {expanded ? story.summary : firstSentence}
+          {!expanded && hasMore && (
+            <button
+              onClick={onToggle}
+              className="ml-1 text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
+            >
+              ...more
+            </button>
+          )}
+        </p>
+      </div>
+
+      {/* Sources + Region */}
+      <div className={`mt-2 flex items-center gap-1.5 flex-wrap ${isHigh ? 'ml-3.5' : ''}`}>
+        {story.sources.map((source, j) => (
+          <span
+            key={j}
+            className="text-[10px] font-medium text-[var(--foreground-light)] bg-[var(--foreground)]/[0.05] px-1.5 py-0.5 rounded"
+          >
+            {source}
+          </span>
+        ))}
+        <RegionBadge region={story.region as WatchpointId} />
+      </div>
+    </div>
   );
 }

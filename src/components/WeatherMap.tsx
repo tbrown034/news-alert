@@ -72,34 +72,38 @@ function isNorthAmerica(coords: [number, number]): boolean {
   return lon >= -170 && lon <= -50 && lat >= 15 && lat <= 72;
 }
 
-// Smart filter: only headline-worthy events (would make international/national news)
+// Major filter: significant weather events (not routine advisories)
 function isNewsworthy(event: WeatherEvent): boolean {
-  // Hurricanes/typhoons are ALWAYS headline news
+  // Hurricanes/typhoons always show
   if (event.type === 'hurricane' || event.type === 'typhoon') return true;
 
-  // Tornadoes are headline news
+  // Tornadoes always show
   if (event.type === 'tornado') return true;
 
-  // Only EXTREME severity for other event types
+  // Extreme severity always shows
   if (event.severity === 'extreme') return true;
 
-  // Wildfires: ONLY show non-US fires (US has routine fires year-round)
-  if (event.type === 'wildfire') {
-    return !isNorthAmerica(event.coordinates);
-  }
-
-  // Floods: only from GDACS (international) or extreme
-  if (event.type === 'flood') {
-    return event.source === 'GDACS';
-  }
-
-  // Storms: skip most - only named tropical systems make headlines
+  // Named tropical systems
   if (event.type === 'storm') {
     const name = event.name.toLowerCase();
-    return name.includes('tropical') || name.includes('cyclone');
+    if (name.includes('tropical') || name.includes('cyclone')) return true;
   }
 
-  // Skip routine weather advisories
+  // NWS severe warnings (not watches/advisories/red flags) — these are active events
+  if (event.source === 'NWS' && event.severity === 'severe') {
+    const name = event.name.toLowerCase();
+    if (name.includes('warning') && !name.includes('red flag')) return true;
+  }
+
+  // GDACS events (international disasters — already filtered to significant)
+  if (event.source === 'GDACS') return true;
+
+  // EONET actual wildfires (not prescribed burns)
+  if (event.source === 'NASA EONET' && event.type === 'wildfire') {
+    const name = event.name.toLowerCase();
+    return name.includes('wildfire') && !name.includes('prescribed') && !name.includes(' rx ');
+  }
+
   return false;
 }
 
@@ -349,7 +353,7 @@ function WeatherMapComponent({ onEventSelect, focusOnId }: WeatherMapProps) {
         {/* Stats badge with filter toggle */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
           <div className="text-sm text-gray-300 bg-black/60 px-3 py-2 rounded-lg font-medium">
-            {filteredEvents.length} active alerts
+            {filteredEvents.length} alert{filteredEvents.length !== 1 ? 's' : ''}
           </div>
           <div className="flex bg-black/60 rounded-lg overflow-hidden">
             <button

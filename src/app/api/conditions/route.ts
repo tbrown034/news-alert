@@ -64,7 +64,14 @@ interface OutageThreat extends BaseThreat {
   percentDown: number;
 }
 
-type Threat = SeismicThreat | WeatherThreat | FireThreat | TravelThreat | OutageThreat;
+interface TFRThreat extends BaseThreat {
+  type: 'tfr';
+  tfrType: string;
+  state: string;
+  notamKey: string;
+}
+
+type Threat = SeismicThreat | WeatherThreat | FireThreat | TravelThreat | OutageThreat | TFRThreat;
 
 interface ThreatsByType {
   seismic: SeismicThreat[];
@@ -72,6 +79,7 @@ interface ThreatsByType {
   fires: FireThreat[];
   travel: TravelThreat[];
   outages: OutageThreat[];
+  tfrs: TFRThreat[];
 }
 
 interface RegionThreats {
@@ -80,6 +88,7 @@ interface RegionThreats {
   fires: FireThreat[];
   travel: TravelThreat[];
   outages: OutageThreat[];
+  tfrs: TFRThreat[];
   totalCount: number;
   criticalCount: number;
 }
@@ -97,6 +106,7 @@ interface ThreatsResponse {
       fires: number;
       travel: number;
       outages: number;
+      tfrs: number;
     };
     lastUpdated: string;
   };
@@ -386,6 +396,33 @@ async function fetchOutagesData(): Promise<OutageThreat[]> {
   }
 }
 
+async function fetchTFRData(): Promise<TFRThreat[]> {
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/api/tfr`);
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    return (data.tfrs || []).slice(0, 50).map((tfr: any) => ({
+      id: `tfr-${tfr.notamKey}`,
+      type: 'tfr' as const,
+      title: `TFR: ${tfr.title}`,
+      description: `${tfr.tfrType} — ${tfr.state}`,
+      severity: tfr.severity,
+      coordinates: tfr.coordinates as [number, number],
+      timestamp: new Date(tfr.lastModified),
+      source: 'FAA',
+      url: tfr.url,
+      region: getRegionFromCoordinates(tfr.coordinates[0], tfr.coordinates[1]),
+      tfrType: tfr.tfrType,
+      state: tfr.state,
+      notamKey: tfr.notamKey,
+    }));
+  } catch (error) {
+    console.error('Error fetching TFR data:', error);
+    return [];
+  }
+}
+
 // =============================================================================
 // MAIN HANDLER
 // =============================================================================
@@ -409,12 +446,13 @@ export async function GET() {
   }
 
   // Fetch all data sources in parallel
-  const [seismic, weather, fires, travel, outages] = await Promise.all([
+  const [seismic, weather, fires, travel, outages, tfrs] = await Promise.all([
     fetchSeismicData(),
     fetchWeatherData(),
     fetchFiresData(),
     fetchTravelData(),
     fetchOutagesData(),
+    fetchTFRData(),
   ]);
 
   // Organize threats by type
@@ -424,6 +462,7 @@ export async function GET() {
     fires,
     travel,
     outages,
+    tfrs,
   };
 
   // Initialize region structure
@@ -437,6 +476,7 @@ export async function GET() {
       fires: [],
       travel: [],
       outages: [],
+      tfrs: [],
       totalCount: 0,
       criticalCount: 0,
     };
@@ -449,6 +489,7 @@ export async function GET() {
     ...fires,
     ...travel,
     ...outages,
+    ...tfrs,
   ];
 
   for (const threat of allThreats) {
@@ -471,6 +512,9 @@ export async function GET() {
           break;
         case 'outage':
           byRegion[region].outages.push(threat as OutageThreat);
+          break;
+        case 'tfr':
+          byRegion[region].tfrs.push(threat as TFRThreat);
           break;
       }
       byRegion[region].totalCount++;
@@ -495,6 +539,9 @@ export async function GET() {
         break;
       case 'outage':
         byRegion['all'].outages.push(threat as OutageThreat);
+        break;
+      case 'tfr':
+        byRegion['all'].tfrs.push(threat as TFRThreat);
         break;
     }
     byRegion['all'].totalCount++;
@@ -521,6 +568,7 @@ export async function GET() {
         fires: fires.length,
         travel: travel.length,
         outages: outages.length,
+        tfrs: tfrs.length,
       },
       lastUpdated: new Date().toISOString(),
     },

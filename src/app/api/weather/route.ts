@@ -96,6 +96,54 @@ function mapGDACSAlertLevel(level: string): WeatherEvent['severity'] {
   }
 }
 
+// US state/territory centroids for geocoding NWS alerts from UGC codes
+// UGC format: 2-letter state + Z/C + 3-digit zone/county number
+const STATE_CENTROIDS: Record<string, [number, number]> = {
+  AL: [-86.9, 32.8], AK: [-153.5, 64.2], AZ: [-111.1, 34.0], AR: [-92.4, 34.8],
+  CA: [-119.4, 36.8], CO: [-105.8, 39.0], CT: [-72.8, 41.6], DE: [-75.5, 39.0],
+  FL: [-81.5, 27.7], GA: [-83.5, 32.2], HI: [-155.5, 19.9], ID: [-114.7, 44.1],
+  IL: [-89.4, 40.6], IN: [-86.1, 40.3], IA: [-93.1, 41.9], KS: [-98.5, 38.5],
+  KY: [-84.3, 37.7], LA: [-91.9, 30.5], ME: [-69.4, 45.3], MD: [-76.6, 39.0],
+  MA: [-71.4, 42.4], MI: [-84.5, 44.3], MN: [-94.7, 46.7], MS: [-89.4, 32.7],
+  MO: [-91.8, 38.6], MT: [-110.4, 46.9], NE: [-99.9, 41.5], NV: [-116.4, 38.8],
+  NH: [-71.6, 43.2], NJ: [-74.4, 40.1], NM: [-105.9, 34.5], NY: [-75.5, 43.0],
+  NC: [-79.0, 35.8], ND: [-101.0, 47.5], OH: [-82.9, 40.4], OK: [-97.1, 35.0],
+  OR: [-120.6, 43.8], PA: [-77.2, 41.2], RI: [-71.5, 41.6], SC: [-81.2, 34.0],
+  SD: [-99.9, 43.9], TN: [-86.6, 35.5], TX: [-99.9, 31.0], UT: [-111.1, 39.3],
+  VT: [-72.6, 44.0], VA: [-78.2, 37.8], WA: [-120.7, 47.8], WV: [-80.5, 38.6],
+  WI: [-89.6, 43.8], WY: [-107.3, 43.1], DC: [-77.0, 38.9],
+  // Territories
+  PR: [-66.6, 18.2], VI: [-64.9, 17.7], GU: [144.8, 13.4], AS: [-170.7, -14.3],
+  MP: [145.8, 15.2],
+  // Marine zones (PK = Alaska marine, PH = Hawaii marine, etc.)
+  PK: [-153.5, 57.0], PH: [-155.5, 19.9], PM: [-170.7, -14.3],
+  AM: [-65.0, 30.0], AN: [-75.0, 35.0], GM: [-90.0, 27.0], // Atlantic/Gulf marine
+  LC: [-81.0, 26.0], LE: [-82.0, 42.0], LH: [-85.0, 45.0], LM: [-87.0, 43.0],
+  LO: [-79.0, 43.5], LS: [-90.0, 47.0], SL: [-75.0, 44.0], // Great Lakes
+  PZ: [-135.0, 45.0], // Pacific marine
+};
+
+// Resolve coordinates from UGC zone codes
+function resolveNWSCoordinates(ugcCodes: string[]): [number, number] | null {
+  if (!ugcCodes || ugcCodes.length === 0) return null;
+
+  const coords: [number, number][] = [];
+  for (const ugc of ugcCodes) {
+    const stateCode = ugc.substring(0, 2);
+    const centroid = STATE_CENTROIDS[stateCode];
+    if (centroid) {
+      coords.push(centroid);
+    }
+  }
+
+  if (coords.length === 0) return null;
+
+  // Average all zone centroids for a rough center of the affected area
+  const avgLon = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
+  const avgLat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
+  return [avgLon, avgLat];
+}
+
 // In-memory cache (weather data updates hourly at most)
 let cachedResponse: { events: WeatherEvent[]; stats: object; fetchedAt: string } | null = null;
 let cacheTimestamp = 0;
@@ -150,11 +198,10 @@ export async function GET() {
 
         if (!eventType) continue;
 
-        // Get centroid of affected area (simplified)
-        let coordinates: [number, number] = [-98, 39]; // Default to US center
+        // Get coordinates: prefer geometry polygon, fall back to UGC zone centroids
+        let coordinates: [number, number] | null = null;
 
         if (feature.geometry?.coordinates) {
-          // For polygon, get rough center
           const coords = feature.geometry.coordinates;
           if (Array.isArray(coords) && coords.length > 0) {
             if (feature.geometry.type === 'Polygon' && coords[0]?.length > 0) {
@@ -167,6 +214,15 @@ export async function GET() {
             }
           }
         }
+
+        // Fall back to UGC zone code geocoding
+        if (!coordinates) {
+          const ugcCodes = props.geocode?.UGC || [];
+          coordinates = resolveNWSCoordinates(ugcCodes);
+        }
+
+        // Skip events we can't locate
+        if (!coordinates) continue;
 
         events.push({
           id: props.id || `nws-${Date.now()}-${Math.random()}`,
@@ -291,16 +347,28 @@ export async function GET() {
   }
 
   // Sort by severity then time
-  const severityOrder = { extreme: 0, severe: 1, moderate: 2, minor: 3 };
+  const severityOrder: Record<string, number> = { extreme: 0, severe: 1, moderate: 2, minor: 3 };
   events.sort((a, b) => {
-    const sevDiff = severityOrder[a.severity] - severityOrder[b.severity];
+    const sevDiff = (severityOrder[a.severity] ?? 3) - (severityOrder[b.severity] ?? 3);
     if (sevDiff !== 0) return sevDiff;
     return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
   });
 
-  // Calculate stats
+  // Deduplicate: keep one event per state+type combo (most severe wins)
+  const seen = new Map<string, WeatherEvent>();
+  for (const event of events) {
+    // Round coordinates to ~state level for grouping
+    const key = `${Math.round(event.coordinates[0])}:${Math.round(event.coordinates[1])}:${event.type}`;
+    if (!seen.has(key)) {
+      seen.set(key, event);
+    }
+    // Already sorted by severity, so first one per key is the most severe
+  }
+  const deduped = Array.from(seen.values());
+
   const stats = {
     total: events.length,
+    displayed: deduped.length,
     byType: {
       hurricane: events.filter(e => e.type === 'hurricane' || e.type === 'typhoon').length,
       storm: events.filter(e => e.type === 'storm' || e.type === 'tornado').length,
@@ -313,7 +381,7 @@ export async function GET() {
   };
 
   const response = {
-    events,
+    events: deduped,
     stats,
     fetchedAt: new Date().toISOString(),
   };

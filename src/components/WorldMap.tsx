@@ -13,6 +13,24 @@ import { Watchpoint, WatchpointId, Earthquake } from '@/types';
 import { RegionActivity } from '@/lib/activityDetection';
 import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
 
+export interface TFRMarker {
+  id: string;
+  title: string;
+  coordinates: [number, number]; // centroid [lon, lat]
+  tfrType: string;
+  state: string;
+  severity: string;
+}
+
+export interface FireMarker {
+  id: string;
+  title: string;
+  coordinates: [number, number]; // [lon, lat]
+  severity: string;
+  brightness: number;
+  source: string;
+}
+
 // World map TopoJSON - using a CDN for the geography data
 const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
@@ -57,6 +75,10 @@ interface WorldMapProps {
   hotspotsOnly?: boolean; // Only show elevated/critical regions
   useUTC?: boolean; // Display times in UTC instead of local
   initialFocus?: WatchpointId; // Focus map here on load (without filtering feed)
+  showTimes?: boolean; // Show local time under region labels (default: true)
+  showZoomControls?: boolean; // Show zoom +/- and globe buttons (default: true)
+  tfrs?: TFRMarker[]; // Active TFRs for map markers
+  fires?: FireMarker[]; // Active wildfire detections
 }
 
 // Activity level colors - visual language:
@@ -81,7 +103,7 @@ const regionMarkers: Record<string, { coordinates: [number, number]; label: stri
 const DEFAULT_CENTER: [number, number] = [20, 30];
 const DEFAULT_ZOOM = 1.6;
 
-function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {}, activity = {}, significantQuakes = [], hoursWindow = 6, hotspotsOnly = false, useUTC = false, initialFocus }: WorldMapProps) {
+function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {}, activity = {}, significantQuakes = [], hoursWindow = 6, hotspotsOnly = false, useUTC = false, initialFocus, showTimes = true, showZoomControls = true, tfrs = [], fires = [] }: WorldMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hasAppliedInitialFocus, setHasAppliedInitialFocus] = useState(false);
@@ -96,6 +118,8 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
   });
   const [hoveredMarker, setHoveredMarker] = useState<string | null>(null);
   const [hoveredQuake, setHoveredQuake] = useState<string | null>(null);
+  const [hoveredTFR, setHoveredTFR] = useState<string | null>(null);
+  const [hoveredFire, setHoveredFire] = useState<string | null>(null);
   const { theme } = useMapTheme();
 
   const handleMoveEnd = (position: { coordinates: [number, number]; zoom: number }) => {
@@ -319,7 +343,6 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
                   style={{ transition: 'r 150ms ease, stroke-width 150ms ease' }}
                 />
 
-
                 {/* Label */}
                 <text
                   y={34}
@@ -336,21 +359,49 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
                   {marker.label}
                 </text>
 
+                {/* Article count badge - positioned below label */}
+                {count > 0 && (
+                  <g>
+                    <rect
+                      x={-14}
+                      y={showTimes ? 62 : 42}
+                      width={28}
+                      height={18}
+                      rx={9}
+                      fill="rgba(255,255,255,0.15)"
+                      stroke="rgba(255,255,255,0.3)"
+                      strokeWidth={1}
+                    />
+                    <text
+                      y={showTimes ? 75 : 55}
+                      textAnchor="middle"
+                      fill="#fff"
+                      fontSize={12}
+                      fontWeight="700"
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      {count}
+                    </text>
+                  </g>
+                )}
+
                 {/* Local Time with City */}
-                <text
-                  y={58}
-                  textAnchor="middle"
-                  fill={theme.timeLabel}
-                  fontSize={16}
-                  fontWeight="500"
-                  fontFamily="monospace"
-                  style={{
-                    textShadow: theme.textShadow,
-                    pointerEvents: 'none',
-                  }}
-                >
-                  {getTimeDisplay(marker.coordinates[0], marker.city, currentTime, useUTC)}
-                </text>
+                {showTimes && (
+                  <text
+                    y={58}
+                    textAnchor="middle"
+                    fill={theme.timeLabel}
+                    fontSize={16}
+                    fontWeight="500"
+                    fontFamily="monospace"
+                    style={{
+                      textShadow: theme.textShadow,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {getTimeDisplay(marker.coordinates[0], marker.city, currentTime, useUTC)}
+                  </text>
+                )}
 
                 {/* Hover tooltip - activity level */}
                 {isHovered && !isSelected && (
@@ -438,38 +489,171 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
               )}
             </Marker>
           ))}
+
+          {/* Fire Markers (Wildfire detections) */}
+          {fires.map((fire) => {
+            const isHovered = hoveredFire === fire.id;
+            const isCritical = fire.severity === 'critical';
+            const markerColor = isCritical ? '#ef4444' : '#f97316'; // red for critical, orange for severe
+            return (
+              <Marker
+                key={fire.id}
+                coordinates={fire.coordinates}
+                onMouseEnter={() => setHoveredFire(fire.id)}
+                onMouseLeave={() => setHoveredFire(null)}
+              >
+                {/* Outer glow — pulsing for critical */}
+                <circle
+                  r={isCritical ? 10 : 8}
+                  fill={markerColor}
+                  opacity={isHovered ? 0.3 : 0.15}
+                  style={{ transition: 'opacity 150ms ease' }}
+                >
+                  {isCritical && (
+                    <animate attributeName="r" values="10;14;10" dur="2s" repeatCount="indefinite" />
+                  )}
+                </circle>
+                {/* Main dot */}
+                <circle
+                  r={isHovered ? 4.5 : 3.5}
+                  fill={markerColor}
+                  stroke="#fff"
+                  strokeWidth={1}
+                  style={{ cursor: 'pointer', transition: 'r 150ms ease' }}
+                />
+                {/* Tooltip on hover */}
+                {isHovered && (
+                  <g>
+                    <rect
+                      x={-60}
+                      y={-38}
+                      width={120}
+                      height={26}
+                      rx={4}
+                      fill="rgba(0,0,0,0.9)"
+                    />
+                    <text
+                      y={-26}
+                      textAnchor="middle"
+                      fill={markerColor}
+                      fontSize={10}
+                      fontWeight="700"
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      {fire.title.length > 25 ? fire.title.slice(0, 25) + '…' : fire.title}
+                    </text>
+                    <text
+                      y={-16}
+                      textAnchor="middle"
+                      fill="#9ca3af"
+                      fontSize={9}
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      {fire.source} · {fire.brightness > 0 ? `${fire.brightness.toFixed(0)}K` : fire.severity}
+                    </text>
+                  </g>
+                )}
+              </Marker>
+            );
+          })}
+
+          {/* TFR Markers (Flight Restrictions) */}
+          {tfrs.map((tfr) => {
+            const isHovered = hoveredTFR === tfr.id;
+            return (
+              <Marker
+                key={tfr.id}
+                coordinates={tfr.coordinates}
+                onMouseEnter={() => setHoveredTFR(tfr.id)}
+                onMouseLeave={() => setHoveredTFR(null)}
+              >
+                {/* Dashed outer ring — restriction zone indicator */}
+                <circle
+                  r={12}
+                  fill="none"
+                  stroke="#22d3ee"
+                  strokeWidth={1.5}
+                  strokeDasharray="3 3"
+                  opacity={isHovered ? 0.8 : 0.4}
+                  style={{ transition: 'opacity 150ms ease' }}
+                />
+                {/* Main marker */}
+                <circle
+                  r={isHovered ? 5 : 4}
+                  fill="#22d3ee"
+                  stroke="#fff"
+                  strokeWidth={1.5}
+                  style={{ cursor: 'pointer', transition: 'r 150ms ease' }}
+                />
+                {/* Tooltip on hover */}
+                {isHovered && (
+                  <g>
+                    <rect
+                      x={-65}
+                      y={-40}
+                      width={130}
+                      height={28}
+                      rx={4}
+                      fill="rgba(0,0,0,0.9)"
+                    />
+                    <text
+                      y={-28}
+                      textAnchor="middle"
+                      fill="#22d3ee"
+                      fontSize={10}
+                      fontWeight="700"
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      {tfr.tfrType} TFR
+                    </text>
+                    <text
+                      y={-17}
+                      textAnchor="middle"
+                      fill="#9ca3af"
+                      fontSize={9}
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      {tfr.state} — {tfr.title.split(',')[0]}
+                    </text>
+                  </g>
+                )}
+              </Marker>
+            );
+          })}
           </ZoomableGroup>
         </ComposableMap>
 
         {/* Zoom Controls */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1 z-10">
-          <button
-            onClick={handleShowAll}
-            className={`p-2 rounded-lg transition-colors ${
-              selected === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-black/60 hover:bg-black/80 text-gray-300 hover:text-white'
-            }`}
-            title="Show all regions"
-          >
-            <GlobeAltIcon className="w-4 h-4" />
-          </button>
-          <div className="h-px bg-white/20 my-0.5" />
-          <button
-            onClick={handleZoomIn}
-            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
-            title="Zoom in"
-          >
-            <PlusIcon className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleZoomOut}
-            className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
-            title="Zoom out"
-          >
-            <MinusIcon className="w-4 h-4" />
-          </button>
-        </div>
+        {showZoomControls && (
+          <div className="absolute top-3 left-3 flex flex-col gap-1 z-10">
+            <button
+              onClick={handleShowAll}
+              className={`p-2 rounded-lg transition-colors ${
+                selected === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-black/60 hover:bg-black/80 text-gray-300 hover:text-white'
+              }`}
+              title="Show all regions"
+            >
+              <GlobeAltIcon className="w-4 h-4" />
+            </button>
+            <div className="h-px bg-white/20 my-0.5" />
+            <button
+              onClick={handleZoomIn}
+              className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+              title="Zoom in"
+            >
+              <PlusIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleZoomOut}
+              className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+              title="Zoom out"
+            >
+              <MinusIcon className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
       </div>
 

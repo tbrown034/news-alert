@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { NewsFeed, Legend, WorldMap, SeismicMap, WeatherMap, OutagesMap, TravelMap, FiresMap, AuthButton } from '@/components';
+import type { TFRMarker, FireMarker } from '@/components/WorldMap';
 import { EditorialFAB } from '@/components/EditorialFAB';
 import { ErrorBoundary, FeedSkeleton, MapSkeleton } from '@/components/ErrorBoundary';
 import { watchpoints as defaultWatchpoints } from '@/lib/mockData';
@@ -88,6 +89,8 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const [heroView, setHeroView] = useState<HeroView>('main');
   const [earthquakes, setEarthquakes] = useState<Earthquake[]>([]);
   const [significantQuakes, setSignificantQuakes] = useState<Earthquake[]>([]); // 6.0+ for Main view
+  const [tfrs, setTfrs] = useState<TFRMarker[]>([]); // Active TFRs for map
+  const [fireMarkers, setFireMarkers] = useState<FireMarker[]>([]); // Active fires for map
   const [selectedQuake, setSelectedQuake] = useState<Earthquake | null>(null);
   const [seismicLoading, setSeismicLoading] = useState(false);
   const [seismicLastFetched, setSeismicLastFetched] = useState<Date | null>(null);
@@ -417,6 +420,50 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
       }
     };
     fetchSignificantQuakes();
+
+    // Fetch active TFRs for map markers
+    const fetchTFRs = async () => {
+      try {
+        const response = await fetch('/api/tfr');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.tfrs) {
+          setTfrs(data.tfrs.map((tfr: any) => ({
+            id: tfr.id,
+            title: tfr.title,
+            coordinates: tfr.coordinates as [number, number],
+            tfrType: tfr.tfrType,
+            state: tfr.state,
+            severity: tfr.severity,
+          })));
+        }
+      } catch {
+        // Silent fail — TFRs are supplementary
+      }
+    };
+    fetchTFRs();
+
+    // Fetch active fires for map markers
+    const fetchFires = async () => {
+      try {
+        const response = await fetch('/api/fires');
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.fires) {
+          setFireMarkers(data.fires.map((fire: any) => ({
+            id: fire.id,
+            title: fire.title,
+            coordinates: fire.coordinates as [number, number],
+            severity: fire.severity,
+            brightness: fire.brightness || 0,
+            source: fire.source,
+          })));
+        }
+      } catch {
+        // Silent fail — fires are supplementary
+      }
+    };
+    fetchFires();
   }, []);
 
   // Click outside handler for dropdown
@@ -478,8 +525,8 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 <h1 className="text-xl sm:text-2xl font-bold headline text-slate-900 dark:text-white">
                   News Pulse
                 </h1>
-                <p className="text-2xs sm:text-xs font-medium tracking-wide uppercase hidden xs:block text-cyan-600 dark:text-cyan-400">
-                  News Before Its News
+                <p className="text-2xs sm:text-xs font-medium tracking-wide hidden xs:block text-cyan-600 dark:text-cyan-400">
+                  News before it&apos;s news
                 </p>
               </div>
             </button>
@@ -771,6 +818,8 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   regionCounts={regionCounts}
                   activity={activityData || undefined}
                   significantQuakes={significantQuakes}
+                  tfrs={tfrs}
+                  fires={fireMarkers}
                   hoursWindow={hoursWindow}
                   useUTC={useUTC}
                   initialFocus={initialMapFocus}
@@ -985,7 +1034,10 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 className="flex items-center gap-1.5 pl-2 border-l border-slate-300 dark:border-slate-700 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
-                <span className="text-slate-700 dark:text-slate-300 hover:text-yellow-600 dark:hover:text-yellow-400">{significantQuakes.length} large earthquake{significantQuakes.length > 1 ? 's' : ''}</span>
+                <span className="text-slate-700 dark:text-slate-300 font-medium">
+                  {significantQuakes.length} large earthquake{significantQuakes.length > 1 ? 's' : ''}
+                </span>
+                <span className="text-slate-500 dark:text-slate-500 text-xs">in last 24h</span>
               </button>
             )}
           </div>

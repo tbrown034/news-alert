@@ -16,18 +16,24 @@ import {
 
 export default function MisinformationGuidePage() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-black border-b border-slate-200 dark:border-slate-800">
+      <header className="sticky top-0 z-50 bg-[var(--background)]/90 backdrop-blur-md border-b border-[var(--border-light)]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center h-14 sm:h-16">
+          <div className="flex items-center justify-between h-14 sm:h-16">
             <Link
               href="/about"
-              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className="flex items-center gap-2 text-[var(--foreground-light)] hover:text-[var(--foreground)] transition-colors"
             >
-              <ArrowLeftIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">Back to About</span>
+              <ArrowLeftIcon className="w-4 h-4" />
+              <span className="text-sm font-medium hidden sm:inline">About</span>
             </Link>
+            <div className="flex items-center gap-2.5">
+              <ShieldCheckIcon className="w-5 h-5 text-[var(--foreground-muted)]" />
+              <h1 className="text-base font-serif font-semibold text-[var(--foreground)] tracking-tight">Media Literacy</h1>
+            </div>
+            {/* Spacer for centering */}
+            <div className="w-12" />
           </div>
         </div>
       </header>

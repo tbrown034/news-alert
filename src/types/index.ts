@@ -147,3 +147,30 @@ export interface NewsItem {
   };
 }
 
+// =============================================================================
+// AI NEWS DIGEST
+// =============================================================================
+
+export interface DigestStory {
+  title: string;
+  summary: string;
+  sources: string[];
+  region: string;
+  importance: 'high' | 'medium';
+}
+
+export interface NewsDigest {
+  id: string;
+  headline: string;
+  summary: string;
+  stories: DigestStory[];
+  articlesAnalyzed: number;
+  timeWindowStart: string;
+  timeWindowEnd: string;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+  createdAt: string;
+}
+

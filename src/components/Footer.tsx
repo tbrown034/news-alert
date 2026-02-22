@@ -12,7 +12,7 @@ export function Footer() {
             </div>
             <div>
               <p className="text-sm font-semibold text-slate-900 dark:text-white">News Pulse</p>
-              <p className="text-xs text-slate-500 dark:text-slate-500">News before its news</p>
+              <p className="text-xs text-slate-500 dark:text-slate-500">News before it's news</p>
             </div>
           </div>
 
