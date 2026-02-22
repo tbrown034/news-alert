@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
@@ -12,6 +12,9 @@ import {
   MapPinIcon,
   WifiIcon,
   SignalIcon,
+  ArrowTrendingUpIcon,
+  CurrencyDollarIcon,
+  BookOpenIcon,
 } from '@heroicons/react/24/outline';
 
 // =============================================================================
@@ -110,6 +113,41 @@ interface RegionActivity {
   percentChange: number;
 }
 
+interface TrendTerm {
+  term: string;
+  traffic: string;
+  url: string;
+}
+
+interface SparklinePoint {
+  date: string;
+  price: number;
+}
+
+interface CommodityData {
+  id: string;
+  name: string;
+  price: number;
+  previousClose: number;
+  change: number;
+  changePercent: number;
+  unit: string;
+  source: string;
+  sparkline: SparklinePoint[];
+}
+
+interface WikiPage {
+  title: string;
+  views: number;
+  url: string;
+  region: string;
+}
+
+interface RegionSignals {
+  trends: TrendTerm[];
+  wikiPages: WikiPage[];
+}
+
 interface ConditionsData {
   byRegion: Record<string, RegionThreats>;
   summary: {
@@ -179,6 +217,9 @@ const severityOrder = { critical: 0, severe: 1, moderate: 2, minor: 3 };
 export default function ConditionsPage() {
   const [data, setData] = useState<ConditionsData | null>(null);
   const [activityData, setActivityData] = useState<Record<string, RegionActivity> | null>(null);
+  const [trendsData, setTrendsData] = useState<Record<string, { terms: TrendTerm[] }> | null>(null);
+  const [commoditiesData, setCommoditiesData] = useState<CommodityData[] | null>(null);
+  const [wikiData, setWikiData] = useState<WikiPage[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -187,9 +228,12 @@ export default function ConditionsPage() {
     setError(null);
 
     try {
-      const [conditionsRes, newsRes] = await Promise.all([
+      const [conditionsRes, newsRes, trendsRes, commoditiesRes, wikiRes] = await Promise.all([
         fetch('/api/conditions'),
         fetch('/api/news?limit=1').catch(() => null),
+        fetch('/api/google-trends').catch(() => null),
+        fetch('/api/commodities').catch(() => null),
+        fetch('/api/wikipedia-views').catch(() => null),
       ]);
       if (!conditionsRes.ok) throw new Error('Failed to fetch conditions');
       const result = await conditionsRes.json();
@@ -198,6 +242,18 @@ export default function ConditionsPage() {
       if (newsRes?.ok) {
         const newsData = await newsRes.json();
         if (newsData.activity) setActivityData(newsData.activity);
+      }
+      if (trendsRes?.ok) {
+        const td = await trendsRes.json();
+        if (td.trends) setTrendsData(td.trends);
+      }
+      if (commoditiesRes?.ok) {
+        const cd = await commoditiesRes.json();
+        if (cd.commodities) setCommoditiesData(cd.commodities);
+      }
+      if (wikiRes?.ok) {
+        const wd = await wikiRes.json();
+        if (wd.pages) setWikiData(wd.pages);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -318,6 +374,24 @@ export default function ConditionsPage() {
               </span>
             </div>
 
+            {/* Markets — global signal with sparklines */}
+            {commoditiesData && commoditiesData.length > 0 && (
+              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                <div className="px-4 py-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CurrencyDollarIcon className="w-4 h-4 text-green-400" />
+                    <span className="text-xs font-medium text-green-400">Markets</span>
+                    <span className="text-[10px] text-slate-600">30-day · Yahoo Finance</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 ml-0">
+                    {commoditiesData.map((c) => (
+                      <CommodityCard key={c.id} commodity={c} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Region cards */}
             <div className="space-y-3">
               {sortedRegions.map((region) => {
@@ -327,9 +401,12 @@ export default function ConditionsPage() {
                 return (
                   <RegionCard
                     key={region.id}
+                    regionId={region.id}
                     name={region.name}
                     data={rd}
                     activity={activityData?.[region.id] ?? null}
+                    trends={trendsData?.[region.id]?.terms ?? null}
+                    wikiPages={wikiData?.filter(p => p.region === region.id) ?? null}
                     formatTimeAgo={formatTimeAgo}
                   />
                 );
@@ -347,14 +424,19 @@ export default function ConditionsPage() {
 // =============================================================================
 
 interface RegionCardProps {
+  regionId: string;
   name: string;
   data: RegionThreats;
   activity: RegionActivity | null;
+  trends: TrendTerm[] | null;
+  wikiPages: WikiPage[] | null;
   formatTimeAgo: (dateStr: string) => string;
 }
 
-function RegionCard({ name, data, activity, formatTimeAgo }: RegionCardProps) {
-  const isEmpty = data.totalCount === 0 && (!activity || activity.level === 'normal');
+function RegionCard({ name, data, activity, trends, wikiPages, formatTimeAgo }: RegionCardProps) {
+  const hasTrends = trends && trends.length > 0;
+  const hasWiki = wikiPages && wikiPages.length > 0;
+  const isEmpty = data.totalCount === 0 && (!activity || activity.level === 'normal') && !hasTrends && !hasWiki;
 
   const categories = (['seismic', 'weather', 'fires', 'travel', 'outages'] as CategoryKey[]).filter(
     (cat) => data[cat].length > 0,
@@ -418,6 +500,56 @@ function RegionCard({ name, data, activity, formatTimeAgo }: RegionCardProps) {
               </div>
               <div className="ml-6">
                 <span className="text-sm text-slate-300">{activityText}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Google Trends section */}
+          {hasTrends && (
+            <div className="px-4 py-2.5 border-b border-slate-800/50">
+              <div className="flex items-center gap-2 mb-2">
+                <ArrowTrendingUpIcon className="w-4 h-4 text-sky-400" />
+                <span className="text-xs font-medium text-sky-400">Trending Searches</span>
+                <span className="text-[10px] text-slate-600">Google Trends</span>
+              </div>
+              <div className="flex flex-wrap gap-2 ml-6">
+                {trends!.slice(0, 5).map((t) => (
+                  <a
+                    key={t.term}
+                    href={t.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-2 py-1 text-xs bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 rounded-md transition-colors"
+                  >
+                    <span>{t.term}</span>
+                    {t.traffic && <span className="text-sky-400/60 text-[10px]">{t.traffic}</span>}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Wikipedia pageview spikes */}
+          {hasWiki && (
+            <div className="px-4 py-2.5 border-b border-slate-800/50">
+              <div className="flex items-center gap-2 mb-2">
+                <BookOpenIcon className="w-4 h-4 text-violet-400" />
+                <span className="text-xs font-medium text-violet-400">Wikipedia Spikes</span>
+                <span className="text-[10px] text-slate-600">Pageviews yesterday</span>
+              </div>
+              <div className="space-y-1 ml-6">
+                {wikiPages!.slice(0, 3).map((p) => (
+                  <a
+                    key={p.title}
+                    href={p.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-slate-300 hover:text-violet-300 transition-colors"
+                  >
+                    <span className="truncate">{p.title}</span>
+                    <span className="text-[10px] text-slate-500 whitespace-nowrap">{p.views.toLocaleString()} views</span>
+                  </a>
+                ))}
               </div>
             </div>
           )}
@@ -524,6 +656,71 @@ function ConditionItem({ item, category, formatTimeAgo }: ConditionItemProps) {
       <span className="text-[10px] text-slate-600 whitespace-nowrap flex-shrink-0">
         {formatTimeAgo(item.timestamp)}
       </span>
+    </div>
+  );
+}
+
+// =============================================================================
+// COMMODITY CARD WITH SPARKLINE
+// =============================================================================
+
+function CommodityCard({ commodity: c }: { commodity: CommodityData }) {
+  const isUp = c.changePercent > 0;
+  const isSignificant = Math.abs(c.changePercent) >= 3;
+  const changeColor = isSignificant
+    ? isUp ? 'text-red-400' : 'text-emerald-400'
+    : isUp ? 'text-emerald-400/70' : 'text-red-400/70';
+  const strokeColor = isUp ? '#34d399' : '#f87171';
+
+  // Format price — drop decimals for large numbers
+  const formattedPrice = c.price >= 1000
+    ? c.price.toLocaleString(undefined, { maximumFractionDigits: 0 })
+    : c.price.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  // Build SVG sparkline from data
+  const sparklinePath = useMemo(() => {
+    if (!c.sparkline || c.sparkline.length < 2) return null;
+    const prices = c.sparkline.map(p => p.price);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const range = max - min || 1;
+    const w = 100;
+    const h = 32;
+    const padding = 2;
+
+    const points = prices.map((p, i) => {
+      const x = (i / (prices.length - 1)) * w;
+      const y = padding + (1 - (p - min) / range) * (h - padding * 2);
+      return `${x},${y}`;
+    });
+
+    return `M${points.join(' L')}`;
+  }, [c.sparkline]);
+
+  return (
+    <div className="bg-slate-800/50 rounded-lg px-3 py-2.5 flex flex-col gap-1">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-slate-300 truncate">{c.name}</span>
+        <span className={`text-[10px] font-semibold ${changeColor}`}>
+          {isUp ? '+' : ''}{c.changePercent.toFixed(2)}%
+        </span>
+      </div>
+      <div className="text-sm font-semibold text-white tabular-nums">
+        {c.unit === 'USD' || c.unit.startsWith('USD/') ? '$' : ''}{formattedPrice}
+      </div>
+      {sparklinePath && (
+        <svg viewBox="0 0 100 32" className="w-full h-8 mt-0.5" preserveAspectRatio="none">
+          <path
+            d={sparklinePath}
+            fill="none"
+            stroke={strokeColor}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      )}
     </div>
   );
 }
