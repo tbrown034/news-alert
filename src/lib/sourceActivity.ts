@@ -32,11 +32,12 @@ function isMeasuredValue(n: number): boolean {
 
 /**
  * Get the effective baseline for a source.
- * Measured values (decimals) are trusted. Round numbers use conservative default.
+ * Measured values (decimals or with baselineMeasuredAt) are trusted.
+ * Round numbers without measurement date use conservative default.
  */
-function getEffectiveBaseline(postsPerDay: number | undefined): number {
+function getEffectiveBaseline(postsPerDay: number | undefined, baselineMeasuredAt?: string): number {
   if (!postsPerDay || postsPerDay <= 0) return CONSERVATIVE_DEFAULT_PPD;
-  return isMeasuredValue(postsPerDay) ? postsPerDay : CONSERVATIVE_DEFAULT_PPD;
+  return (isMeasuredValue(postsPerDay) || baselineMeasuredAt) ? postsPerDay : CONSERVATIVE_DEFAULT_PPD;
 }
 
 /**
@@ -49,7 +50,7 @@ export function calculateSourceActivity(
   items: NewsItem[]
 ): Record<string, SourceActivityProfile> {
   // Group items by source ID
-  const bySource = new Map<string, { count: number; postsPerDay: number }>();
+  const bySource = new Map<string, { count: number; postsPerDay: number; baselineMeasuredAt?: string }>();
 
   for (const item of items) {
     const sourceId = item.source.id;
@@ -60,6 +61,7 @@ export function calculateSourceActivity(
       bySource.set(sourceId, {
         count: 1,
         postsPerDay: (item.source as any).postsPerDay ?? 0,
+        baselineMeasuredAt: (item.source as any).baselineMeasuredAt,
       });
     }
   }
@@ -68,7 +70,7 @@ export function calculateSourceActivity(
   const result: Record<string, SourceActivityProfile> = {};
 
   for (const [sourceId, data] of bySource) {
-    const baseline = getEffectiveBaseline(data.postsPerDay);
+    const baseline = getEffectiveBaseline(data.postsPerDay, data.baselineMeasuredAt);
     const expectedIn6h = baseline / (24 / WINDOW_HOURS); // postsPerDay / 4
     const anomalyRatio = expectedIn6h > 0
       ? Math.round((data.count / expectedIn6h) * 10) / 10

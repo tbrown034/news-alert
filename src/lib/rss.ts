@@ -1111,11 +1111,12 @@ async function fetchBlueskyFeed(source: Source & { feedUrl: string }): Promise<B
       }
 
       // Extract repost context
+      // reason.by = the person who reposted; post.author = the original author
       let repostContext: RepostContext | undefined;
       if (item.reason?.$type === 'app.bsky.feed.defs#reasonRepost' && item.reason.by) {
         repostContext = {
-          originalAuthor: item.reason.by.displayName || item.reason.by.handle,
-          originalHandle: item.reason.by.handle,
+          originalAuthor: item.post.author?.displayName || item.post.author?.handle || '',
+          originalHandle: item.post.author?.handle || '',
         };
       }
 

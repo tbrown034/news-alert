@@ -150,11 +150,9 @@ export const NewsFeed = memo(function NewsFeed({
   // Track previously seen item IDs to animate new ones
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
   const [newItemIds, setNewItemIds] = useState<Set<string>>(new Set());
-  const [moreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [regionalExpanded, setRegionalExpanded] = useState(false);
   const [showFeedStats, setShowFeedStats] = useState(false);
   const [selectedTab, setSelectedTab] = useState<SelectedTab>('all'); // Local tab state, defaults to All
-  const moreDropdownRef = useRef<HTMLDivElement>(null);
   const isInitialLoadRef = useRef(true);
 
   // useTransition for smooth region switching - keeps UI responsive during filtering
@@ -182,16 +180,6 @@ export const NewsFeed = memo(function NewsFeed({
     }
   }, [selectedWatchpoint]);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (moreDropdownRef.current && !moreDropdownRef.current.contains(event.target as Node)) {
-        setMoreDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const filteredItems = useMemo(() => {
     // Apply region filter only
@@ -314,8 +302,6 @@ export const NewsFeed = memo(function NewsFeed({
   const inlineTabs = allTabs.filter(t => t.alwaysVisible || t.minScreen);
   // Tabs that go in More dropdown
   const dropdownTabs = allTabs.filter(t => !t.alwaysVisible && !t.minScreen);
-  // Check if selected tab is in dropdown
-  const isDropdownTabSelected = dropdownTabs.some(t => t.id === selectedTab);
 
   // Get animation class for an item
   const getItemAnimationClass = (itemId: string, index: number): string => {
@@ -518,7 +504,7 @@ export const NewsFeed = memo(function NewsFeed({
           </div>
 
           {/* Region Selector */}
-          <div className="pb-2" ref={moreDropdownRef}>
+          <div className="pb-2">
             <div className={`
               inline-flex flex-wrap items-center gap-0.5 p-1 rounded-xl
               bg-gradient-to-b from-slate-100 to-slate-50 dark:from-slate-800/80 dark:to-slate-900/60

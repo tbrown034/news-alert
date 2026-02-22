@@ -92,7 +92,7 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\bconnecticut(?:'s)?\b/i,
       /\bdelaware(?:'s)?\b/i,
       /\bflorida(?:'s)?\b/i,
-      /\bgeorgia(?:'s)?\b/i,
+      /\bgeorgia(?:'s)?\b/i, // Note: ambiguous US state / country — tiebreaker prefers foreign
       /\bhawaii(?:'s)?\b/i,
       /\bidaho(?:'s)?\b/i,
       /\billinois(?:'s)?\b/i,
@@ -220,9 +220,7 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\bbuenos\s+aires\b/i,
       /\bmilei\b/i,
       // Mexico
-      /\bmexico\b/i,
-      /\bmexican\b/i,
-      /\bmexic[oa]n?\b/i,
+      /\bmexic(?:o|an)\b/i,
       /\bmexico\s+city\b/i,
       /\bamlo\b/i,
       /\bsheinbaum\b/i,
@@ -433,6 +431,10 @@ const regionPatterns: Record<Exclude<WatchpointId, 'all'>, RegionPatterns> = {
       /\bnorway\b/i,
       /\bnorwegian\b/i,
       /\boslo\b/i,
+      // Georgia (country) - Caucasus
+      /\btbilisi\b/i,
+      /\bsouth\s+ossetia\b/i,
+      /\babkhazia\b/i,
     ],
     medium: [
       /\bblack\s+sea\b/i,

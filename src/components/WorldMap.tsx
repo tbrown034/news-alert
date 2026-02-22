@@ -183,33 +183,6 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
     return wp?.activityLevel || 'normal';
   };
 
-  // Format activity comparison text
-  const formatActivityText = (regionActivity: RegionActivity | undefined) => {
-    if (!regionActivity) return 'Loading...';
-    const { multiplier } = regionActivity;
-    if (multiplier >= 1) {
-      return `${multiplier.toFixed(1)}x normal`;
-    }
-    return `${multiplier.toFixed(1)}x normal`;
-  };
-
-  // Calculate global activity stats
-  const getGlobalActivity = (): { multiplier: number; level: 'critical' | 'elevated' | 'normal'; totalCount: number } => {
-    const regions = Object.values(activity);
-    if (regions.length === 0) return { multiplier: 1, level: 'normal', totalCount: 0 };
-
-    const totalCount = regions.reduce((sum, r) => sum + r.count, 0);
-    const totalBaseline = regions.reduce((sum, r) => sum + r.baseline, 0);
-    const multiplier = totalBaseline > 0 ? Math.round((totalCount / totalBaseline) * 10) / 10 : 1;
-
-    let level: 'critical' | 'elevated' | 'normal';
-    if (regions.some(r => r.level === 'critical')) level = 'critical';
-    else if (regions.some(r => r.level === 'elevated')) level = 'elevated';
-    else level = 'normal';
-
-    return { multiplier, level, totalCount };
-  };
-
   // Show loading placeholder during SSR to avoid hydration mismatch
   if (!isMounted) {
     return (

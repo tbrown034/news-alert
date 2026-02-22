@@ -179,7 +179,7 @@ export async function generateSummary(
   region: WatchpointId,
   timeWindowHours: number = 6,
   model: string = 'claude-haiku-4-5-20251001'
-): Promise<SituationBriefing> {
+): Promise<SituationBriefing | null> {
   const startTime = Date.now();
 
   // Validate we have posts
@@ -264,7 +264,13 @@ export async function generateSummary(
     jsonStr = jsonMatch[1];
   }
 
-  const parsed = JSON.parse(jsonStr.trim());
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonStr.trim());
+  } catch {
+    console.error('Failed to parse AI summary JSON:', jsonStr.substring(0, 200));
+    return null;
+  }
 
   // Convert developments array to keyDevelopments format for UI
   const developments = parsed.developments || [];

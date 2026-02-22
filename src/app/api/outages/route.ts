@@ -68,20 +68,7 @@ const CAPITAL_COORDS: Record<string, { capital: string; coords: [number, number]
 
 // Known ongoing outages (manually maintained for accuracy)
 // Updated based on credible reports from NetBlocks, OONI, news
-const KNOWN_OUTAGES: Omit<CountryOutage, 'id'>[] = [
-  {
-    country: 'Iran',
-    countryCode: 'IR',
-    capital: 'Tehran',
-    coordinates: [51.39, 35.69],
-    severity: 'critical',
-    percentDown: 85,
-    startTime: new Date('2026-01-10T00:00:00Z'),
-    description: 'Widespread internet and power disruptions following infrastructure attacks',
-    source: 'Multiple Reports',
-    url: 'https://netblocks.org',
-  },
-];
+const KNOWN_OUTAGES: Omit<CountryOutage, 'id'>[] = [];
 
 // Outage-related keywords
 const OUTAGE_KEYWORDS = [
@@ -152,73 +139,68 @@ export async function GET() {
   }
 
   // Try to fetch from NetBlocks Twitter/X feed via RSS bridge (if available)
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+  const nitterInstances = [
+    'https://nitter.privacydev.net',
+    'https://nitter.poast.org',
+  ];
 
-    // Nitter RSS for NetBlocks (various instances)
-    const nitterInstances = [
-      'https://nitter.privacydev.net',
-      'https://nitter.poast.org',
-    ];
+  for (const instance of nitterInstances) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-    for (const instance of nitterInstances) {
-      try {
-        const response = await fetch(`${instance}/netblocks/rss`, {
-          signal: controller.signal,
-          headers: { 'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)' },
-        });
+      const response = await fetch(`${instance}/netblocks/rss`, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'PulseAlert/1.0 (OSINT Dashboard)' },
+      });
 
-        if (response.ok) {
-          const text = await response.text();
-          // Parse RSS using fast-xml-parser
-          const parsed = xmlParser.parse(text);
-          const items = parsed?.rss?.channel?.item || [];
-          const itemArray = Array.isArray(items) ? items : [items];
+      clearTimeout(timeoutId);
 
-          for (const item of itemArray.slice(0, 10)) {
-            const title = item.title;
-            const desc = item.description;
-            const pubDateStr = item.pubDate;
+      if (response.ok) {
+        const text = await response.text();
+        // Parse RSS using fast-xml-parser
+        const parsed = xmlParser.parse(text);
+        const items = parsed?.rss?.channel?.item || [];
+        const itemArray = Array.isArray(items) ? items : [items];
 
-            if (title && desc) {
-              const fullText = `${title} ${desc}`;
-              const countryCode = detectCountryInText(fullText);
+        for (const item of itemArray.slice(0, 10)) {
+          const title = item.title;
+          const desc = item.description;
+          const pubDateStr = item.pubDate;
 
-              if (countryCode && hasOutageKeywords(fullText) && CAPITAL_COORDS[countryCode]) {
-                const info = CAPITAL_COORDS[countryCode];
-                const pubDate = pubDateStr ? new Date(String(pubDateStr)) : now;
+          if (title && desc) {
+            const fullText = `${title} ${desc}`;
+            const countryCode = detectCountryInText(fullText);
 
-                // Only include if within last 7 days
-                const daysAgo = (now.getTime() - pubDate.getTime()) / (1000 * 60 * 60 * 24);
-                if (daysAgo <= 7) {
-                  outages.push({
-                    id: `netblocks-${countryCode}-${pubDate.getTime()}`,
-                    country: info.country,
-                    countryCode,
-                    capital: info.capital,
-                    coordinates: info.coords,
-                    severity: 'severe',
-                    percentDown: 60,
-                    startTime: pubDate,
-                    description: String(title).substring(0, 200),
-                    source: 'NetBlocks',
-                    url: 'https://netblocks.org',
-                  });
-                }
+            if (countryCode && hasOutageKeywords(fullText) && CAPITAL_COORDS[countryCode]) {
+              const info = CAPITAL_COORDS[countryCode];
+              const pubDate = pubDateStr ? new Date(String(pubDateStr)) : now;
+
+              // Only include if within last 7 days
+              const daysAgo = (now.getTime() - pubDate.getTime()) / (1000 * 60 * 60 * 24);
+              if (daysAgo <= 7) {
+                outages.push({
+                  id: `netblocks-${countryCode}-${pubDate.getTime()}`,
+                  country: info.country,
+                  countryCode,
+                  capital: info.capital,
+                  coordinates: info.coords,
+                  severity: 'severe',
+                  percentDown: 60,
+                  startTime: pubDate,
+                  description: String(title).substring(0, 200),
+                  source: 'NetBlocks',
+                  url: 'https://netblocks.org',
+                });
               }
             }
           }
-          break; // Successfully got data, don't try other instances
         }
-      } catch {
-        // Try next instance
+        break; // Successfully got data, don't try other instances
       }
+    } catch {
+      // Try next instance
     }
-
-    clearTimeout(timeoutId);
-  } catch (error) {
-    console.error('NetBlocks fetch error:', error);
   }
 
   // Deduplicate by country (keep most severe)

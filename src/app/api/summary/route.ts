@@ -204,6 +204,13 @@ export async function GET(request: Request) {
     // Generate summary with the selected model tier
     const briefing = await generateSummary(sortedPosts, region, hours, model);
 
+    if (!briefing) {
+      return NextResponse.json(
+        { error: 'Failed to generate summary. AI returned invalid response.' },
+        { status: 502 }
+      );
+    }
+
     // Cache the result - keyed by region+tier
     cacheSummary(briefing, tierParam);
 

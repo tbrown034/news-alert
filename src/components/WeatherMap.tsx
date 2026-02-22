@@ -66,12 +66,6 @@ function formatTimeAgo(date: Date): string {
 
 type FilterMode = 'all' | 'major';
 
-// Check if coordinates are in North America (rough bounding box)
-function isNorthAmerica(coords: [number, number]): boolean {
-  const [lon, lat] = coords;
-  return lon >= -170 && lon <= -50 && lat >= 15 && lat <= 72;
-}
-
 // Major filter: significant weather events (not routine advisories)
 function isNewsworthy(event: WeatherEvent): boolean {
   // Hurricanes/typhoons always show
@@ -120,7 +114,6 @@ function WeatherMapComponent({ onEventSelect, focusOnId }: WeatherMapProps) {
   const [events, setEvents] = useState<WeatherEvent[]>([]);
   const [selected, setSelected] = useState<WeatherEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<any>(null);
   const { theme } = useMapTheme();
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
   const [filterMode, setFilterMode] = useState<FilterMode>('major'); // Default to major only
@@ -160,7 +153,6 @@ function WeatherMapComponent({ onEventSelect, focusOnId }: WeatherMapProps) {
           startTime: new Date(e.startTime),
           endTime: e.endTime ? new Date(e.endTime) : undefined,
         })));
-        setStats(data.stats);
       }
     } catch (error) {
       console.error('Failed to fetch weather events:', error);
