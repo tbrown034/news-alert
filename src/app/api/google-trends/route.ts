@@ -17,9 +17,9 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 // Country codes mapped to our WatchpointId regions
 const REGION_COUNTRIES: Record<string, string[]> = {
   'us': ['US'],
-  'middle-east': ['IL', 'IR', 'EG'],
-  'europe-russia': ['GB', 'DE', 'RU'],
-  'asia': ['JP', 'IN'],
+  'middle-east': ['AE', 'IL', 'EG'],  // UAE has more English-language trends
+  'europe-russia': ['GB', 'DE', 'FR'],
+  'asia': ['IN', 'SG', 'JP'],  // India/Singapore for English, Japan for coverage
   'latam': ['BR', 'MX'],
 };
 
@@ -136,6 +136,16 @@ function mergeAndDedup(allItems: TrendItem[]): TrendItem[] {
   );
 }
 
+/** Filter to terms readable by English-speaking audience (Latin script) */
+function isLatinScript(term: string): boolean {
+  // Allow terms that are primarily Latin characters, numbers, spaces, punctuation
+  const latinChars = term.replace(/[\s\d\p{P}]/gu, '').replace(/[\p{Script=Latin}]/gu, '');
+  // If more than 30% of non-space chars are non-Latin, skip it
+  const textOnly = term.replace(/[\s\d\p{P}]/gu, '');
+  if (textOnly.length === 0) return false;
+  return latinChars.length / textOnly.length < 0.3;
+}
+
 /** Parse traffic strings like "200K+", "2M+" into numbers for sorting */
 function parseTraffic(traffic: string): number {
   if (!traffic) return 0;
@@ -205,7 +215,7 @@ export async function GET() {
       }
     }
 
-    const merged = mergeAndDedup(regionItems);
+    const merged = mergeAndDedup(regionItems).filter(item => isLatinScript(item.term));
     trends[region] = { terms: merged.slice(0, 5) };
   }
 
