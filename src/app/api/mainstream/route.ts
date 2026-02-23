@@ -3,6 +3,7 @@ import { fetchRssFeed } from '@/lib/rss';
 import { allTieredSources, TieredSource } from '@/lib/sources-clean';
 import { WatchpointId, NewsItem } from '@/types';
 import { checkRateLimit, getClientIp, rateLimitHeaders } from '@/lib/rateLimit';
+import { getDbCache, isDbCacheFresh, setDbCache } from '@/lib/dbCache';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -211,6 +212,20 @@ async function fetchMainstreamWithCache(region: WatchpointId): Promise<Mainstrea
     return inFlight;
   }
 
+  // L2: Check Postgres cache (survives cold starts, shared across instances)
+  if (region === 'all') {
+    try {
+      const dbCache = await getDbCache<MainstreamSourceGroup[]>('mainstream:all');
+      if (dbCache && isDbCacheFresh(dbCache.fetchedAt)) {
+        console.log(`[Mainstream API] L2 Postgres hit for mainstream:all (${dbCache.itemCount} groups, ${Math.round((Date.now() - dbCache.fetchedAt.getTime()) / 1000)}s old)`);
+        setCachedMainstream(cacheKey, dbCache.items); // populate L1
+        return dbCache.items;
+      }
+    } catch (err) {
+      console.error('[Mainstream API] L2 cache read error:', err);
+    }
+  }
+
   const sources = getMainstreamSources(region);
 
   const fetchPromise = (async () => {
@@ -218,6 +233,14 @@ async function fetchMainstreamWithCache(region: WatchpointId): Promise<Mainstrea
       console.log(`[Mainstream API] Fetching ${region} (${sources.length} sources)`);
       const groups = await fetchMainstreamNews(sources);
       setCachedMainstream(cacheKey, groups);
+
+      // Update L2 Postgres cache (fire-and-forget)
+      if (region === 'all') {
+        setDbCache('mainstream:all', groups, groups.length).catch(err =>
+          console.error('[Mainstream API] L2 cache write error:', err)
+        );
+      }
+
       return groups;
     } finally {
       inFlightFetches.delete(cacheKey);

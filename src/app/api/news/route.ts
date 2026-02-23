@@ -16,6 +16,7 @@ import { getActiveEditorialPosts } from '@/lib/editorial';
 import { EditorialPost } from '@/types/editorial';
 import { logActivitySnapshot } from '@/lib/activityLogging';
 import { calculateSourceActivity, attachSourceActivity } from '@/lib/sourceActivity';
+import { getDbCache, isDbCacheFresh, setDbCache } from '@/lib/dbCache';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -183,6 +184,20 @@ async function fetchNewsWithCache(region: WatchpointId): Promise<NewsItem[]> {
     return inFlight;
   }
 
+  // L2: Check Postgres cache (survives cold starts, shared across instances)
+  if (region === 'all') {
+    try {
+      const dbCache = await getDbCache<NewsItem[]>('osint:all');
+      if (dbCache && isDbCacheFresh(dbCache.fetchedAt)) {
+        console.log(`[News API] L2 Postgres hit for osint:all (${dbCache.itemCount} items, ${Math.round((Date.now() - dbCache.fetchedAt.getTime()) / 1000)}s old)`);
+        setCachedNews(cacheKey, dbCache.items, true); // populate L1
+        return dbCache.items;
+      }
+    } catch (err) {
+      console.error('[News API] L2 cache read error:', err);
+    }
+  }
+
   const sources = getSourcesForRegion(region);
 
   const fetchPromise = (async () => {
@@ -207,8 +222,15 @@ async function fetchNewsWithCache(region: WatchpointId): Promise<NewsItem[]> {
       const fetchEnd = Date.now();
       await logActivitySnapshot(region, dedupedById, sources.length, fetchEnd - fetchStart);
 
-      // Update cache
+      // Update L1 in-memory cache
       setCachedNews(cacheKey, dedupedById, true);
+
+      // Update L2 Postgres cache (fire-and-forget)
+      if (region === 'all') {
+        setDbCache('osint:all', dedupedById, dedupedById.length).catch(err =>
+          console.error('[News API] L2 cache write error:', err)
+        );
+      }
 
       return dedupedById;
     } finally {
