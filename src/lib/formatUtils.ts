@@ -1,5 +1,40 @@
 import { WatchpointId } from '@/types';
 
+// Source type colors - distinct, editorial styling
+// Each type has a subtle but intentional color identity
+export const sourceTypeColors: Record<string, string> = {
+  official: 'bg-slate-800 dark:bg-slate-200 text-slate-100 dark:text-slate-900 border-transparent font-semibold',
+  'news-org': 'bg-zinc-700 dark:bg-zinc-300 text-zinc-100 dark:text-zinc-900 border-transparent',
+  osint: 'bg-amber-600 dark:bg-amber-500 text-white dark:text-amber-950 border-transparent font-semibold',
+  reporter: 'bg-stone-500 dark:bg-stone-400 text-white dark:text-stone-950 border-transparent',
+  analyst: 'bg-slate-600 dark:bg-slate-400 text-white dark:text-slate-950 border-transparent',
+  aggregator: 'bg-neutral-500 dark:bg-neutral-500 text-white dark:text-neutral-100 border-transparent',
+  ground: 'bg-emerald-700 dark:bg-emerald-600 text-white dark:text-emerald-50 border-transparent font-semibold',
+  bot: 'bg-gray-400 dark:bg-gray-600 text-gray-700 dark:text-gray-300 border-transparent italic',
+};
+
+// Platform display names
+export const platformNames: Record<string, string> = {
+  bluesky: 'Bluesky',
+  rss: 'RSS',
+  telegram: 'Telegram',
+  reddit: 'Reddit',
+  youtube: 'YouTube',
+  mastodon: 'Mastodon',
+};
+
+// Human-readable source type labels
+export const sourceTypeLabels: Record<string, string> = {
+  official: 'Official',
+  'news-org': 'News Org',
+  osint: 'OSINT',
+  reporter: 'Reporter',
+  analyst: 'Analyst',
+  aggregator: 'Aggregator',
+  ground: 'Ground',
+  bot: 'Bot',
+};
+
 export function formatTimeAgo(date: Date): string {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();

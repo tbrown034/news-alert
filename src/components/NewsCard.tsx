@@ -2,11 +2,12 @@
 
 import { useState, useMemo, memo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { ArrowTopRightOnSquareIcon, ShareIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon as CheckBadgeSolid } from '@heroicons/react/24/solid';
 import { NewsItem, WatchpointId, MediaAttachment } from '@/types';
 import { PlatformIcon, platformColors } from './PlatformIcon';
-import { formatTimeAgo, regionBadges } from '@/lib/formatUtils';
+import { formatTimeAgo, regionBadges, sourceTypeColors, sourceTypeLabels, platformNames } from '@/lib/formatUtils';
 
 interface NewsCardProps {
   item: NewsItem;
@@ -14,49 +15,6 @@ interface NewsCardProps {
 
 // Character limit for truncation
 const CHAR_LIMIT = 280;
-
-// Source type colors - distinct, editorial styling
-// Each type has a subtle but intentional color identity
-const sourceTypeColors: Record<string, string> = {
-  // Official sources (government, military) - authoritative blue-gray
-  official: 'bg-slate-800 dark:bg-slate-200 text-slate-100 dark:text-slate-900 border-transparent font-semibold',
-  // News organizations - classic newspaper charcoal
-  'news-org': 'bg-zinc-700 dark:bg-zinc-300 text-zinc-100 dark:text-zinc-900 border-transparent',
-  // OSINT - intelligence amber/gold accent
-  osint: 'bg-amber-600 dark:bg-amber-500 text-white dark:text-amber-950 border-transparent font-semibold',
-  // Individual reporters - subtle warm gray
-  reporter: 'bg-stone-500 dark:bg-stone-400 text-white dark:text-stone-950 border-transparent',
-  // Analysts/experts - refined slate
-  analyst: 'bg-slate-600 dark:bg-slate-400 text-white dark:text-slate-950 border-transparent',
-  // Aggregators - muted, secondary
-  aggregator: 'bg-neutral-500 dark:bg-neutral-500 text-white dark:text-neutral-100 border-transparent',
-  // Ground reporters - earthy tone
-  ground: 'bg-emerald-700 dark:bg-emerald-600 text-white dark:text-emerald-50 border-transparent font-semibold',
-  // Bots - subtle, clearly automated
-  bot: 'bg-gray-400 dark:bg-gray-600 text-gray-700 dark:text-gray-300 border-transparent italic',
-};
-
-// Platform display names
-const platformNames: Record<string, string> = {
-  bluesky: 'Bluesky',
-  rss: 'RSS',
-  telegram: 'Telegram',
-  reddit: 'Reddit',
-  youtube: 'YouTube',
-  mastodon: 'Mastodon',
-};
-
-// Human-readable source type labels
-const sourceTypeLabels: Record<string, string> = {
-  official: 'Official',
-  'news-org': 'News Org',
-  osint: 'OSINT',
-  reporter: 'Reporter',
-  analyst: 'Analyst',
-  aggregator: 'Aggregator',
-  ground: 'Ground',
-  bot: 'Bot',
-};
 
 // External link card component (for article links, embeds) - compact design
 function ExternalLinkCard({ link }: { link: MediaAttachment }) {
@@ -345,9 +303,13 @@ export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
               platformColor={platformColor}
             />
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-label font-medium text-[var(--foreground)] truncate">
+              <Link
+                href={`/source/${item.source.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-label font-medium text-[var(--foreground)] truncate hover:underline"
+              >
                 {item.repostContext ? item.repostContext.originalAuthor : item.source.name}
-              </span>
+              </Link>
               {isVerified && !item.repostContext && (
                 <CheckBadgeSolid className="w-4 h-4 text-[var(--color-success)] flex-shrink-0" />
               )}

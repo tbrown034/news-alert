@@ -8421,3 +8421,7 @@ export function getSourcesByRegion(region: WatchpointId): TieredSource[] {
   if (region === 'all') return allTieredSources;
   return allTieredSources.filter(s => s.region === region || s.region === 'all');
 }
+
+export function getSourceById(id: string): TieredSource | undefined {
+  return allTieredSources.find(s => s.id === id);
+}
