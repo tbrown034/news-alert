@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import type { WatchpointId } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -432,7 +433,13 @@ let cachedResponse: ThreatsResponse | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-export async function GET() {
+export async function GET(request: Request) {
+  const clientIp = getClientIp(request);
+  const rateCheck = checkRateLimit(`conditions:${clientIp}`, { maxRequests: 60 });
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const now = Date.now();
 
   // Return cached response if still valid

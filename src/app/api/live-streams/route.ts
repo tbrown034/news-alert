@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -322,7 +323,13 @@ async function fetchAllLiveStreams(apiKey: string): Promise<LiveStreamResponse> 
 // ============================================================================
 // API ROUTE
 // ============================================================================
-export async function GET() {
+export async function GET(request: Request) {
+  const clientIp = getClientIp(request);
+  const rateCheck = checkRateLimit(`live-streams:${clientIp}`, { maxRequests: 60 });
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const apiKey = process.env.YOUTUBE_API_KEY;
 
   // Handle missing API key gracefully

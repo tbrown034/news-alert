@@ -1,19 +1,16 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import { getStats } from '@/lib/sourceStats';
-
-const ALLOWED_EMAILS = [
-  'tbrown034@gmail.com',
-  'trevorbrown.web@gmail.com',
-];
+import { ADMIN_EMAILS } from '@/lib/admin';
 
 async function getAdminSession(): Promise<{ email: string } | null> {
   try {
     const headersList = await headers();
     const session = await auth.api.getSession({ headers: headersList });
     if (!session?.user?.email) return null;
-    if (!ALLOWED_EMAILS.includes(session.user.email.toLowerCase())) return null;
+    if (!ADMIN_EMAILS.includes(session.user.email.toLowerCase())) return null;
     return { email: session.user.email };
   } catch {
     return null;
@@ -21,6 +18,12 @@ async function getAdminSession(): Promise<{ email: string } | null> {
 }
 
 export async function POST(request: Request) {
+  const clientIp = getClientIp(request);
+  const rateCheck = checkRateLimit(`admin-source-stats:${clientIp}`, { maxRequests: 30 });
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const admin = await getAdminSession();
   if (!admin) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

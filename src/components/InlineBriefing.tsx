@@ -196,8 +196,7 @@ const TIER_INFO: Record<ModelTier, {
   },
 };
 
-// Admin emails
-const ADMIN_EMAILS = ['tbrown034@gmail.com', 'trevorbrown.web@gmail.com'];
+import { ADMIN_EMAILS } from '@/lib/admin';
 
 // Loading phase messages
 const LOADING_PHASES = [

@@ -18,8 +18,7 @@ const MODEL_MAP: Record<ModelTier, string> = {
   pro: 'claude-opus-4-5-20250131',
 };
 
-// Admin emails that can use Pro tier
-const ADMIN_EMAILS = ['tbrown034@gmail.com', 'trevorbrown.web@gmail.com'];
+import { ADMIN_EMAILS } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow up to 60 seconds for AI generation (requires Vercel Pro)

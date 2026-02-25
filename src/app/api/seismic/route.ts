@@ -5,6 +5,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import type { Earthquake } from '@/types';
 
 // USGS GeoJSON feed endpoints
@@ -13,6 +14,12 @@ const USGS_API = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+  const clientIp = getClientIp(request);
+  const rateCheck = checkRateLimit(`seismic:${clientIp}`, { maxRequests: 60 });
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const { searchParams } = new URL(request.url);
 
   // Time period: hour, day, week, month

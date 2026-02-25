@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -160,7 +161,13 @@ function parseTraffic(traffic: string): number {
   return num;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const clientIp = getClientIp(request);
+  const rateCheck = checkRateLimit(`google-trends:${clientIp}`, { maxRequests: 60 });
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const now = Date.now();
 
   // Return cached response if fresh

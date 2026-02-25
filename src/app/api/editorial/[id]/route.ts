@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import {
   getEditorialPostById,
   updateEditorialPost,
@@ -11,12 +12,7 @@ import {
   deleteEditorialPost,
 } from '@/lib/editorial';
 import { EditorialPostUpdate } from '@/types/editorial';
-
-// Allowed admin emails (same as auth.ts)
-const ALLOWED_EMAILS = [
-  'tbrown034@gmail.com',
-  'trevorbrown.web@gmail.com',
-];
+import { ADMIN_EMAILS } from '@/lib/admin';
 
 // Check if user is authenticated admin
 async function getAdminSession(): Promise<{ email: string } | null> {
@@ -28,7 +24,7 @@ async function getAdminSession(): Promise<{ email: string } | null> {
       return null;
     }
 
-    if (!ALLOWED_EMAILS.includes(session.user.email.toLowerCase())) {
+    if (!ADMIN_EMAILS.includes(session.user.email.toLowerCase())) {
       return null;
     }
 
@@ -80,6 +76,12 @@ export async function PUT(
   request: Request,
   { params }: RouteParams
 ) {
+  const clientIp = getClientIp(request);
+  const rateCheck = checkRateLimit(`editorial-put:${clientIp}`, { maxRequests: 30 });
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const admin = await getAdminSession();
   if (!admin) {
     return NextResponse.json(
@@ -167,6 +169,12 @@ export async function DELETE(
   request: Request,
   { params }: RouteParams
 ) {
+  const clientIp = getClientIp(request);
+  const rateCheck = checkRateLimit(`editorial-delete:${clientIp}`, { maxRequests: 30 });
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const admin = await getAdminSession();
   if (!admin) {
     return NextResponse.json(

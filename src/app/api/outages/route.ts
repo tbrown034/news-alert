@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import { XMLParser } from 'fast-xml-parser';
 
 export const dynamic = 'force-dynamic';
@@ -110,7 +111,13 @@ let cachedResponse: { outages: CountryOutage[]; stats: object; fetchedAt: string
 let cacheTimestamp = 0;
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
-export async function GET() {
+export async function GET(request: Request) {
+  const clientIp = getClientIp(request);
+  const rateCheck = checkRateLimit(`outages:${clientIp}`, { maxRequests: 60 });
+  if (!rateCheck.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
   const nowMs = Date.now();
 
   // Return cached response if still valid

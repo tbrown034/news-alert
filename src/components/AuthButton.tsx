@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { signIn, signOut, useSession } from '@/lib/auth-client';
 import { UserCircleIcon, Cog6ToothIcon, ArrowRightOnRectangleIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
+import { ADMIN_EMAILS } from '@/lib/admin';
 
 interface AuthButtonProps {
   variant?: 'default' | 'mobile' | 'dropdown';
@@ -69,7 +70,7 @@ export function AuthButton({ variant = 'default', onNavigate }: AuthButtonProps)
       ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
       : session.user.email?.slice(0, 2).toUpperCase() || '??';
 
-    const isAdmin = session.user.email?.endsWith('@gmail.com');
+    const isAdmin = session.user.email ? ADMIN_EMAILS.includes(session.user.email.toLowerCase()) : false;
 
     // Dropdown variant - compact for menu
     if (variant === 'dropdown') {
