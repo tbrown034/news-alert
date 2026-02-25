@@ -25,7 +25,7 @@ interface ApiResponse {
   isIncremental?: boolean;
 }
 
-type HeroView = 'main' | 'seismic' | 'weather' | 'outages' | 'travel' | 'fires';
+type HeroView = 'main' | 'seismic' | 'weather' | 'outages' | 'travel' | 'fires' | 'combined';
 
 const HERO_MAIN_TABS = [
   { id: 'main', label: 'Main', icon: GlobeAltIcon, color: 'blue' },
@@ -37,6 +37,7 @@ const HERO_SECONDARY_TABS = [
   { id: 'outages', label: 'Outages', icon: SignalIcon, color: 'purple' },
   { id: 'travel', label: 'Travel', icon: ExclamationTriangleIcon, color: 'rose' },
   { id: 'fires', label: 'Fires', icon: FireIcon, color: 'orange' },
+  { id: 'combined', label: 'Combined', icon: GlobeAltIcon, color: 'blue' },
 ] as const;
 
 const HERO_ALL_TABS = [...HERO_MAIN_TABS, ...HERO_SECONDARY_TABS];
@@ -397,7 +398,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const handleHeroViewChange = useCallback((view: HeroView) => {
     setHeroView(view);
     // Fetch earthquake data when seismic tab is opened (if not already loaded)
-    if (view === 'seismic' && earthquakes.length === 0) {
+    if ((view === 'seismic' || view === 'combined') && earthquakes.length === 0) {
       fetchEarthquakes();
     }
   }, [earthquakes.length, fetchEarthquakes]);
@@ -490,11 +491,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  const regionCounts = useMemo(() => newsItems.reduce((acc, item) => {
-    acc[item.region] = (acc[item.region] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>), [newsItems]);
 
   const uniqueSources = useMemo(() => new Set(newsItems.map(i => i.source.id)).size, [newsItems]);
 
@@ -740,6 +736,12 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                       <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Wildfire Tracker</h2>
                     </>
                   )}
+                  {heroView === 'combined' && (
+                    <>
+                      <GlobeAltIcon className="w-4 h-4 text-blue-500" />
+                      <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Combined Monitor</h2>
+                    </>
+                  )}
                 </div>
 
                 {/* Tabs - right side: Main + Seismic visible, rest in More dropdown */}
@@ -815,11 +817,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   watchpoints={watchpoints}
                   selected={selectedWatchpoint}
                   onSelect={setSelectedWatchpoint}
-                  regionCounts={regionCounts}
                   activity={activityData || undefined}
-                  significantQuakes={significantQuakes}
-                  tfrs={tfrs}
-                  fires={fireMarkers}
                   hoursWindow={hoursWindow}
                   useUTC={useUTC}
                   initialFocus={initialMapFocus}
@@ -839,13 +837,26 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               {heroView === 'outages' && <OutagesMap />}
               {heroView === 'travel' && <TravelMap />}
               {heroView === 'fires' && <FiresMap />}
+              {heroView === 'combined' && (
+                <WorldMap
+                  watchpoints={watchpoints}
+                  selected={selectedWatchpoint}
+                  onSelect={setSelectedWatchpoint}
+                  activity={activityData || undefined}
+                  significantQuakes={significantQuakes}
+                  tfrs={tfrs}
+                  fires={fireMarkers}
+                  hoursWindow={hoursWindow}
+                  useUTC={useUTC}
+                />
+              )}
               </ErrorBoundary>
             </div>
           </div>
 
         {/* Status Bar - flush against map bottom */}
-          <div className="flex items-center justify-between px-3 py-2 bg-slate-100 dark:bg-slate-900 rounded-b-2xl border-x border-b border-slate-300 dark:border-slate-600 -mt-[1px] text-xs text-slate-500 dark:text-slate-400 shadow-lg shadow-black/5 dark:shadow-black/30">
-            <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 bg-slate-100 dark:bg-slate-900 rounded-b-2xl border-x border-b border-slate-300 dark:border-slate-600 -mt-[1px] text-xs text-slate-500 dark:text-slate-400 shadow-lg shadow-black/5 dark:shadow-black/30">
+            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-x-3">
 
             {/* Seismic Legend */}
             {heroView === 'seismic' && (
@@ -885,6 +896,37 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
                   <span>Moderate</span>
+                </div>
+              </div>
+            )}
+
+            {/* Combined Legend */}
+            {heroView === 'combined' && (
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                  <span>Normal</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                  <span>Elevated</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                  <span>Critical</span>
+                </div>
+                <span className="text-slate-300 dark:text-slate-600">|</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+                  <span>Quake</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-orange-400" />
+                  <span>Fire</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
+                  <span>TFR</span>
                 </div>
               </div>
             )}
@@ -981,10 +1023,9 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               const hasCritical = elevatedRegions.some(([, data]) => data.level === 'critical');
 
               return (
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 sm:gap-x-3">
-                  {/* Always show global status */}
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-x-3">
                   <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
                       hasCritical ? 'bg-red-500 animate-pulse' : hasElevated ? 'bg-orange-500' : 'bg-green-500'
                     }`} />
                     <span className={`font-medium ${
@@ -994,7 +1035,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                           ? 'text-orange-600 dark:text-orange-400'
                           : 'text-slate-700 dark:text-slate-300'
                     }`}>
-                      Feed Activity: {hasCritical ? 'Surging Across Regions' : hasElevated ? 'Above Typical Levels' : 'Within Normal Range'}
+                      Feed Activity: {hasCritical ? 'Surging Across Regions' : hasElevated ? 'Above Typical Levels' : 'Normal'}
                     </span>
                     {!hasElevated && (
                       <span className="text-slate-500 dark:text-slate-500 text-xs">for this time of day</span>
@@ -1028,18 +1069,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 </div>
               );
             })()}
-            {heroView === 'main' && significantQuakes.length > 0 && (
-              <button
-                onClick={() => handleHeroViewChange('seismic')}
-                className="flex items-center gap-1.5 pl-2 border-l border-slate-300 dark:border-slate-700 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
-                <span className="text-slate-700 dark:text-slate-300 font-medium">
-                  {significantQuakes.length} large earthquake{significantQuakes.length > 1 ? 's' : ''}
-                </span>
-                <span className="text-slate-500 dark:text-slate-500 text-xs">in last 24h</span>
-              </button>
-            )}
           </div>
           {/* Panel toggle buttons */}
           <div className="flex items-center gap-1">
@@ -1285,41 +1314,21 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               <div className="text-2xs text-slate-400 dark:text-slate-500 mb-1.5 font-medium">Map Key</div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 dark:text-slate-400">
                 {heroView === 'main' && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400 dark:text-slate-500 text-2xs">({hoursWindow}h)</span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-green-500" />
-                        <span>Typical</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-orange-500" />
-                        <span>2x+</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-red-500" />
-                        <span>4x+</span>
-                      </span>
-                    </div>
-                    {significantQuakes.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-300 dark:text-slate-600">|</span>
-                        <span className="text-slate-400 dark:text-slate-500 text-2xs">(24h)</span>
-                        <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                          <span>M6+</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-orange-500" />
-                          <span>M6.5+</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="w-2 h-2 rounded-full bg-red-500" />
-                          <span>M7+</span>
-                        </span>
-                      </div>
-                    )}
-                  </>
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400 dark:text-slate-500 text-2xs">({hoursWindow}h)</span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                      <span>Typical</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-orange-500" />
+                      <span>2x+</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-red-500" />
+                      <span>4x+</span>
+                    </span>
+                  </div>
                 )}
                 {heroView === 'seismic' && (
                   <div className="flex items-center gap-2">
@@ -1357,6 +1366,17 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>Low</span></span>
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Moderate</span></span>
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>High</span></span>
+                  </div>
+                )}
+                {heroView === 'combined' && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /><span>Normal</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Elevated</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>Critical</span></span>
+                    <span className="text-slate-300 dark:text-slate-600">|</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>Quake</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400" /><span>Fire</span></span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400" /><span>TFR</span></span>
                   </div>
                 )}
               </div>

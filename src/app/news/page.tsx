@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
@@ -233,17 +233,7 @@ export default function NewsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Compute region counts from all articles (not filtered)
-  const regionCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const a of articles) {
-      const region = a._sourceRegion || a.region;
-      if (region && region !== 'all' && region !== 'seismic') {
-        counts[region] = (counts[region] || 0) + 1;
-      }
-    }
-    return counts;
-  }, [articles]);
+
 
   const handleRegionSelect = useCallback((id: WatchpointId) => {
     setSelectedRegion(id);
@@ -306,7 +296,6 @@ export default function NewsPage() {
               watchpoints={WATCHPOINTS}
               selected={selectedRegion}
               onSelect={handleRegionSelect}
-              regionCounts={regionCounts}
               showTimes={false}
               showZoomControls={false}
             />

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:clean": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true; open http://localhost:3000; next dev",
+    "dev:clean": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true; rm -f .next/dev/lock; open -a 'Google Chrome' http://localhost:3000; next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

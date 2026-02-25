@@ -68,7 +68,6 @@ interface WorldMapProps {
   watchpoints: Watchpoint[];
   selected: WatchpointId;
   onSelect: (id: WatchpointId) => void;
-  regionCounts?: Record<string, number>;
   activity?: Record<string, RegionActivity>;
   significantQuakes?: Earthquake[]; // 6.0+ earthquakes for Main view
   hoursWindow?: number; // Time window in hours
@@ -103,7 +102,7 @@ const regionMarkers: Record<string, { coordinates: [number, number]; label: stri
 const DEFAULT_CENTER: [number, number] = [20, 30];
 const DEFAULT_ZOOM = 1.6;
 
-function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {}, activity = {}, significantQuakes = [], hoursWindow = 6, hotspotsOnly = false, useUTC = false, initialFocus, showTimes = true, showZoomControls = true, tfrs = [], fires = [] }: WorldMapProps) {
+function WorldMapComponent({ watchpoints, selected, onSelect, activity = {}, significantQuakes = [], hoursWindow = 6, hotspotsOnly = false, useUTC = false, initialFocus, showTimes = true, showZoomControls = true, tfrs = [], fires = [] }: WorldMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hasAppliedInitialFocus, setHasAppliedInitialFocus] = useState(false);
@@ -147,6 +146,28 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
     if (magnitude >= 7) return '#ef4444'; // Red
     if (magnitude >= 6.5) return '#f97316'; // Orange
     return '#eab308'; // Yellow
+  };
+
+  // Marker sizing reflects real-world frequency & significance:
+  // M6+ ~weekly, M7+ ~monthly, M7.5+ few/year → scale accordingly
+  const getQuakeRadius = (magnitude: number) => {
+    if (magnitude >= 7.5) return 16; // Rare, catastrophic
+    if (magnitude >= 7) return 11;   // Major, ~monthly
+    if (magnitude >= 6.5) return 7;  // Strong, bi-weekly
+    return 4;                         // M6+, ~weekly — modest
+  };
+
+  // Fires: many detections, only critical fires deserve visual weight
+  const getFireRadius = (severity: string) => {
+    if (severity === 'critical') return 3;
+    if (severity === 'severe') return 1.5;
+    return 1;
+  };
+
+  // TFRs: dozens active at any time, background noise unless security/VIP
+  const getTfrRadius = (tfrType: string) => {
+    if (tfrType === 'Security' || tfrType === 'VIP') return 2;
+    return 1;
   };
 
   useEffect(() => {
@@ -262,7 +283,6 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
             const isSelected = selected === id;
             const isHovered = hoveredMarker === id;
             const isCritical = activityLevel === 'critical';
-            const count = regionCounts[id] || 0;
 
             return (
               <Marker
@@ -332,32 +352,6 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
                   {marker.label}
                 </text>
 
-                {/* Article count badge - positioned below label */}
-                {count > 0 && (
-                  <g>
-                    <rect
-                      x={-14}
-                      y={showTimes ? 62 : 42}
-                      width={28}
-                      height={18}
-                      rx={9}
-                      fill="rgba(255,255,255,0.15)"
-                      stroke="rgba(255,255,255,0.3)"
-                      strokeWidth={1}
-                    />
-                    <text
-                      y={showTimes ? 75 : 55}
-                      textAnchor="middle"
-                      fill="#fff"
-                      fontSize={12}
-                      fontWeight="700"
-                      style={{ pointerEvents: 'none' }}
-                    >
-                      {count}
-                    </text>
-                  </g>
-                )}
-
                 {/* Local Time with City */}
                 {showTimes && (
                   <text
@@ -404,37 +398,39 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
           })}
 
           {/* Significant Earthquake Markers (6.0+) */}
-          {significantQuakes.map((quake) => (
+          {significantQuakes.map((quake) => {
+            const qRadius = getQuakeRadius(quake.magnitude);
+            return (
             <Marker
               key={quake.id}
               coordinates={[quake.coordinates[0], quake.coordinates[1]]}
               onMouseEnter={() => setHoveredQuake(quake.id)}
               onMouseLeave={() => setHoveredQuake(null)}
             >
-              {/* Outer pulse ring */}
+              {/* Outer pulse ring — scales with magnitude */}
               <circle
-                r={16}
+                r={qRadius * 2.5}
                 fill="none"
                 stroke={getQuakeColor(quake.magnitude)}
-                strokeWidth={2}
+                strokeWidth={quake.magnitude >= 7 ? 2.5 : 1.5}
                 opacity={0.3}
                 className="animate-ping-subtle"
               />
               {/* Inner pulse ring */}
               <circle
-                r={10}
+                r={qRadius * 1.6}
                 fill="none"
                 stroke={getQuakeColor(quake.magnitude)}
                 strokeWidth={1.5}
                 opacity={0.5}
                 className="animate-pulse"
               />
-              {/* Main marker */}
+              {/* Main marker — size by magnitude */}
               <circle
-                r={hoveredQuake === quake.id ? 7 : 6}
+                r={hoveredQuake === quake.id ? qRadius + 1.5 : qRadius}
                 fill={getQuakeColor(quake.magnitude)}
                 stroke="#fff"
-                strokeWidth={2}
+                strokeWidth={quake.magnitude >= 7 ? 2.5 : 1.5}
                 style={{ cursor: 'pointer', transition: 'r 150ms ease' }}
               />
               {/* Tooltip on hover */}
@@ -461,13 +457,15 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
                 </g>
               )}
             </Marker>
-          ))}
+            );
+          })}
 
           {/* Fire Markers (Wildfire detections) */}
           {fires.map((fire) => {
             const isHovered = hoveredFire === fire.id;
             const isCritical = fire.severity === 'critical';
             const markerColor = isCritical ? '#ef4444' : '#f97316'; // red for critical, orange for severe
+            const fRadius = getFireRadius(fire.severity);
             return (
               <Marker
                 key={fire.id}
@@ -475,23 +473,23 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
                 onMouseEnter={() => setHoveredFire(fire.id)}
                 onMouseLeave={() => setHoveredFire(null)}
               >
-                {/* Outer glow — pulsing for critical */}
+                {/* Outer glow — pulsing for critical, scaled by severity */}
                 <circle
-                  r={isCritical ? 10 : 8}
+                  r={fRadius * 2.5}
                   fill={markerColor}
                   opacity={isHovered ? 0.3 : 0.15}
                   style={{ transition: 'opacity 150ms ease' }}
                 >
                   {isCritical && (
-                    <animate attributeName="r" values="10;14;10" dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="r" values={`${fRadius * 2.5};${fRadius * 3.5};${fRadius * 2.5}`} dur="2s" repeatCount="indefinite" />
                   )}
                 </circle>
-                {/* Main dot */}
+                {/* Main dot — size by severity */}
                 <circle
-                  r={isHovered ? 4.5 : 3.5}
+                  r={isHovered ? fRadius + 1 : fRadius}
                   fill={markerColor}
                   stroke="#fff"
-                  strokeWidth={1}
+                  strokeWidth={isCritical ? 1 : 0.5}
                   style={{ cursor: 'pointer', transition: 'r 150ms ease' }}
                 />
                 {/* Tooltip on hover */}
@@ -533,6 +531,7 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
           {/* TFR Markers (Flight Restrictions) */}
           {tfrs.map((tfr) => {
             const isHovered = hoveredTFR === tfr.id;
+            const tRadius = getTfrRadius(tfr.tfrType);
             return (
               <Marker
                 key={tfr.id}
@@ -540,22 +539,22 @@ function WorldMapComponent({ watchpoints, selected, onSelect, regionCounts = {},
                 onMouseEnter={() => setHoveredTFR(tfr.id)}
                 onMouseLeave={() => setHoveredTFR(null)}
               >
-                {/* Dashed outer ring — restriction zone indicator */}
+                {/* Dashed outer ring — scaled by type */}
                 <circle
-                  r={12}
+                  r={tRadius * 3}
                   fill="none"
                   stroke="#22d3ee"
-                  strokeWidth={1.5}
-                  strokeDasharray="3 3"
-                  opacity={isHovered ? 0.8 : 0.4}
+                  strokeWidth={1}
+                  strokeDasharray="2 2"
+                  opacity={isHovered ? 0.8 : 0.3}
                   style={{ transition: 'opacity 150ms ease' }}
                 />
-                {/* Main marker */}
+                {/* Main marker — size by type */}
                 <circle
-                  r={isHovered ? 5 : 4}
+                  r={isHovered ? tRadius + 1 : tRadius}
                   fill="#22d3ee"
                   stroke="#fff"
-                  strokeWidth={1.5}
+                  strokeWidth={1}
                   style={{ cursor: 'pointer', transition: 'r 150ms ease' }}
                 />
                 {/* Tooltip on hover */}
