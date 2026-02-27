@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeftIcon, ArrowTopRightOnSquareIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
 import { TieredSource } from '@/lib/sources-clean';
+import { getEffectivePPD } from '@/lib/baselineUtils';
 import { PlatformIcon, platformColors, platformBadgeStyles } from '@/components/PlatformIcon';
 import { formatTimeAgo, regionBadges, sourceTypeColors, sourceTypeLabels, platformNames } from '@/lib/formatUtils';
 import { NewsCard } from '@/components/NewsCard';
@@ -53,10 +54,6 @@ function SourceAvatar({ avatarUrl, platform, name, size = 64 }: {
   );
 }
 
-function isMeasuredValue(postsPerDay: number, baselineMeasuredAt?: string): boolean {
-  return !!baselineMeasuredAt || postsPerDay % 1 !== 0;
-}
-
 export default function SourceProfileClient({ source }: SourceProfileClientProps) {
   const [posts, setPosts] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +68,8 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
   const sourceTypeLabel = sourceTypeLabels[source.sourceType] || source.sourceType;
   const platformBadge = platformBadgeStyles[source.platform] || platformBadgeStyles.rss;
   const platformName = platformNames[source.platform] || source.platform;
-  const measured = isMeasuredValue(source.postsPerDay, source.baselineMeasuredAt);
+  const effectivePPD = getEffectivePPD(source);
+  const measured = !!source.baselineMeasuredAt;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -217,10 +215,10 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
             {/* Posts per day */}
             <div>
               <p className="text-2xl font-bold text-[var(--foreground)]">
-                {source.postsPerDay < 1 ? source.postsPerDay.toFixed(1) : Math.round(source.postsPerDay)}
+                {effectivePPD < 1 ? effectivePPD.toFixed(1) : Math.round(effectivePPD)}
               </p>
               <p className="text-xs text-[var(--foreground-light)]">
-                posts/day {measured ? '(measured)' : '(estimated)'}
+                posts/day {measured ? '(measured)' : source.estimatedPPD ? '(estimated)' : '(default)'}
               </p>
             </div>
 
@@ -257,9 +255,11 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
             </div>
           </div>
 
-          {source.baselineMeasuredAt && (
+          {(source.baselineMeasuredAt || source.estimatedAt) && (
             <p className="text-xs text-[var(--foreground-light)] mt-4 pt-3 border-t border-[var(--border-card)]">
-              Baseline measured {source.baselineMeasuredAt}
+              {source.baselineMeasuredAt
+                ? `Baseline measured ${source.baselineMeasuredAt}`
+                : `Estimated ${source.estimatedAt}`}
             </p>
           )}
         </section>

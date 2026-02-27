@@ -2,7 +2,7 @@
  * MEASURE SOURCE BASELINES
  * ========================
  * Paginate through 30 days of post history for each Bluesky/Telegram/Mastodon source
- * and calculate actual postsPerDay values. Updates sources-clean.ts with measured
+ * and calculate actual baselinePPD values. Updates sources-clean.ts with measured
  * decimal values (which activityDetection.ts trusts over round-number guesses).
  *
  * Usage:
@@ -32,8 +32,8 @@ interface MeasuredBaseline {
   platform: string;
   totalPosts: number;
   daysSpan: number;
-  postsPerDay: number;
-  oldPostsPerDay: number;
+  baselinePPD: number;
+  oldBaselinePPD: number;
 }
 
 const results: MeasuredBaseline[] = [];
@@ -105,7 +105,7 @@ async function measureBlueskySource(source: any): Promise<MeasuredBaseline | nul
   const now = new Date();
   const spanMs = oldestPostDate ? now.getTime() - oldestPostDate.getTime() : LOOKBACK_MS;
   const daysSpan = Math.max(1, spanMs / (24 * 60 * 60 * 1000));
-  const postsPerDay = Math.round((totalPosts / daysSpan) * 10) / 10;
+  const baselinePPD = Math.round((totalPosts / daysSpan) * 10) / 10;
 
   return {
     sourceId: source.id,
@@ -113,8 +113,8 @@ async function measureBlueskySource(source: any): Promise<MeasuredBaseline | nul
     platform: 'bluesky',
     totalPosts,
     daysSpan: Math.round(daysSpan * 10) / 10,
-    postsPerDay,
-    oldPostsPerDay: source.postsPerDay,
+    baselinePPD,
+    oldBaselinePPD: source.baselinePPD,
   };
 }
 
@@ -176,7 +176,7 @@ async function measureMastodonSource(source: any): Promise<MeasuredBaseline | nu
     const now = new Date();
     const spanMs = oldestPostDate ? now.getTime() - oldestPostDate.getTime() : LOOKBACK_MS;
     const daysSpan = Math.max(1, spanMs / (24 * 60 * 60 * 1000));
-    const postsPerDay = Math.round((totalPosts / daysSpan) * 10) / 10;
+    const baselinePPD = Math.round((totalPosts / daysSpan) * 10) / 10;
 
     return {
       sourceId: source.id,
@@ -184,8 +184,8 @@ async function measureMastodonSource(source: any): Promise<MeasuredBaseline | nu
       platform: 'mastodon',
       totalPosts,
       daysSpan: Math.round(daysSpan * 10) / 10,
-      postsPerDay,
-      oldPostsPerDay: source.postsPerDay,
+      baselinePPD,
+      oldBaselinePPD: source.baselinePPD,
     };
   } catch (err: any) {
     errors.push({ sourceId: source.id, error: err.message });
@@ -272,7 +272,7 @@ async function measureTelegramMTProto(source: any, handle: string): Promise<Meas
   const now = new Date();
   const spanMs = oldestPostDate ? now.getTime() - oldestPostDate.getTime() : LOOKBACK_MS;
   const daysSpan = Math.max(1, spanMs / (24 * 60 * 60 * 1000));
-  const postsPerDay = Math.round((totalPosts / daysSpan) * 10) / 10;
+  const baselinePPD = Math.round((totalPosts / daysSpan) * 10) / 10;
 
   return {
     sourceId: source.id,
@@ -280,8 +280,8 @@ async function measureTelegramMTProto(source: any, handle: string): Promise<Meas
     platform: 'telegram',
     totalPosts,
     daysSpan: Math.round(daysSpan * 10) / 10,
-    postsPerDay,
-    oldPostsPerDay: source.postsPerDay,
+    baselinePPD,
+    oldBaselinePPD: source.baselinePPD,
   };
 }
 
@@ -313,7 +313,7 @@ async function measureTelegramScrape(source: any, handle: string): Promise<Measu
   const now = new Date();
   const spanMs = oldestPostDate ? now.getTime() - oldestPostDate.getTime() : LOOKBACK_MS;
   const daysSpan = Math.max(1, spanMs / (24 * 60 * 60 * 1000));
-  const postsPerDay = Math.round((totalPosts / daysSpan) * 10) / 10;
+  const baselinePPD = Math.round((totalPosts / daysSpan) * 10) / 10;
 
   return {
     sourceId: source.id,
@@ -321,8 +321,8 @@ async function measureTelegramScrape(source: any, handle: string): Promise<Measu
     platform: 'telegram (scraped)',
     totalPosts,
     daysSpan: Math.round(daysSpan * 10) / 10,
-    postsPerDay,
-    oldPostsPerDay: source.postsPerDay,
+    baselinePPD,
+    oldBaselinePPD: source.baselinePPD,
   };
 }
 
@@ -336,8 +336,8 @@ function updateSourcesFile(baselines: MeasuredBaseline[]) {
 
   let updated = 0;
   for (const baseline of baselines) {
-    // Match postsPerDay value for this source by finding the source block
-    // Look for the id line, then find postsPerDay within the next few lines
+    // Match baselinePPD value for this source by finding the source block
+    // Look for the id line, then find baselinePPD within the next few lines
     const idPattern = `id: '${baseline.sourceId}'`;
     const idIdx = content.indexOf(idPattern);
     if (idIdx === -1) {
@@ -345,16 +345,16 @@ function updateSourcesFile(baselines: MeasuredBaseline[]) {
       continue;
     }
 
-    // Find the postsPerDay line within the next 300 chars (should be in the same source block)
+    // Find the baselinePPD line within the next 300 chars (should be in the same source block)
     const searchRegion = content.slice(idIdx, idIdx + 400);
-    const ppdMatch = searchRegion.match(/postsPerDay:\s*[\d.]+/);
+    const ppdMatch = searchRegion.match(/baselinePPD:\s*[\d.]+/);
     if (!ppdMatch) {
-      console.warn(`  Could not find postsPerDay for ${baseline.sourceId}`);
+      console.warn(`  Could not find baselinePPD for ${baseline.sourceId}`);
       continue;
     }
 
     const oldValue = ppdMatch[0];
-    const newValue = `postsPerDay: ${baseline.postsPerDay}`;
+    const newValue = `baselinePPD: ${baseline.baselinePPD}`;
 
     if (oldValue === newValue) continue;
 
@@ -366,7 +366,7 @@ function updateSourcesFile(baselines: MeasuredBaseline[]) {
 
   if (updated > 0) {
     fs.writeFileSync(sourcesPath, content, 'utf-8');
-    console.log(`\nUpdated ${updated} postsPerDay values in sources-clean.ts`);
+    console.log(`\nUpdated ${updated} baselinePPD values in sources-clean.ts`);
   } else {
     console.log('\nNo changes needed in sources-clean.ts');
   }
@@ -399,10 +399,10 @@ async function main() {
       const result = await measureBlueskySource(source);
       if (result) {
         results.push(result);
-        const change = result.postsPerDay !== result.oldPostsPerDay
-          ? ` (was ${result.oldPostsPerDay})`
+        const change = result.baselinePPD !== result.oldBaselinePPD
+          ? ` (was ${result.oldBaselinePPD})`
           : '';
-        console.log(` ${result.postsPerDay}/day (${result.totalPosts} posts over ${result.daysSpan}d)${change}`);
+        console.log(` ${result.baselinePPD}/day (${result.totalPosts} posts over ${result.daysSpan}d)${change}`);
       } else {
         console.log(' FAILED');
       }
@@ -418,10 +418,10 @@ async function main() {
       const result = await measureTelegramSource(source);
       if (result) {
         results.push(result);
-        const change = result.postsPerDay !== result.oldPostsPerDay
-          ? ` (was ${result.oldPostsPerDay})`
+        const change = result.baselinePPD !== result.oldBaselinePPD
+          ? ` (was ${result.oldBaselinePPD})`
           : '';
-        console.log(` ${result.postsPerDay}/day (${result.totalPosts} posts over ${result.daysSpan}d)${change}`);
+        console.log(` ${result.baselinePPD}/day (${result.totalPosts} posts over ${result.daysSpan}d)${change}`);
       } else {
         console.log(' FAILED');
       }
@@ -437,10 +437,10 @@ async function main() {
       const result = await measureMastodonSource(source);
       if (result) {
         results.push(result);
-        const change = result.postsPerDay !== result.oldPostsPerDay
-          ? ` (was ${result.oldPostsPerDay})`
+        const change = result.baselinePPD !== result.oldBaselinePPD
+          ? ` (was ${result.oldBaselinePPD})`
           : '';
-        console.log(` ${result.postsPerDay}/day (${result.totalPosts} posts over ${result.daysSpan}d)${change}`);
+        console.log(` ${result.baselinePPD}/day (${result.totalPosts} posts over ${result.daysSpan}d)${change}`);
       } else {
         console.log(' FAILED');
       }
@@ -461,15 +461,15 @@ async function main() {
 
   // Show biggest changes
   const changes = results
-    .filter(r => r.postsPerDay !== r.oldPostsPerDay)
-    .sort((a, b) => Math.abs(b.postsPerDay - b.oldPostsPerDay) - Math.abs(a.postsPerDay - a.oldPostsPerDay));
+    .filter(r => r.baselinePPD !== r.oldBaselinePPD)
+    .sort((a, b) => Math.abs(b.baselinePPD - b.oldBaselinePPD) - Math.abs(a.baselinePPD - a.oldBaselinePPD));
 
   if (changes.length > 0) {
     console.log(`\nBiggest changes (${changes.length} sources):`);
     for (const c of changes.slice(0, 20)) {
-      const direction = c.postsPerDay > c.oldPostsPerDay ? '+' : '';
-      const diff = c.postsPerDay - c.oldPostsPerDay;
-      console.log(`  ${c.name}: ${c.oldPostsPerDay} → ${c.postsPerDay} (${direction}${diff.toFixed(1)}/day)`);
+      const direction = c.baselinePPD > c.oldBaselinePPD ? '+' : '';
+      const diff = c.baselinePPD - c.oldBaselinePPD;
+      console.log(`  ${c.name}: ${c.oldBaselinePPD} → ${c.baselinePPD} (${direction}${diff.toFixed(1)}/day)`);
     }
   }
 

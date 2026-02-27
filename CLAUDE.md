@@ -109,7 +109,7 @@ npx tsx scripts/test-new-sources.ts
   confidence: 85,
   region: 'middle-east',
   fetchTier: 'T2',
-  postsPerDay: 5,
+  baselinePPD: 5,
   feedUrl: 'https://bsky.app/profile/handle.bsky.social/rss'
 }
 ```
@@ -162,19 +162,13 @@ Two separate systems. **Do not cross-wire them.**
 
 **Files:** `activityDetection.ts` (region-level), `sourceActivity.ts` (per-source)
 
-Compares actual post count in a 6-hour window against time-adjusted baselines.
+Compares actual post count in a 6-hour window against DB-derived baselines.
 
 ```
-Raw Baseline = sum of postsPerDay for region ÷ 4 (flat 6h average)
-Adjusted Baseline = Raw Baseline × Time-of-Day Multiplier
+Baseline = 14-day rolling average of actual posts per 6h bucket (from post_activity_logs)
+Fallback = PPD-sum from sources-clean.ts ÷ 4 (used if DB has no data)
 
-Time-of-Day Multipliers (4 UTC slots, sum = 4.0):
-  00:00–06:00 UTC → 0.4  (US night, EU night — trough)
-  06:00–12:00 UTC → 0.8  (US sleeping, EU morning peak)
-  12:00–18:00 UTC → 1.5  (US morning + EU afternoon — peak)
-  18:00–24:00 UTC → 1.3  (US afternoon, EU evening)
-
-Region-level thresholds (against adjusted baseline):
+Region-level thresholds (against baseline):
   Multiplier >= 5.0 AND count >= 50 → CRITICAL
   Multiplier >= 2.5 AND count >= 25 → ELEVATED
   Otherwise → NORMAL
@@ -183,9 +177,9 @@ Source-level thresholds:
   Multiplier >= 2.5 AND count >= 3 → ANOMALOUS
 ```
 
-**Baselines come from `postsPerDay` values in `sources-clean.ts`.** These are static numbers baked into the source file. Decimal values (e.g., 37.2) were measured from real data and are trusted. Round numbers (e.g., 50) were guessed and get replaced with a conservative default of 3 PPD.
+**Baselines come from the database** — `getRegionBaselineAverages()` in `activityLogging.ts` queries 14-day rolling averages from the `region_breakdown` JSONB column in `post_activity_logs`. This captures actual post distribution after region reclassification, so baselines are self-correcting when sources are added/removed.
 
-**Time-of-day ratios** are based on the source composition (~70% US, ~20% EU, ~10% Middle East). The multipliers redistribute the daily expectation across slots so nighttime doesn't read as "below normal" and daytime surges aren't muted. The sum of 4.0 ensures the total daily expectation is unchanged.
+**Fallback:** If the DB has insufficient data (<4 samples), baselines fall back to summing `getEffectivePPD()` values (`baselinePPD ?? estimatedPPD ?? 3`) from `sources-clean.ts`. Baselines are cached for 30 minutes with background refresh.
 
 Excluded regions (always NORMAL): LATAM, Asia, Africa — insufficient source coverage.
 
@@ -195,23 +189,25 @@ Excluded regions (always NORMAL): LATAM, Asia, Africa — insufficient source co
 
 Writes 6-hour-bucketed snapshots (post counts, region/platform breakdowns, fetch duration) to the database on every fetch. Buckets align to 00:00/06:00/12:00/18:00 UTC.
 
-**This data is NOT used by the detection system.** It exists for the admin dashboard (`getRollingAverages()`, `getActivityTrend()`) to let you visually inspect trends and spot-check whether baselines are still accurate.
+**This data IS used by the detection system** — `getRegionBaselineAverages()` derives baselines from 14-day rolling averages of these snapshots. It also powers the activity history chart on the conditions page via `/api/analytics/activity?view=history`.
 
 ### Keeping Baselines Fresh
 
-Run periodically (monthly, or after adding/removing sources):
+Baselines update automatically from the database. No manual intervention needed unless the DB is reset.
+
+For per-source PPD measurement (used for source-level anomaly detection), run periodically:
 ```bash
 npx tsx scripts/measure-source-baselines.ts           # Update all platforms
 npx tsx scripts/measure-source-baselines.ts --dry-run  # Preview without writing
 npx tsx scripts/measure-source-baselines.ts --platform bluesky  # One platform only
 ```
 
-This script paginates 30 days of post history via each platform's API (Bluesky xRPC, Mastodon REST, Telegram MTProto) and writes measured decimal `postsPerDay` values back into `sources-clean.ts`.
-
 ### Design Decisions
 
-- **Time-of-day adjusted baseline** — divides postsPerDay by 4 for a flat 6h average, then multiplies by a UTC slot factor (0.4/0.8/1.5/1.3). This prevents false "below normal" at night and muted surge detection during peak hours. Ratios derived from source composition (US/EU/ME timezone mix). If ratios need tuning, adjust `TIME_OF_DAY_MULTIPLIERS` in `activityDetection.ts` — they must sum to 4.0.
+- **DB-derived baselines** — 14-day rolling average from `post_activity_logs.region_breakdown` JSONB. Self-correcting when sources are added/removed. Solves the region:'all' baseline leak (sources tagged 'all' produce posts classified to specific regions, and DB captures actual distribution).
+- **No time-of-day multipliers** — empirical data showed posting is nearly flat across UTC slots (0.92-1.04), so multipliers were removed in favor of a flat baseline.
 - **Per-source anomaly data is computed but not yet displayed in the UI** — attached to each NewsItem as `sourceActivity` but NewsCard/NewsFeed don't render it.
+- **Activity history chart** on conditions page (`ActivityChart.tsx`) — uses recharts `AreaChart` with time range selector (24h/3d/7d/14d) and region toggles.
 
 ---
 
@@ -220,10 +216,11 @@ This script paginates 30 days of post history via each platform's API (Bluesky x
 ### Active (Keep)
 | Script | Purpose |
 |--------|---------|
-| `measure-source-baselines.ts` | Measure postsPerDay for all sources (run monthly) |
+| `measure-source-baselines.ts` | Measure baselinePPD for all sources (run monthly) |
+| `estimate-ppd.ts` | Quick PPD estimate from ~100 posts (`--region`, `--platform`, `--dry-run`) |
 | `test-new-sources.ts` | Test newly added sources |
 | `audit-sources.ts` | Validate all sources, find 404s/inactive |
-| `generate-clean-sources.ts` | Generate tiered source file |
+| `audit-sources-quick.ts` | Quick alive-check with PPD comparison (`--region`, `--platform`) |
 | `test-bluesky-accounts.ts` | Performance diagnostics |
 | `test-region-detection.ts` | 90-test suite for region detection |
 | `telegram-auth.ts` | Telegram session re-authentication |

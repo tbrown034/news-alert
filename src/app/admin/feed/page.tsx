@@ -11,7 +11,7 @@ import { FEED_PLATFORMS, platformBadgeClass, regionDisplayNames } from '../share
 const allSources: TieredSource[] = [...tier1Sources, ...tier2Sources, ...tier3Sources];
 const feedSources = allSources.filter(s => FEED_PLATFORMS.has(s.platform));
 
-type SortField = 'name' | 'platform' | 'sourceType' | 'fetchTier' | 'confidence' | 'region' | 'postsPerDay';
+type SortField = 'name' | 'platform' | 'sourceType' | 'fetchTier' | 'confidence' | 'region' | 'baselinePPD';
 type SortDirection = 'asc' | 'desc';
 
 export default function FeedSourcesPage() {
@@ -28,6 +28,8 @@ export default function FeedSourcesPage() {
   const [selectedSource, setSelectedSource] = useState<TieredSource | null>(null);
   const [liveStats, setLiveStats] = useState<any>(null);
   const [liveStatsLoading, setLiveStatsLoading] = useState(false);
+  const [saveEstimateLoading, setSaveEstimateLoading] = useState(false);
+  const [saveEstimateResult, setSaveEstimateResult] = useState<string | null>(null);
 
   const [testHandle, setTestHandle] = useState('');
   const [testPlatform, setTestPlatform] = useState('bluesky');
@@ -54,10 +56,13 @@ export default function FeedSourcesPage() {
     if (regionFilter !== 'all') result = result.filter(s => s.region === regionFilter);
 
     return [...result].sort((a, b) => {
-      let aVal = a[sortField], bVal = b[sortField];
+      let aVal: string | number | undefined = a[sortField];
+      let bVal: string | number | undefined = b[sortField];
       if (typeof aVal === 'string' && typeof bVal === 'string') { aVal = aVal.toLowerCase(); bVal = bVal.toLowerCase(); }
-      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      const aComp = aVal ?? 0;
+      const bComp = bVal ?? 0;
+      if (aComp < bComp) return sortDirection === 'asc' ? -1 : 1;
+      if (aComp > bComp) return sortDirection === 'asc' ? 1 : -1;
       return 0;
     });
   }, [search, platformFilter, typeFilter, regionFilter, sortField, sortDirection]);
@@ -85,6 +90,16 @@ export default function FeedSourcesPage() {
       if (res.ok) setLiveStats(await res.json());
     } catch { /* silent */ }
     finally { setLiveStatsLoading(false); }
+  };
+
+  const handleSaveEstimate = async (source: TieredSource, ppd: number) => {
+    setSaveEstimateLoading(true); setSaveEstimateResult(null);
+    try {
+      const res = await fetch('/api/admin/source-estimate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sourceId: source.id, estimatedPPD: ppd }) });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || `HTTP ${res.status}`); }
+      setSaveEstimateResult(`Saved estimatedPPD: ${ppd}`);
+    } catch (err) { setSaveEstimateResult(`Error: ${err instanceof Error ? err.message : 'Failed'}`); }
+    finally { setSaveEstimateLoading(false); }
   };
 
   if (isPending) return <div className="min-h-screen bg-slate-50 dark:bg-black flex items-center justify-center"><div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
@@ -151,7 +166,7 @@ export default function FeedSourcesPage() {
           {testResult && !testResult.error && (
             <div className="mt-3 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                <div><p className="text-xs text-slate-500 uppercase">Posts/Day</p><p className="font-mono font-bold text-slate-900 dark:text-white">{testResult.postsPerDay}</p></div>
+                <div><p className="text-xs text-slate-500 uppercase">Posts/Day</p><p className="font-mono font-bold text-slate-900 dark:text-white">{testResult.recentPPD}</p></div>
                 <div><p className="text-xs text-slate-500 uppercase">Last Posted</p><p className="font-mono text-slate-700 dark:text-slate-300">{testResult.lastPostedAgo}</p></div>
                 <div><p className="text-xs text-slate-500 uppercase">Sampled</p><p className="font-mono text-slate-700 dark:text-slate-300">{testResult.totalPosts} / {testResult.spanDays}d</p></div>
                 <div><p className="text-xs text-slate-500 uppercase">Avg Gap</p><p className="font-mono text-slate-700 dark:text-slate-300">{testResult.gapHoursAvg}h</p></div>
@@ -196,10 +211,10 @@ export default function FeedSourcesPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                  {(['name', 'platform', 'sourceType', 'region', 'confidence', 'postsPerDay'] as SortField[]).map(field => (
+                  {(['name', 'platform', 'sourceType', 'region', 'confidence', 'baselinePPD'] as SortField[]).map(field => (
                     <th key={field} className="text-left px-4 py-3">
                       <button onClick={() => handleSort(field)} className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                        {field === 'sourceType' ? 'Type' : field === 'postsPerDay' ? 'Posts/Day' : field.charAt(0).toUpperCase() + field.slice(1)}
+                        {field === 'sourceType' ? 'Type' : field === 'baselinePPD' ? 'PPD' : field.charAt(0).toUpperCase() + field.slice(1)}
                         <ChevronUpDownIcon className="w-4 h-4" />
                       </button>
                     </th>
@@ -220,12 +235,13 @@ export default function FeedSourcesPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      {source.postsPerDay > 0 ? (
-                        <span className="text-sm font-mono text-slate-600 dark:text-slate-300">{source.postsPerDay}</span>
+                      {(source.baselinePPD ?? source.estimatedPPD ?? 0) > 0 ? (
+                        <span className="text-sm font-mono text-slate-600 dark:text-slate-300">{source.baselinePPD ?? source.estimatedPPD}</span>
                       ) : (
                         <span className="text-xs text-slate-400 dark:text-slate-500">{source.baselineMeasuredAt ? 'inactive' : '–'}</span>
                       )}
-                      {source.baselineMeasuredAt && source.postsPerDay > 0 && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{source.baselineMeasuredAt}</p>}
+                      {source.baselineMeasuredAt && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{source.baselineMeasuredAt}</p>}
+                      {!source.baselineMeasuredAt && source.estimatedAt && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">est {source.estimatedAt}</p>}
                     </td>
                   </tr>
                 ))}
@@ -258,13 +274,22 @@ export default function FeedSourcesPage() {
                 <div><p className="text-xs text-slate-500 uppercase">Region</p><p className="text-slate-700 dark:text-slate-300">{regionDisplayNames[selectedSource.region] || selectedSource.region}</p></div>
                 <div><p className="text-xs text-slate-500 uppercase">Confidence</p><p className="text-slate-700 dark:text-slate-300">{selectedSource.confidence}%</p></div>
                 <div>
-                  <p className="text-xs text-slate-500 uppercase">Posts/Day</p>
-                  {selectedSource.postsPerDay > 0 ? (
-                    <p className="font-mono font-bold text-slate-900 dark:text-white">{selectedSource.postsPerDay}</p>
+                  <p className="text-xs text-slate-500 uppercase">Baseline PPD</p>
+                  {selectedSource.baselinePPD && selectedSource.baselinePPD > 0 ? (
+                    <p className="font-mono font-bold text-slate-900 dark:text-white">{selectedSource.baselinePPD}</p>
                   ) : (
                     <p className="text-sm text-slate-400 dark:text-slate-500">{selectedSource.baselineMeasuredAt ? 'inactive' : '–'}</p>
                   )}
-                  {selectedSource.baselineMeasuredAt ? <p className="text-[10px] text-slate-500 dark:text-slate-400">measured {selectedSource.baselineMeasuredAt}</p> : <p className="text-[10px] text-slate-400 dark:text-slate-500">estimated</p>}
+                  {selectedSource.baselineMeasuredAt && <p className="text-[10px] text-slate-500 dark:text-slate-400">measured {selectedSource.baselineMeasuredAt}</p>}
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Est. PPD</p>
+                  {selectedSource.estimatedPPD && selectedSource.estimatedPPD > 0 ? (
+                    <p className="font-mono font-bold text-slate-900 dark:text-white">{selectedSource.estimatedPPD}</p>
+                  ) : (
+                    <p className="text-sm text-slate-400 dark:text-slate-500">–</p>
+                  )}
+                  {selectedSource.estimatedAt && <p className="text-[10px] text-slate-500 dark:text-slate-400">{selectedSource.estimatedAt}</p>}
                 </div>
                 <div><p className="text-xs text-slate-500 uppercase">Tier</p><p className="text-slate-700 dark:text-slate-300">{selectedSource.fetchTier}</p></div>
               </div>
@@ -278,12 +303,18 @@ export default function FeedSourcesPage() {
                 </div>
                 {liveStats && !liveStats.error && (
                   <div className="grid grid-cols-2 gap-3 text-sm bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
-                    <div><p className="text-xs text-slate-500 uppercase">Posts/Day</p><p className="font-mono font-bold text-slate-900 dark:text-white">{liveStats.postsPerDay}</p></div>
+                    <div><p className="text-xs text-slate-500 uppercase">Posts/Day</p><p className="font-mono font-bold text-slate-900 dark:text-white">{liveStats.recentPPD}</p></div>
                     <div><p className="text-xs text-slate-500 uppercase">Last Posted</p><p className="font-mono text-slate-700 dark:text-slate-300">{liveStats.lastPostedAgo}</p></div>
                     <div><p className="text-xs text-slate-500 uppercase">Sampled</p><p className="font-mono text-slate-700 dark:text-slate-300">{liveStats.totalPosts} / {liveStats.spanDays}d</p></div>
                     <div><p className="text-xs text-slate-500 uppercase">Avg Gap</p><p className="font-mono text-slate-700 dark:text-slate-300">{liveStats.gapHoursAvg}h</p></div>
                     <div><p className="text-xs text-slate-500 uppercase">Last 6h</p><p className="font-mono text-slate-700 dark:text-slate-300">{liveStats.postsLast6h}</p></div>
                     <div><p className="text-xs text-slate-500 uppercase">Last 24h</p><p className="font-mono text-slate-700 dark:text-slate-300">{liveStats.postsLast24h}</p></div>
+                  </div>
+                )}
+                {liveStats && !liveStats.error && liveStats.recentPPD > 0 && (
+                  <div className="mt-3 flex items-center gap-2">
+                    <button onClick={() => handleSaveEstimate(selectedSource, liveStats.recentPPD)} disabled={saveEstimateLoading} className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-lg transition-colors">{saveEstimateLoading ? 'Saving...' : `Save as Estimate (${liveStats.recentPPD})`}</button>
+                    {saveEstimateResult && <span className={`text-xs ${saveEstimateResult.startsWith('Error') ? 'text-red-500' : 'text-emerald-500'}`}>{saveEstimateResult}</span>}
                   </div>
                 )}
                 {liveStats?.error && <p className="text-xs text-red-500">{liveStats.error}</p>}

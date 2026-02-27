@@ -1,4 +1,5 @@
 import { TieredSource } from '@/lib/sources-clean';
+import { getEffectivePPD } from '@/lib/baselineUtils';
 
 // Feed platforms (power the live wire + activity detection)
 export const FEED_PLATFORMS = new Set(['bluesky', 'telegram', 'mastodon']);
@@ -28,12 +29,6 @@ export const regionDisplayNames: Record<string, string> = {
   'seismic': 'Seismic',
 };
 
-// Baseline calculation (mirrors activityDetection.ts logic)
-const CONSERVATIVE_DEFAULT = 3;
-function isMeasuredValue(n: number): boolean {
-  return n !== Math.floor(n);
-}
-
 export interface RegionBaseline {
   region: string;
   feedSources: number;
@@ -51,8 +46,8 @@ export function calculateRegionBaselines(allSources: TieredSource[]): RegionBase
     if (!regionMap.has(r)) regionMap.set(r, { count: 0, totalPpd: 0, trustedPpd: 0 });
     const entry = regionMap.get(r)!;
     entry.count++;
-    entry.totalPpd += s.postsPerDay || 0;
-    entry.trustedPpd += isMeasuredValue(s.postsPerDay) ? s.postsPerDay : CONSERVATIVE_DEFAULT;
+    entry.totalPpd += getEffectivePPD(s);
+    entry.trustedPpd += getEffectivePPD(s);
   }
 
   const results: RegionBaseline[] = [];

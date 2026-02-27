@@ -380,7 +380,7 @@ export async function GET(request: Request) {
     const limited = finalFeed.slice(0, limit);
 
     // Calculate activity levels from full 6h window (not since-filtered slice)
-    const activity = calculateRegionActivity(fullWindowItems);
+    const activity = await calculateRegionActivity(fullWindowItems);
 
     // Calculate per-source activity (surge detection)
     const sourceActivity = calculateSourceActivity(filtered);
@@ -409,7 +409,7 @@ export async function GET(request: Request) {
       const filtered = filterByTimeWindow(cached.items, hours);
       return NextResponse.json({
         items: filtered.slice(0, limit),
-        activity: calculateRegionActivity(filtered),
+        activity: await calculateRegionActivity(filtered),
         fetchedAt: new Date().toISOString(),
         totalItems: filtered.length,
         fromCache: true,

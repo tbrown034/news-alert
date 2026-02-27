@@ -9,8 +9,10 @@ export type FetchTier = 'T1' | 'T2' | 'T3';
 export interface TieredSource extends Source {
   feedUrl: string;
   fetchTier: FetchTier;
-  postsPerDay: number;
+  baselinePPD?: number;        // 30-day measured baseline (from measure-source-baselines.ts)
   baselineMeasuredAt?: string; // ISO date of last measurement (e.g. '2026-02-06')
+  estimatedPPD?: number;       // Quick API estimate (~100 posts, from estimate-ppd.ts or admin)
+  estimatedAt?: string;        // ISO date of estimate
 }
 
 // -----------------------------------------------------------------------------
@@ -29,7 +31,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/noelreports.com',
     url: 'https://bsky.app/profile/noelreports.com',
-    postsPerDay: 36.7,
+    baselinePPD: 36.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -43,7 +45,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/warmonitor.net',
     url: 'https://bsky.app/profile/warmonitor.net',
-    postsPerDay: 8.7,
+    baselinePPD: 8.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -57,7 +59,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bnonews.com',
     url: 'https://bsky.app/profile/bnonews.com',
-    postsPerDay: 1.4,
+    baselinePPD: 1.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -71,7 +73,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/malcontentnews.bsky.social',
     url: 'https://bsky.app/profile/malcontentnews.bsky.social',
-    postsPerDay: 2.2,
+    baselinePPD: 2.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -85,7 +87,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/factal.com',
     url: 'https://bsky.app/profile/factal.com',
-    postsPerDay: 4.1,
+    baselinePPD: 4.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -99,7 +101,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/christopherjm.ft.com',
     url: 'https://bsky.app/profile/christopherjm.ft.com',
-    postsPerDay: 1.1,
+    baselinePPD: 1.1,
     baselineMeasuredAt: '2026-02-07',
   },
   // === MAJOR NEWS WIRES (Jan 2026 - bluecrawler top 1000) ===
@@ -114,7 +116,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/apnews.com',
     url: 'https://bsky.app/profile/apnews.com',
-    postsPerDay: 37,
+    baselinePPD: 37,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -128,7 +130,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/reuters.com',
     url: 'https://bsky.app/profile/reuters.com',
-    postsPerDay: 214,
+    baselinePPD: 214,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -142,7 +144,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/motherjones.com',
     url: 'https://bsky.app/profile/motherjones.com',
-    postsPerDay: 28.5,
+    baselinePPD: 28.5,
     baselineMeasuredAt: '2026-02-07',
   },
   // === TOP JOURNALISTS (bluecrawler top 1000) ===
@@ -157,7 +159,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ronfilipkowski.bsky.social',
     url: 'https://bsky.app/profile/ronfilipkowski.bsky.social',
-    postsPerDay: 24.8,
+    baselinePPD: 24.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -171,7 +173,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/katestarbird.bsky.social',
     url: 'https://bsky.app/profile/katestarbird.bsky.social',
-    postsPerDay: 8.2,
+    baselinePPD: 8.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -185,7 +187,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jimacosta.bsky.social',
     url: 'https://bsky.app/profile/jimacosta.bsky.social',
-    postsPerDay: 2.7,
+    baselinePPD: 2.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -199,7 +201,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jenrubin.bsky.social',
     url: 'https://bsky.app/profile/jenrubin.bsky.social',
-    postsPerDay: 6.4,
+    baselinePPD: 6.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -213,7 +215,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jaketapper.bsky.social',
     url: 'https://bsky.app/profile/jaketapper.bsky.social',
-    postsPerDay: 4.1,
+    baselinePPD: 4.1,
     baselineMeasuredAt: '2026-02-07',
   },
   // === NEW OSINT ACCOUNTS (Jan 2026) ===
@@ -228,7 +230,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/eliothiggins.bsky.social',
     url: 'https://bsky.app/profile/eliothiggins.bsky.social',
-    postsPerDay: 41.7,
+    baselinePPD: 41.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -242,7 +244,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/wartranslated.bsky.social',
     url: 'https://bsky.app/profile/wartranslated.bsky.social',
-    postsPerDay: 25.2,
+    baselinePPD: 25.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -256,7 +258,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/covertshores.bsky.social',
     url: 'https://bsky.app/profile/covertshores.bsky.social',
-    postsPerDay: 7.5,
+    baselinePPD: 7.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -270,7 +272,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/rebel44cz.bsky.social',
     url: 'https://bsky.app/profile/rebel44cz.bsky.social',
-    postsPerDay: 3.8,
+    baselinePPD: 3.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -284,7 +286,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/vcdgf555.bsky.social',
     url: 'https://bsky.app/profile/vcdgf555.bsky.social',
-    postsPerDay: 10.8,
+    baselinePPD: 10.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -298,7 +300,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thestudyofwar.bsky.social',
     url: 'https://bsky.app/profile/thestudyofwar.bsky.social',
-    postsPerDay: 17.8,
+    baselinePPD: 17.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -312,7 +314,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/intelnightowl.bsky.social',
     url: 'https://bsky.app/profile/intelnightowl.bsky.social',
-    postsPerDay: 2.1,
+    baselinePPD: 2.1,
     baselineMeasuredAt: '2026-02-07',
   },
   // === ORIGINAL T1 SOURCES ===
@@ -327,7 +329,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/vanjackson.bsky.social',
     url: 'https://bsky.app/profile/vanjackson.bsky.social',
-    postsPerDay: 2.9,
+    baselinePPD: 2.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -341,7 +343,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/euanmacdonald.bsky.social',
     url: 'https://bsky.app/profile/euanmacdonald.bsky.social',
-    postsPerDay: 2.9,
+    baselinePPD: 2.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -355,7 +357,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/revkin.bsky.social',
     url: 'https://bsky.app/profile/revkin.bsky.social',
-    postsPerDay: 4.1,
+    baselinePPD: 4.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -369,7 +371,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/crisisgroup.org',
     url: 'https://bsky.app/profile/crisisgroup.org',
-    postsPerDay: 2.8,
+    baselinePPD: 2.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -383,7 +385,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/helenbranswell.bsky.social',
     url: 'https://bsky.app/profile/helenbranswell.bsky.social',
-    postsPerDay: 2.2,
+    baselinePPD: 2.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -397,7 +399,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/caseynewton.bsky.social',
     url: 'https://bsky.app/profile/caseynewton.bsky.social',
-    postsPerDay: 2.2,
+    baselinePPD: 2.2,
     baselineMeasuredAt: '2026-02-07',
   },
   // === BLUECRAWLER TOP 1000 (Jan 2026) ===
@@ -412,7 +414,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nytimes.com',
     url: 'https://bsky.app/profile/nytimes.com',
-    postsPerDay: 67.7,
+    baselinePPD: 67.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -426,7 +428,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/atrupar.com',
     url: 'https://bsky.app/profile/atrupar.com',
-    postsPerDay: 125.6,
+    baselinePPD: 125.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -440,7 +442,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/washingtonpost.com',
     url: 'https://bsky.app/profile/washingtonpost.com',
-    postsPerDay: 37.5,
+    baselinePPD: 37.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -454,7 +456,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/hcrichardson.bsky.social',
     url: 'https://bsky.app/profile/hcrichardson.bsky.social',
-    postsPerDay: 96.1,
+    baselinePPD: 96.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -468,7 +470,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/theguardian.com',
     url: 'https://bsky.app/profile/theguardian.com',
-    postsPerDay: 91.1,
+    baselinePPD: 91.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -482,7 +484,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jamellebouie.net',
     url: 'https://bsky.app/profile/jamellebouie.net',
-    postsPerDay: 25.5,
+    baselinePPD: 25.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -496,7 +498,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cnn.com',
     url: 'https://bsky.app/profile/cnn.com',
-    postsPerDay: 37,
+    baselinePPD: 37,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -510,7 +512,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bencollins.bsky.social',
     url: 'https://bsky.app/profile/bencollins.bsky.social',
-    postsPerDay: 31.7,
+    baselinePPD: 31.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -524,7 +526,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bloomberg.com',
     url: 'https://bsky.app/profile/bloomberg.com',
-    postsPerDay: 47.3,
+    baselinePPD: 47.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -538,7 +540,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/politico.com',
     url: 'https://bsky.app/profile/politico.com',
-    postsPerDay: 32.1,
+    baselinePPD: 32.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -552,7 +554,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/financialtimes.com',
     url: 'https://bsky.app/profile/financialtimes.com',
-    postsPerDay: 48,
+    baselinePPD: 48,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -566,7 +568,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/theatlantic.com',
     url: 'https://bsky.app/profile/theatlantic.com',
-    postsPerDay: 31.8,
+    baselinePPD: 31.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -580,7 +582,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thebulwark.com',
     url: 'https://bsky.app/profile/thebulwark.com',
-    postsPerDay: 56.6,
+    baselinePPD: 56.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -594,7 +596,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/politico.eu',
     url: 'https://bsky.app/profile/politico.eu',
-    postsPerDay: 32.9,
+    baselinePPD: 32.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -608,7 +610,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/pbsnews.org',
     url: 'https://bsky.app/profile/pbsnews.org',
-    postsPerDay: 34.2,
+    baselinePPD: 34.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -622,7 +624,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nbcnews.com',
     url: 'https://bsky.app/profile/nbcnews.com',
-    postsPerDay: 33.7,
+    baselinePPD: 33.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -636,7 +638,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bylinetimes.bsky.social',
     url: 'https://bsky.app/profile/bylinetimes.bsky.social',
-    postsPerDay: 23.3,
+    baselinePPD: 23.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -650,7 +652,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thedailybeast.bsky.social',
     url: 'https://bsky.app/profile/thedailybeast.bsky.social',
-    postsPerDay: 49.9,
+    baselinePPD: 49.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -664,7 +666,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/huffpost.com',
     url: 'https://bsky.app/profile/huffpost.com',
-    postsPerDay: 84.3,
+    baselinePPD: 84.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -678,7 +680,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cpsc.gov',
     url: 'https://bsky.app/profile/cpsc.gov',
-    postsPerDay: 10.7,
+    baselinePPD: 10.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -692,7 +694,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thetimes.com',
     url: 'https://bsky.app/profile/thetimes.com',
-    postsPerDay: 68.8,
+    baselinePPD: 68.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -706,7 +708,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/latimes.com',
     url: 'https://bsky.app/profile/latimes.com',
-    postsPerDay: 57.9,
+    baselinePPD: 57.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -720,7 +722,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/newsweek.com',
     url: 'https://bsky.app/profile/newsweek.com',
-    postsPerDay: 45.1,
+    baselinePPD: 45.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -734,7 +736,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/npr.org',
     url: 'https://bsky.app/profile/npr.org',
-    postsPerDay: 27.2,
+    baselinePPD: 27.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -748,7 +750,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/propublica.org',
     url: 'https://bsky.app/profile/propublica.org',
-    postsPerDay: 12.7,
+    baselinePPD: 12.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -762,7 +764,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/gtconway.bsky.social',
     url: 'https://bsky.app/profile/gtconway.bsky.social',
-    postsPerDay: 19.4,
+    baselinePPD: 19.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -776,7 +778,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/acyn.bsky.social',
     url: 'https://bsky.app/profile/acyn.bsky.social',
-    postsPerDay: 9.5,
+    baselinePPD: 9.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -790,7 +792,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cwarzel.bsky.social',
     url: 'https://bsky.app/profile/cwarzel.bsky.social',
-    postsPerDay: 5.1,
+    baselinePPD: 5.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -804,7 +806,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/chrislhayes.bsky.social',
     url: 'https://bsky.app/profile/chrislhayes.bsky.social',
-    postsPerDay: 16,
+    baselinePPD: 16,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -818,7 +820,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/decodingfoxnews.bsky.social',
     url: 'https://bsky.app/profile/decodingfoxnews.bsky.social',
-    postsPerDay: 7.6,
+    baselinePPD: 7.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -832,7 +834,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/swiftonsecurity.com',
     url: 'https://bsky.app/profile/swiftonsecurity.com',
-    postsPerDay: 13.5,
+    baselinePPD: 13.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -846,7 +848,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mollyjongfast.bsky.social',
     url: 'https://bsky.app/profile/mollyjongfast.bsky.social',
-    postsPerDay: 13.5,
+    baselinePPD: 13.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -860,7 +862,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/theintercept.com',
     url: 'https://bsky.app/profile/theintercept.com',
-    postsPerDay: 14.5,
+    baselinePPD: 14.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -874,7 +876,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/vox.com',
     url: 'https://bsky.app/profile/vox.com',
-    postsPerDay: 8.2,
+    baselinePPD: 8.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -888,7 +890,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/marcelias.bsky.social',
     url: 'https://bsky.app/profile/marcelias.bsky.social',
-    postsPerDay: 11.4,
+    baselinePPD: 11.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -902,7 +904,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/axios.com',
     url: 'https://bsky.app/profile/axios.com',
-    postsPerDay: 8.3,
+    baselinePPD: 8.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -916,7 +918,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/talkingpointsmemo.com',
     url: 'https://bsky.app/profile/talkingpointsmemo.com',
-    postsPerDay: 9.3,
+    baselinePPD: 9.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -930,7 +932,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kylegriffin1.bsky.social',
     url: 'https://bsky.app/profile/kylegriffin1.bsky.social',
-    postsPerDay: 10.4,
+    baselinePPD: 10.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -944,7 +946,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/davidcorn.bsky.social',
     url: 'https://bsky.app/profile/davidcorn.bsky.social',
-    postsPerDay: 7.8,
+    baselinePPD: 7.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -958,7 +960,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/joycewhitevance.bsky.social',
     url: 'https://bsky.app/profile/joycewhitevance.bsky.social',
-    postsPerDay: 5.9,
+    baselinePPD: 5.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -972,7 +974,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/katiephang.bsky.social',
     url: 'https://bsky.app/profile/katiephang.bsky.social',
-    postsPerDay: 6.7,
+    baselinePPD: 6.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -986,7 +988,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/maddow.bsky.social',
     url: 'https://bsky.app/profile/maddow.bsky.social',
-    postsPerDay: 9.6,
+    baselinePPD: 9.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1000,7 +1002,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/adamkinzinger.substack.com',
     url: 'https://bsky.app/profile/adamkinzinger.substack.com',
-    postsPerDay: 5.2,
+    baselinePPD: 5.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1014,7 +1016,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/macfarlanenews.bsky.social',
     url: 'https://bsky.app/profile/macfarlanenews.bsky.social',
-    postsPerDay: 7,
+    baselinePPD: 7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1028,7 +1030,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mehdirhasan.bsky.social',
     url: 'https://bsky.app/profile/mehdirhasan.bsky.social',
-    postsPerDay: 4.9,
+    baselinePPD: 4.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1042,7 +1044,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/lincolnproject.us',
     url: 'https://bsky.app/profile/lincolnproject.us',
-    postsPerDay: 3.9,
+    baselinePPD: 3.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1056,7 +1058,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/warren.senate.gov',
     url: 'https://bsky.app/profile/warren.senate.gov',
-    postsPerDay: 4.9,
+    baselinePPD: 4.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1070,7 +1072,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/governor.ca.gov',
     url: 'https://bsky.app/profile/governor.ca.gov',
-    postsPerDay: 4.8,
+    baselinePPD: 4.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1084,7 +1086,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/schiff.senate.gov',
     url: 'https://bsky.app/profile/schiff.senate.gov',
-    postsPerDay: 3.6,
+    baselinePPD: 3.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1098,7 +1100,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/whitehouse.senate.gov',
     url: 'https://bsky.app/profile/whitehouse.senate.gov',
-    postsPerDay: 5.7,
+    baselinePPD: 5.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1112,7 +1114,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/newsagents.bsky.social',
     url: 'https://bsky.app/profile/newsagents.bsky.social',
-    postsPerDay: 3.2,
+    baselinePPD: 3.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1126,7 +1128,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/schumer.senate.gov',
     url: 'https://bsky.app/profile/schumer.senate.gov',
-    postsPerDay: 2.5,
+    baselinePPD: 2.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1140,7 +1142,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/pressley.house.gov',
     url: 'https://bsky.app/profile/pressley.house.gov',
-    postsPerDay: 2.7,
+    baselinePPD: 2.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1154,7 +1156,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thedailyshow.com',
     url: 'https://bsky.app/profile/thedailyshow.com',
-    postsPerDay: 3.1,
+    baselinePPD: 3.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1168,7 +1170,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/democracyforward.org',
     url: 'https://bsky.app/profile/democracyforward.org',
-    postsPerDay: 3.1,
+    baselinePPD: 3.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1182,7 +1184,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/govpritzker.illinois.gov',
     url: 'https://bsky.app/profile/govpritzker.illinois.gov',
-    postsPerDay: 3.2,
+    baselinePPD: 3.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1196,7 +1198,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/brandyzadrozny.bsky.social',
     url: 'https://bsky.app/profile/brandyzadrozny.bsky.social',
-    postsPerDay: 2.4,
+    baselinePPD: 2.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1210,7 +1212,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/smith.senate.gov',
     url: 'https://bsky.app/profile/smith.senate.gov',
-    postsPerDay: 3,
+    baselinePPD: 3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1224,7 +1226,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/privateeyenews.bsky.social',
     url: 'https://bsky.app/profile/privateeyenews.bsky.social',
-    postsPerDay: 2.9,
+    baselinePPD: 2.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1238,7 +1240,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/vanhollen.senate.gov',
     url: 'https://bsky.app/profile/vanhollen.senate.gov',
-    postsPerDay: 2.8,
+    baselinePPD: 2.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1252,7 +1254,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/governorwalz.mn.gov',
     url: 'https://bsky.app/profile/governorwalz.mn.gov',
-    postsPerDay: 2.4,
+    baselinePPD: 2.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1266,7 +1268,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/briantylercohen.bsky.social',
     url: 'https://bsky.app/profile/briantylercohen.bsky.social',
-    postsPerDay: 3,
+    baselinePPD: 3,
     baselineMeasuredAt: '2026-02-07',
   },
   // === NEW ADDITIONS - January 2026 ===
@@ -1282,7 +1284,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/aljazeera.com',
     url: 'https://bsky.app/profile/aljazeera.com',
-    postsPerDay: 39.5,
+    baselinePPD: 39.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1296,7 +1298,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kyivindependent.com',
     url: 'https://bsky.app/profile/kyivindependent.com',
-    postsPerDay: 20.2,
+    baselinePPD: 20.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1310,7 +1312,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/wsj.com',
     url: 'https://bsky.app/profile/wsj.com',
-    postsPerDay: 60,
+    baselinePPD: 60,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1324,7 +1326,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/lemonde.fr',
     url: 'https://bsky.app/profile/lemonde.fr',
-    postsPerDay: 72.7,
+    baselinePPD: 72.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1338,7 +1340,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/elpais.com',
     url: 'https://bsky.app/profile/elpais.com',
-    postsPerDay: 80.6,
+    baselinePPD: 80.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1352,7 +1354,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/democracynow.org',
     url: 'https://bsky.app/profile/democracynow.org',
-    postsPerDay: 7,
+    baselinePPD: 7,
     baselineMeasuredAt: '2026-02-07',
   },
   // OSINT & Investigative Journalists
@@ -1367,7 +1369,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/emptywheel.bsky.social',
     url: 'https://bsky.app/profile/emptywheel.bsky.social',
-    postsPerDay: 48.1,
+    baselinePPD: 48.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1381,7 +1383,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kenklippenstein.bsky.social',
     url: 'https://bsky.app/profile/kenklippenstein.bsky.social',
-    postsPerDay: 5.9,
+    baselinePPD: 5.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1395,7 +1397,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/iwriteok.bsky.social',
     url: 'https://bsky.app/profile/iwriteok.bsky.social',
-    postsPerDay: 28.6,
+    baselinePPD: 28.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1409,7 +1411,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/404media.co',
     url: 'https://bsky.app/profile/404media.co',
-    postsPerDay: 15.3,
+    baselinePPD: 15.3,
     baselineMeasuredAt: '2026-02-07',
   },
   // Legal & Court Reporters
@@ -1424,7 +1426,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/annabower.bsky.social',
     url: 'https://bsky.app/profile/annabower.bsky.social',
-    postsPerDay: 6.2,
+    baselinePPD: 6.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1438,7 +1440,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kyledcheney.bsky.social',
     url: 'https://bsky.app/profile/kyledcheney.bsky.social',
-    postsPerDay: 4,
+    baselinePPD: 4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1452,7 +1454,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/lawfaremedia.org',
     url: 'https://bsky.app/profile/lawfaremedia.org',
-    postsPerDay: 6.5,
+    baselinePPD: 6.5,
     baselineMeasuredAt: '2026-02-07',
   },
   // White House & National Security
@@ -1467,7 +1469,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/peterbakernyt.bsky.social',
     url: 'https://bsky.app/profile/peterbakernyt.bsky.social',
-    postsPerDay: 3.6,
+    baselinePPD: 3.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1481,7 +1483,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/drewharwell.com',
     url: 'https://bsky.app/profile/drewharwell.com',
-    postsPerDay: 7.9,
+    baselinePPD: 7.9,
     baselineMeasuredAt: '2026-02-07',
   },
   // International Organizations
@@ -1496,7 +1498,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/who.int',
     url: 'https://bsky.app/profile/who.int',
-    postsPerDay: 1.2,
+    baselinePPD: 1.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -1510,7 +1512,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/aclu.org',
     url: 'https://bsky.app/profile/aclu.org',
-    postsPerDay: 9,
+    baselinePPD: 9,
     baselineMeasuredAt: '2026-02-07',
   },
   // Tech Journalism
@@ -1525,7 +1527,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/techcrunch.com',
     url: 'https://bsky.app/profile/techcrunch.com',
-    postsPerDay: 18.9,
+    baselinePPD: 18.9,
     baselineMeasuredAt: '2026-02-07',
   },
   // Trump Truth Social Mirror Bot
@@ -1540,7 +1542,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/trumpstruth.bsky.social',
     url: 'https://bsky.app/profile/trumpstruth.bsky.social',
-    postsPerDay: 10.8,
+    baselinePPD: 10.8,
     baselineMeasuredAt: '2026-02-07',
     tags: ['politics'] as USTag[],
   },
@@ -1556,7 +1558,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/executiveorders.bsky.social',
     url: 'https://bsky.app/profile/executiveorders.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
     tags: ['politics'] as USTag[],
   },
@@ -1571,7 +1573,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/fedbillbot.bsky.social',
     url: 'https://bsky.app/profile/fedbillbot.bsky.social',
-    postsPerDay: 13.3,
+    baselinePPD: 13.3,
     baselineMeasuredAt: '2026-02-07',
     tags: ['politics'] as USTag[],
   },
@@ -1586,7 +1588,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/govtrack.us',
     url: 'https://bsky.app/profile/govtrack.us',
-    postsPerDay: 6.3,
+    baselinePPD: 6.3,
     baselineMeasuredAt: '2026-02-07',
     tags: ['politics'] as USTag[],
   },
@@ -1601,7 +1603,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/wht.politicnexus.com',
     url: 'https://bsky.app/profile/wht.politicnexus.com',
-    postsPerDay: 0.8,
+    baselinePPD: 0.8,
     baselineMeasuredAt: '2026-02-07',
     tags: ['politics'] as USTag[],
   },
@@ -1616,7 +1618,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.defenseone.com/rss/all/',
     url: 'https://www.defenseone.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'war-on-the-rocks-rss',
@@ -1628,7 +1630,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://warontherocks.com/feed/',
     url: 'https://warontherocks.com',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'the-war-zone-rss',
@@ -1640,7 +1642,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.twz.com/feed',
     url: 'https://www.twz.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'al-monitor-rss',
@@ -1652,7 +1654,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.al-monitor.com/rss',
     url: 'https://www.al-monitor.com',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
   {
     id: 'insight-crime-rss',
@@ -1664,7 +1666,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://insightcrime.org/feed/',
     url: 'https://insightcrime.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'naval-news-rss',
@@ -1676,7 +1678,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.navalnews.com/feed/',
     url: 'https://www.navalnews.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   // === MORE RSS FEEDS - January 2026 Hunt ===
   // -- Government/Official --
@@ -1690,7 +1692,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.cisa.gov/news.xml',
     url: 'https://www.cisa.gov',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // -- Think Tanks --
   {
@@ -1703,7 +1705,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.foreignaffairs.com/rss.xml',
     url: 'https://www.foreignaffairs.com',
-    postsPerDay: 8,
+    baselinePPD: 8,
   },
   {
     id: 'foreign-policy-rss',
@@ -1715,7 +1717,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://foreignpolicy.com/feed/',
     url: 'https://foreignpolicy.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   // -- Defense/Military --
   {
@@ -1728,7 +1730,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://breakingdefense.com/feed/',
     url: 'https://breakingdefense.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'defense-news-rss',
@@ -1740,7 +1742,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.defensenews.com/arc/outboundfeeds/rss/?outputType=xml',
     url: 'https://www.defensenews.com',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
   {
     id: 'military-times-rss',
@@ -1752,7 +1754,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.militarytimes.com/arc/outboundfeeds/rss/?outputType=xml',
     url: 'https://www.militarytimes.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'c4isrnet-rss',
@@ -1764,7 +1766,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.c4isrnet.com/arc/outboundfeeds/rss/?outputType=xml',
     url: 'https://www.c4isrnet.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'space-news-rss',
@@ -1776,7 +1778,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://spacenews.com/feed/',
     url: 'https://spacenews.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   // -- Cybersecurity/OSINT --
   {
@@ -1789,7 +1791,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://krebsonsecurity.com/feed/',
     url: 'https://krebsonsecurity.com',
-    postsPerDay: 2,
+    baselinePPD: 2,
   },
   {
     id: 'icij-rss',
@@ -1801,7 +1803,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.icij.org/feed/',
     url: 'https://www.icij.org',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   // GIJN removed - Cloudflare bot protection (403)
   // -- Wire Services/Major News --
@@ -1815,7 +1817,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.aljazeera.com/xml/rss/all.xml',
     url: 'https://www.aljazeera.com',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   {
     id: 'bbc-world-rss',
@@ -1827,7 +1829,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://feeds.bbci.co.uk/news/world/rss.xml',
     url: 'https://www.bbc.com/news/world',
-    postsPerDay: 60,
+    baselinePPD: 60,
   },
   {
     id: 'nyt-world-rss',
@@ -1839,7 +1841,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
     url: 'https://www.nytimes.com/section/world',
-    postsPerDay: 40,
+    baselinePPD: 40,
   },
   {
     id: 'guardian-world-rss',
@@ -1851,7 +1853,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.theguardian.com/world/rss',
     url: 'https://www.theguardian.com/world',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   {
     id: 'npr-news-rss',
@@ -1863,7 +1865,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://feeds.npr.org/1001/rss.xml',
     url: 'https://www.npr.org',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   {
     id: 'wapo-world-rss',
@@ -1875,7 +1877,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://feeds.washingtonpost.com/rss/world',
     url: 'https://www.washingtonpost.com/world',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   {
     id: 'wapo-national-rss',
@@ -1887,7 +1889,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://feeds.washingtonpost.com/rss/national',
     url: 'https://www.washingtonpost.com/national',
-    postsPerDay: 35,
+    baselinePPD: 35,
   },
   {
     id: 'pbs-newshour-rss',
@@ -1899,7 +1901,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.pbs.org/newshour/feeds/rss/headlines',
     url: 'https://www.pbs.org/newshour',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'politico-rss',
@@ -1911,7 +1913,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://rss.politico.com/politics-news.xml',
     url: 'https://www.politico.com',
-    postsPerDay: 25,
+    baselinePPD: 25,
     tags: ['politics'] as USTag[],
   },
   {
@@ -1924,7 +1926,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://abcnews.go.com/abcnews/internationalheadlines',
     url: 'https://abcnews.go.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'france24-rss',
@@ -1936,7 +1938,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.france24.com/en/rss',
     url: 'https://www.france24.com',
-    postsPerDay: 40,
+    baselinePPD: 40,
   },
   {
     id: 'euronews-rss',
@@ -1948,7 +1950,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.euronews.com/rss',
     url: 'https://www.euronews.com',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   // -- Regional: Middle East --
   {
@@ -1961,7 +1963,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.haaretz.com/srv/haaretz-latest-headlines',
     url: 'https://www.haaretz.com',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   {
     id: 'jpost-rss',
@@ -1973,7 +1975,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.jpost.com/rss/rssfeedsfrontpage.aspx',
     url: 'https://www.jpost.com',
-    postsPerDay: 40,
+    baselinePPD: 40,
   },
   // -- Regional: Europe/Russia --
   {
@@ -1986,7 +1988,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.themoscowtimes.com/rss/news',
     url: 'https://www.themoscowtimes.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   // Politico EU removed - Cloudflare bot protection (403)
   {
@@ -1999,7 +2001,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://balkaninsight.com/feed/',
     url: 'https://balkaninsight.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   // -- Regional: Asia Pacific --
   {
@@ -2012,7 +2014,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.straitstimes.com/news/asia/rss.xml',
     url: 'https://www.straitstimes.com',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   {
     id: 'abc-australia-rss',
@@ -2024,7 +2026,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.abc.net.au/news/feed/2942460/rss.xml',
     url: 'https://www.abc.net.au/news',
-    postsPerDay: 40,
+    baselinePPD: 40,
   },
   {
     id: 'times-of-india-rss',
@@ -2036,7 +2038,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://timesofindia.indiatimes.com/rssfeedstopstories.cms',
     url: 'https://timesofindia.indiatimes.com',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   // -- Regional: Latin America --
   {
@@ -2049,7 +2051,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://www.batimes.com.ar/feed',
     url: 'https://www.batimes.com.ar',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   // -- Regional: Africa --
   {
@@ -2062,7 +2064,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.africanews.com/feed/',
     url: 'https://www.africanews.com',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   {
     id: 'mail-guardian-rss',
@@ -2074,7 +2076,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://mg.co.za/feed/',
     url: 'https://mg.co.za',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'premium-times-rss',
@@ -2086,7 +2088,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.premiumtimesng.com/feed',
     url: 'https://www.premiumtimesng.com',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   // === MORE RSS FEEDS - Hunt Round 2 ===
   // -- Nuclear/Arms Control --
@@ -2100,7 +2102,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://nonproliferation.org/feed/',
     url: 'https://nonproliferation.org',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'stimson-rss',
@@ -2112,7 +2114,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.stimson.org/feed/',
     url: 'https://www.stimson.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'newlines-rss',
@@ -2124,7 +2126,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://newlinesinstitute.org/feed/',
     url: 'https://newlinesinstitute.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // -- Asia Pacific (more) --
   {
@@ -2137,7 +2139,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.japantimes.co.jp/feed/',
     url: 'https://www.japantimes.co.jp',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   {
     id: 'rappler-rss',
@@ -2149,7 +2151,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.rappler.com/feed/',
     url: 'https://www.rappler.com',
-    postsPerDay: 40,
+    baselinePPD: 40,
   },
   {
     id: 'diplomat-rss',
@@ -2161,7 +2163,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://thediplomat.com/feed/',
     url: 'https://thediplomat.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   // -- Latin America (more) --
   {
@@ -2174,7 +2176,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://mexiconewsdaily.com/feed/',
     url: 'https://mexiconewsdaily.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'brazil-reports-rss',
@@ -2186,7 +2188,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://brazilreports.com/feed/',
     url: 'https://brazilreports.com',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'colombia-reports-rss',
@@ -2198,7 +2200,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://colombiareports.com/feed/',
     url: 'https://colombiareports.com',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // -- Europe/Ukraine --
   {
@@ -2211,7 +2213,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.ukrinform.net/rss/block-lastnews',
     url: 'https://www.ukrinform.net',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   {
     id: 'ukrainska-pravda-rss',
@@ -2223,7 +2225,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.pravda.com.ua/eng/rss/',
     url: 'https://www.pravda.com.ua',
-    postsPerDay: 40,
+    baselinePPD: 40,
   },
   {
     id: 'notes-from-poland-rss',
@@ -2235,7 +2237,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://notesfrompoland.com/feed/',
     url: 'https://notesfrompoland.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   // -- Middle East (more) --
   {
@@ -2248,7 +2250,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.timesofisrael.com/feed/',
     url: 'https://www.timesofisrael.com',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   {
     id: 'middle-east-monitor-rss',
@@ -2260,7 +2262,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.middleeastmonitor.com/feed/',
     url: 'https://www.middleeastmonitor.com',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   // -- Investigative/Policy --
   {
@@ -2273,7 +2275,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.project-syndicate.org/rss',
     url: 'https://www.project-syndicate.org',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   // -- Cybersecurity --
   {
@@ -2286,7 +2288,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.wired.com/feed/category/security/latest/rss',
     url: 'https://www.wired.com/category/security/',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'securityweek-rss',
@@ -2298,7 +2300,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.securityweek.com/feed/',
     url: 'https://www.securityweek.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'cyberscoop-rss',
@@ -2310,7 +2312,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://cyberscoop.com/feed/',
     url: 'https://cyberscoop.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'the-record-rss',
@@ -2322,7 +2324,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://therecord.media/feed',
     url: 'https://therecord.media',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'schneier-rss',
@@ -2334,7 +2336,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.schneier.com/feed/',
     url: 'https://www.schneier.com',
-    postsPerDay: 2,
+    baselinePPD: 2,
   },
   // === RSS FEEDS - Hunt Round 3 (January 2026) ===
   // -- Caucasus/Central Asia --
@@ -2348,7 +2350,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://jam-news.net/feed/',
     url: 'https://jam-news.net',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'oc-media-rss',
@@ -2360,7 +2362,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://oc-media.org/feed/',
     url: 'https://oc-media.org',
-    postsPerDay: 8,
+    baselinePPD: 8,
   },
   {
     id: 'coda-story-rss',
@@ -2372,7 +2374,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.codastory.com/feed/',
     url: 'https://www.codastory.com',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // -- Humanitarian --
   {
@@ -2385,7 +2387,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://reliefweb.int/updates/rss.xml?view=headlines',
     url: 'https://reliefweb.int',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   {
     id: 'crisis-group-rss',
@@ -2397,7 +2399,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.crisisgroup.org/rss.xml',
     url: 'https://www.crisisgroup.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // -- US Politics --
   // Politico US removed - Cloudflare bot protection (403)
@@ -2411,7 +2413,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://talkingpointsmemo.com/feed',
     url: 'https://talkingpointsmemo.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
     tags: ['politics'] as USTag[],
   },
   {
@@ -2424,7 +2426,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.scotusblog.com/feed/',
     url: 'https://www.scotusblog.com',
-    postsPerDay: 5,
+    baselinePPD: 5,
     tags: ['politics'] as USTag[],
   },
   // -- Climate/Energy --
@@ -2438,7 +2440,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.carbonbrief.org/feed/',
     url: 'https://www.carbonbrief.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'climate-change-news-rss',
@@ -2450,7 +2452,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.climatechangenews.com/feed/',
     url: 'https://www.climatechangenews.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'oilprice-rss',
@@ -2462,7 +2464,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://oilprice.com/rss/main',
     url: 'https://oilprice.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'utility-dive-rss',
@@ -2474,7 +2476,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.utilitydive.com/feeds/news/',
     url: 'https://www.utilitydive.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
     tags: ['economy'] as USTag[],
   },
   {
@@ -2487,7 +2489,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://simpleflying.com/feed/',
     url: 'https://simpleflying.com',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
   {
     id: 'aviationist-rss',
@@ -2499,7 +2501,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://theaviationist.com/feed/',
     url: 'https://theaviationist.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'aviation-today-rss',
@@ -2511,7 +2513,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.aviationtoday.com/feed/',
     url: 'https://www.aviationtoday.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   // -- China --
   {
@@ -2524,7 +2526,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://chinadigitaltimes.net/feed/',
     url: 'https://chinadigitaltimes.net',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'whats-on-weibo-rss',
@@ -2536,7 +2538,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.whatsonweibo.com/feed/',
     url: 'https://www.whatsonweibo.com',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   // -- Economics/Finance --
   {
@@ -2549,7 +2551,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.ft.com/world?format=rss',
     url: 'https://www.ft.com/world',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   {
     id: 'naked-capitalism-rss',
@@ -2561,7 +2563,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.nakedcapitalism.com/feed',
     url: 'https://www.nakedcapitalism.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   // -- Tech/Digital Rights --
   {
@@ -2574,7 +2576,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.techdirt.com/feed/',
     url: 'https://www.techdirt.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'eff-rss',
@@ -2586,7 +2588,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.eff.org/rss/updates.xml',
     url: 'https://www.eff.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'cset-georgetown-rss',
@@ -2598,7 +2600,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://cset.georgetown.edu/feed/',
     url: 'https://cset.georgetown.edu',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   // -- Maritime --
   {
@@ -2611,7 +2613,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://gcaptain.com/feed/',
     url: 'https://gcaptain.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'splash247-rss',
@@ -2623,7 +2625,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://splash247.com/feed/',
     url: 'https://splash247.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'seatrade-maritime-rss',
@@ -2635,7 +2637,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.seatrade-maritime.com/rss.xml',
     url: 'https://www.seatrade-maritime.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'hellenic-shipping-rss',
@@ -2647,7 +2649,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.hellenicshippingnews.com/feed/',
     url: 'https://www.hellenicshippingnews.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   // -- Legal --
   {
@@ -2660,7 +2662,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://abovethelaw.com/feed/',
     url: 'https://abovethelaw.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
     tags: ['politics'] as USTag[],
   },
   {
@@ -2673,7 +2675,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.courthousenews.com/feed/',
     url: 'https://www.courthousenews.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
     tags: ['politics'] as USTag[],
   },
   {
@@ -2686,7 +2688,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.lawdork.com/feed',
     url: 'https://www.lawdork.com',
-    postsPerDay: 3,
+    baselinePPD: 3,
     tags: ['politics'] as USTag[],
   },
   {
@@ -2699,7 +2701,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.jurist.org/news/feed/',
     url: 'https://www.jurist.org',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'law-and-crime-rss',
@@ -2711,7 +2713,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://lawandcrime.com/feed/',
     url: 'https://lawandcrime.com',
-    postsPerDay: 25,
+    baselinePPD: 25,
     tags: ['domestic'] as USTag[],
   },
   // -- Extremism Research --
@@ -2725,7 +2727,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://gnet-research.org/feed/',
     url: 'https://gnet-research.org',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'adl-rss',
@@ -2737,7 +2739,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.adl.org/rss.xml',
     url: 'https://www.adl.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
     tags: ['domestic'] as USTag[],
   },
   // -- International Perspectives --
@@ -2751,7 +2753,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.economist.com/international/rss.xml',
     url: 'https://www.economist.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'global-times-rss',
@@ -2764,7 +2766,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.globaltimes.cn/rss/outbrain.xml',
     url: 'https://www.globaltimes.cn',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   {
     id: 'rt-rss',
@@ -2777,7 +2779,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.rt.com/rss/news/',
     url: 'https://www.rt.com',
-    postsPerDay: 100,
+    baselinePPD: 100,
   },
   {
     id: 'sputnik-rss',
@@ -2790,7 +2792,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://sputnikglobe.com/export/rss2/archive/index.xml',
     url: 'https://sputnikglobe.com',
-    postsPerDay: 100,
+    baselinePPD: 100,
   },
   // === RSS FEEDS - Hunt Round 4 (January 2026) ===
   // -- Africa --
@@ -2804,7 +2806,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf',
     url: 'https://allafrica.com',
-    postsPerDay: 100,
+    baselinePPD: 100,
   },
   // -- Southeast Asia --
   {
@@ -2817,7 +2819,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.bangkokpost.com/rss/data/topstories.xml',
     url: 'https://www.bangkokpost.com',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   // -- Latin America --
   {
@@ -2830,7 +2832,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://haitiantimes.com/feed/',
     url: 'https://haitiantimes.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   // -- Latin America (Feb 2026 source hunt) --
   {
@@ -2843,7 +2845,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://caracaschronicles.com/feed/',
     url: 'https://caracaschronicles.com',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'dialogo-chino-rss',
@@ -2855,7 +2857,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://dialogochino.net/en/feed/',
     url: 'https://dialogochino.net',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'nacla-rss',
@@ -2867,7 +2869,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://nacla.org/feed',
     url: 'https://nacla.org',
-    postsPerDay: 2,
+    baselinePPD: 2,
   },
   {
     id: 'global-voices-rss',
@@ -2879,7 +2881,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://globalvoices.org/feed/',
     url: 'https://globalvoices.org',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'rest-of-world-rss',
@@ -2891,7 +2893,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://restofworld.org/feed/latest',
     url: 'https://restofworld.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // -- Middle East --
   {
@@ -2904,7 +2906,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.middleeasteye.net/rss',
     url: 'https://www.middleeasteye.net',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   // -- Middle East (Feb 2026 source hunt) --
   {
@@ -2917,7 +2919,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.aa.com.tr/en/rss/default?cat=world',
     url: 'https://www.aa.com.tr/en',
-    postsPerDay: 40,
+    baselinePPD: 40,
   },
   {
     id: 'asharq-al-awsat-rss',
@@ -2929,7 +2931,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://english.aawsat.com/feed',
     url: 'https://english.aawsat.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'new-lines-mag-rss',
@@ -2941,7 +2943,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.newlinesmag.com/feed/',
     url: 'https://www.newlinesmag.com',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'iraqi-news-rss',
@@ -2953,7 +2955,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.iraqinews.com/feed/',
     url: 'https://www.iraqinews.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'syria-direct-rss',
@@ -2965,7 +2967,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://syriadirect.org/feed/',
     url: 'https://syriadirect.org',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   // -- Eastern Europe --
   // Euractiv removed - Cloudflare bot protection (403)
@@ -2979,7 +2981,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://emerging-europe.com/feed/',
     url: 'https://emerging-europe.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   // -- Think Tanks --
   {
@@ -2992,7 +2994,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.atlanticcouncil.org/feed/',
     url: 'https://www.atlanticcouncil.org',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   // -- Nuclear/Arms --
   {
@@ -3005,7 +3007,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.38north.org/feed/',
     url: 'https://www.38north.org',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'nknews-rss',
@@ -3017,7 +3019,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.nknews.org/feed/',
     url: 'https://www.nknews.org',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   // -- Investigative --
   {
@@ -3030,7 +3032,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://theintercept.com/feed/',
     url: 'https://theintercept.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'propublica-rss',
@@ -3042,7 +3044,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.propublica.org/feeds/propublica/main',
     url: 'https://www.propublica.org',
-    postsPerDay: 10,
+    baselinePPD: 10,
     tags: ['domestic'] as USTag[],
   },
   {
@@ -3055,7 +3057,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.justsecurity.org/feed/',
     url: 'https://www.justsecurity.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
     tags: ['politics'] as USTag[],
   },
   // -- Defense --
@@ -3069,7 +3071,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://seapowermagazine.org/feed/',
     url: 'https://seapowermagazine.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
     tags: ['defense'] as USTag[],
   },
   {
@@ -3082,7 +3084,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.armytimes.com/arc/outboundfeeds/rss/?outputType=xml',
     url: 'https://www.armytimes.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
     tags: ['defense'] as USTag[],
   },
   {
@@ -3095,7 +3097,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://nationalinterest.org/feed',
     url: 'https://nationalinterest.org',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
   // -- Space --
   {
@@ -3108,7 +3110,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://nasawatch.com/feed/',
     url: 'https://nasawatch.com',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // -- Tech --
   {
@@ -3121,7 +3123,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://arstechnica.com/feed/',
     url: 'https://arstechnica.com',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   // -- Economics --
   {
@@ -3134,7 +3136,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://wolfstreet.com/feed/',
     url: 'https://wolfstreet.com',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'econbrowser-rss',
@@ -3146,7 +3148,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://econbrowser.com/feed',
     url: 'https://econbrowser.com',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'econlib-rss',
@@ -3158,7 +3160,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.econlib.org/feed/',
     url: 'https://www.econlib.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'economist-finance-rss',
@@ -3170,7 +3172,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.economist.com/finance-and-economics/rss.xml',
     url: 'https://www.economist.com/finance-and-economics',
-    postsPerDay: 8,
+    baselinePPD: 8,
   },
   // -- US Major News --
   {
@@ -3183,7 +3185,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml',
     url: 'https://www.nytimes.com/section/politics',
-    postsPerDay: 30,
+    baselinePPD: 30,
     tags: ['politics'] as USTag[],
   },
   {
@@ -3196,7 +3198,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://feeds.nbcnews.com/nbcnews/public/world',
     url: 'https://www.nbcnews.com/world',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   {
     id: 'abc-intl-rss',
@@ -3208,7 +3210,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://abcnews.go.com/abcnews/internationalheadlines',
     url: 'https://abcnews.go.com/International',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
   {
     id: 'pbs-world-rss',
@@ -3220,7 +3222,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.pbs.org/newshour/feeds/rss/world',
     url: 'https://www.pbs.org/newshour/world',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'csmonitor-rss',
@@ -3232,7 +3234,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://rss.csmonitor.com/feeds/world',
     url: 'https://www.csmonitor.com/World',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'newsweek-rss',
@@ -3244,7 +3246,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.newsweek.com/rss',
     url: 'https://www.newsweek.com',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   // -- UK News --
   // Telegraph removed 2026-01-29: HTTP 403 (blocks RSS requests)
@@ -3258,7 +3260,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.independent.co.uk/news/world/rss',
     url: 'https://www.independent.co.uk/news/world',
-    postsPerDay: 40,
+    baselinePPD: 40,
   },
   {
     id: 'new-statesman-rss',
@@ -3270,7 +3272,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.newstatesman.com/feed',
     url: 'https://www.newstatesman.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'unherd-rss',
@@ -3282,7 +3284,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://unherd.com/feed/',
     url: 'https://unherd.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   // -- Opinion/Analysis --
   {
@@ -3295,7 +3297,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.vox.com/rss/index.xml',
     url: 'https://www.vox.com',
-    postsPerDay: 30,
+    baselinePPD: 30,
     tags: ['politics'] as USTag[],
   },
   {
@@ -3308,7 +3310,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.motherjones.com/feed/',
     url: 'https://www.motherjones.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
     tags: ['politics'] as USTag[],
   },
   {
@@ -3321,7 +3323,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://reason.com/feed/',
     url: 'https://reason.com',
-    postsPerDay: 20,
+    baselinePPD: 20,
     tags: ['politics'] as USTag[],
   },
   {
@@ -3334,7 +3336,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.nationalreview.com/feed/',
     url: 'https://www.nationalreview.com',
-    postsPerDay: 30,
+    baselinePPD: 30,
     tags: ['politics'] as USTag[],
   },
   {
@@ -3347,7 +3349,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://jacobin.com/feed/',
     url: 'https://jacobin.com',
-    postsPerDay: 10,
+    baselinePPD: 10,
     tags: ['politics'] as USTag[],
   },
   // === RSS FEEDS - Hunt Round 5 (January 2026) ===
@@ -3362,7 +3364,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.aspistrategist.org.au/feed/',
     url: 'https://www.aspistrategist.org.au',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'lowy-interpreter-rss',
@@ -3374,7 +3376,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.lowyinstitute.org/the-interpreter/rss.xml',
     url: 'https://www.lowyinstitute.org/the-interpreter',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'fulcrum-rss',
@@ -3386,7 +3388,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://fulcrum.sg/feed/',
     url: 'https://fulcrum.sg',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // -- US Policy/Think Tanks --
   {
@@ -3399,7 +3401,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.defensepriorities.org/feed/',
     url: 'https://www.defensepriorities.org',
-    postsPerDay: 3,
+    baselinePPD: 3,
     tags: ['defense'] as USTag[],
   },
   // -- Europe Official --
@@ -3413,7 +3415,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.ecb.europa.eu/rss/press.html',
     url: 'https://www.ecb.europa.eu',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   // -- US Opinion (Left) --
   {
@@ -3426,7 +3428,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.commondreams.org/feeds/feed.rss',
     url: 'https://www.commondreams.org',
-    postsPerDay: 20,
+    baselinePPD: 20,
     tags: ['politics'] as USTag[],
   },
   {
@@ -3439,7 +3441,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://truthout.org/feed/',
     url: 'https://truthout.org',
-    postsPerDay: 15,
+    baselinePPD: 15,
     tags: ['politics'] as USTag[],
   },
   {
@@ -3452,7 +3454,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.democracynow.org/democracynow.rss',
     url: 'https://www.democracynow.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
     tags: ['politics'] as USTag[],
   },
   // -- US Opinion (Right) --
@@ -3466,7 +3468,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.theamericanconservative.com/feed/',
     url: 'https://www.theamericanconservative.com',
-    postsPerDay: 15,
+    baselinePPD: 15,
     tags: ['politics'] as USTag[],
   },
   // -- Middle East (Alternative) --
@@ -3480,7 +3482,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://electronicintifada.net/rss.xml',
     url: 'https://electronicintifada.net',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'mondoweiss-rss',
@@ -3492,7 +3494,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://mondoweiss.net/feed/',
     url: 'https://mondoweiss.net',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   // === RSS FEEDS - Hunt Round 6 (January 2026) ===
   // -- Taiwan --
@@ -3506,7 +3508,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.taipeitimes.com/xml/index.rss',
     url: 'https://www.taipeitimes.com',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   // -- Singapore --
   {
@@ -3519,7 +3521,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml',
     url: 'https://www.channelnewsasia.com',
-    postsPerDay: 60,
+    baselinePPD: 60,
   },
   // -- Iran --
   {
@@ -3532,7 +3534,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.iranintl.com/en/feed',
     url: 'https://www.iranintl.com',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   // === NEW RSS SOURCES - January 2026 Research ===
   // -- Government/Official Sources --
@@ -3546,7 +3548,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://news.un.org/feed/subscribe/en/news/all/rss.xml',
     url: 'https://news.un.org/',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
   {
     id: 'uk-fcdo-rss',
@@ -3558,7 +3560,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.gov.uk/government/organisations/foreign-commonwealth-development-office.atom',
     url: 'https://www.gov.uk/fcdo',
-    postsPerDay: 8,
+    baselinePPD: 8,
   },
   {
     id: 'eu-commission-rss',
@@ -3570,7 +3572,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://ec.europa.eu/commission/presscorner/api/rss',
     url: 'https://ec.europa.eu/commission/presscorner/',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'iaea-news-rss',
@@ -3582,7 +3584,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.iaea.org/feeds/topnews',
     url: 'https://www.iaea.org/',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'pentagon-rss',
@@ -3594,7 +3596,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.defense.gov/DesktopModules/ArticleCS/RSS.ashx?ContentType=1&Site=945&max=10',
     url: 'https://www.defense.gov/',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'cisa-advisories-rss',
@@ -3606,7 +3608,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.cisa.gov/cybersecurity-advisories/all.xml',
     url: 'https://www.cisa.gov/cybersecurity-advisories',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   // -- OSINT & Investigations --
   {
@@ -3619,7 +3621,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.bellingcat.com/feed/',
     url: 'https://www.bellingcat.com/',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'soufan-center-rss',
@@ -3631,7 +3633,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://thesoufancenter.org/feed/',
     url: 'https://thesoufancenter.org/',
-    postsPerDay: 4,
+    baselinePPD: 4,
   },
   {
     id: 'hrw-rss',
@@ -3643,7 +3645,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.hrw.org/rss',
     url: 'https://www.hrw.org/',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // -- Think Tanks --
   {
@@ -3656,7 +3658,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://ecfr.eu/feed/',
     url: 'https://ecfr.eu/',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // -- Regional News --
   {
@@ -3669,7 +3671,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://rss.dw.com/rdf/rss-en-all',
     url: 'https://www.dw.com/',
-    postsPerDay: 40,
+    baselinePPD: 40,
   },
   {
     id: 'meduza-rss',
@@ -3681,7 +3683,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://meduza.io/rss/en/all',
     url: 'https://meduza.io/',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'yonhap-rss',
@@ -3693,7 +3695,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://en.yna.co.kr/RSS/news.xml',
     url: 'https://en.yna.co.kr/',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   {
     id: 'channel-news-asia-rss',
@@ -3705,7 +3707,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml',
     url: 'https://www.channelnewsasia.com/',
-    postsPerDay: 40,
+    baselinePPD: 40,
   },
   // -- Security Analysis --
   {
@@ -3718,7 +3720,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://thecipherbrief.com/feed',
     url: 'https://thecipherbrief.com/',
-    postsPerDay: 6,
+    baselinePPD: 6,
   },
   // -- Key Substacks --
   {
@@ -3731,7 +3733,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://samf.substack.com/feed',
     url: 'https://samf.substack.com/',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
   },
   {
     id: 'substack-tooze-rss',
@@ -3743,7 +3745,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://adamtooze.substack.com/feed',
     url: 'https://adamtooze.substack.com/',
-    postsPerDay: 1,
+    baselinePPD: 1,
   },
   {
     id: 'substack-counteroffensive-rss',
@@ -3755,7 +3757,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.counteroffensive.news/feed',
     url: 'https://www.counteroffensive.news/',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
   },
   {
     id: 'substack-chinatalk-rss',
@@ -3767,7 +3769,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.chinatalk.media/feed',
     url: 'https://www.chinatalk.media/',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
   },
   {
     id: 'substack-pobrien-rss',
@@ -3779,7 +3781,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://phillipspobrien.substack.com/feed',
     url: 'https://phillipspobrien.substack.com/',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
   },
   {
     id: 'substack-dorsey-rss',
@@ -3791,7 +3793,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://jamesmdorsey.substack.com/feed',
     url: 'https://jamesmdorsey.substack.com/',
-    postsPerDay: 1,
+    baselinePPD: 1,
   },
   // === TELEGRAM CHANNELS (High-Value OSINT) ===
   {
@@ -3805,7 +3807,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/DeepStateUA',
     url: 'https://t.me/DeepStateUA',
-    postsPerDay: 6,
+    baselinePPD: 6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -3819,7 +3821,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/wartranslated',
     url: 'https://t.me/wartranslated',
-    postsPerDay: 50.1,
+    baselinePPD: 50.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -3833,7 +3835,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/DIUkraine',
     url: 'https://t.me/DIUkraine',
-    postsPerDay: 5.7,
+    baselinePPD: 5.7,
     baselineMeasuredAt: '2026-02-07',
   },
   // === NEW TELEGRAM CHANNELS (Feb 2026 Source Hunt) ===
@@ -3849,7 +3851,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/clashreport',
     url: 'https://t.me/clashreport',
-    postsPerDay: 66.7,
+    baselinePPD: 66.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -3863,7 +3865,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/Disaster_News',
     url: 'https://t.me/Disaster_News',
-    postsPerDay: 5.9,
+    baselinePPD: 5.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -3877,7 +3879,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/liveuamap',
     url: 'https://t.me/liveuamap',
-    postsPerDay: 1.9,
+    baselinePPD: 1.9,
     baselineMeasuredAt: '2026-02-07',
   },
   // --- Middle East / Iran ---
@@ -3892,7 +3894,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/MiddleEastEye_TG',
     url: 'https://t.me/MiddleEastEye_TG',
-    postsPerDay: 29.9,
+    baselinePPD: 29.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -3906,7 +3908,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/LebUpdate',
     url: 'https://t.me/LebUpdate',
-    postsPerDay: 3.3,
+    baselinePPD: 3.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -3920,7 +3922,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/Hengaw_Org',
     url: 'https://t.me/Hengaw_Org',
-    postsPerDay: 45.4,
+    baselinePPD: 45.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -3934,7 +3936,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/syriageneral',
     url: 'https://t.me/syriageneral',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -3948,7 +3950,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/Enabbaladi_en',
     url: 'https://t.me/Enabbaladi_en',
-    postsPerDay: 3.7,
+    baselinePPD: 3.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -3962,7 +3964,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/Kurdistan24english',
     url: 'https://t.me/Kurdistan24english',
-    postsPerDay: 35.9,
+    baselinePPD: 35.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -3976,7 +3978,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/IRIran_Military',
     url: 'https://t.me/IRIran_Military',
-    postsPerDay: 34.9,
+    baselinePPD: 34.9,
     baselineMeasuredAt: '2026-02-07',
   },
   // --- Asia ---
@@ -3991,7 +3993,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://t.me/s/OsintTv',
     url: 'https://t.me/OsintTv',
-    postsPerDay: 13.2,
+    baselinePPD: 13.2,
     baselineMeasuredAt: '2026-02-07',
   },
   // --- Disasters ---
@@ -4006,7 +4008,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/top_disasters',
     url: 'https://t.me/top_disasters',
-    postsPerDay: 4.8,
+    baselinePPD: 4.8,
     baselineMeasuredAt: '2026-02-07',
   },
   // --- State/Official Sources (lower confidence, tagged official) ---
@@ -4021,7 +4023,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/Irna_en',
     url: 'https://t.me/Irna_en',
-    postsPerDay: 13.3,
+    baselinePPD: 13.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4035,7 +4037,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/SANANewsEnglish',
     url: 'https://t.me/SANANewsEnglish',
-    postsPerDay: 96.2,
+    baselinePPD: 96.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4049,7 +4051,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/Eng_ahed',
     url: 'https://t.me/Eng_ahed',
-    postsPerDay: 69.1,
+    baselinePPD: 69.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4063,7 +4065,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/GeneralStaffZSU',
     url: 'https://t.me/GeneralStaffZSU',
-    postsPerDay: 14.2,
+    baselinePPD: 14.2,
     baselineMeasuredAt: '2026-02-07',
   },
   // --- Western Europe / NATO ---
@@ -4078,7 +4080,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/noel_reports',
     url: 'https://t.me/noel_reports',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
 
   // === MASTODON / FEDIVERSE (T1 OSINT accounts) ===
@@ -4095,7 +4097,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://infosec.exchange/@briankrebs',
     url: 'https://infosec.exchange/@briankrebs',
-    postsPerDay: 1.9,
+    baselinePPD: 1.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4109,7 +4111,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://cyberplace.social/@GossiTheDog',
     url: 'https://cyberplace.social/@GossiTheDog',
-    postsPerDay: 4.6,
+    baselinePPD: 4.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4123,7 +4125,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://mastodon.social/@campuscodi',
     url: 'https://mastodon.social/@campuscodi',
-    postsPerDay: 4.3,
+    baselinePPD: 4.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4137,7 +4139,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://mastodon.social/@africacenter',
     url: 'https://mastodon.social/@africacenter',
-    postsPerDay: 2.3,
+    baselinePPD: 2.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4151,7 +4153,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://infosec.exchange/@kimzetter',
     url: 'https://infosec.exchange/@kimzetter',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4165,7 +4167,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://infosec.exchange/@cyb_detective',
     url: 'https://infosec.exchange/@cyb_detective',
-    postsPerDay: 1,
+    baselinePPD: 1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4179,7 +4181,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://m.ai6yr.org/@nws_bot',
     url: 'https://m.ai6yr.org/@nws_bot',
-    postsPerDay: 20.9,
+    baselinePPD: 20.9,
     baselineMeasuredAt: '2026-02-07',
   },
   // War Mapper removed - Mastodon inactive since Apr 2025 (have on Bluesky)
@@ -4195,7 +4197,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://mastodon.online/@SocraticEthics',
     url: 'https://mastodon.online/@SocraticEthics',
-    postsPerDay: 155.9,
+    baselinePPD: 155.9,
     baselineMeasuredAt: '2026-02-07',
   },
   // --- Western Europe / EU Official ---
@@ -4210,7 +4212,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://ec.social-network.europa.eu/@EUCommission',
     url: 'https://ec.social-network.europa.eu/@EUCommission',
-    postsPerDay: 5.3,
+    baselinePPD: 5.3,
   },
 
   // === REDDIT (High-quality subreddits, 100+ upvote filter) ===
@@ -4225,7 +4227,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/worldnews/.rss',
     url: 'https://www.reddit.com/r/worldnews',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   {
     id: 'reddit-geopolitics',
@@ -4238,7 +4240,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/geopolitics/.rss',
     url: 'https://www.reddit.com/r/geopolitics',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'reddit-ukrainianconflict',
@@ -4251,7 +4253,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/UkrainianConflict/.rss',
     url: 'https://www.reddit.com/r/UkrainianConflict',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
 
   // === YOUTUBE (Breaking news channels via RSS) ===
@@ -4266,7 +4268,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCshCsg1YVKli8yBai-wa78w',
     url: 'https://www.youtube.com/@AgendaFreeTV',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'youtube-dwnews',
@@ -4279,7 +4281,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCknLrEdhRCp1aegoMqRaCZg',
     url: 'https://www.youtube.com/@DWNews',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'youtube-aljazeera',
@@ -4292,7 +4294,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCNye-wNBqNL5ZzHSJj3l8Bg',
     url: 'https://www.youtube.com/@AlJazeeraEnglish',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'youtube-france24',
@@ -4305,7 +4307,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCQfwfsi5VrQ8yKZ-UWmAEFg',
     url: 'https://www.youtube.com/@FRANCE24English',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'youtube-wion',
@@ -4318,7 +4320,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC_gUM8rL-Lrg6O3adPW9K1g',
     url: 'https://www.youtube.com/@WIONews',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
 
   // === ADDITIONAL TELEGRAM CHANNELS ===
@@ -4333,7 +4335,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/OSINTdefender',
     url: 'https://t.me/OSINTdefender',
-    postsPerDay: 11.9,
+    baselinePPD: 11.9,
     baselineMeasuredAt: '2026-02-07',
   },
   // === ADDITIONAL MASTODON ACCOUNTS ===
@@ -4352,7 +4354,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jongambrell.bsky.social',
     url: 'https://bsky.app/profile/jongambrell.bsky.social',
-    postsPerDay: 1.7,
+    baselinePPD: 1.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4366,7 +4368,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/atabatabai.bsky.social',
     url: 'https://bsky.app/profile/atabatabai.bsky.social',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4380,7 +4382,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/sfrantzman.bsky.social',
     url: 'https://bsky.app/profile/sfrantzman.bsky.social',
-    postsPerDay: 0.8,
+    baselinePPD: 0.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4394,7 +4396,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jimlaporta.bsky.social',
     url: 'https://bsky.app/profile/jimlaporta.bsky.social',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4408,7 +4410,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kshaheen.bsky.social',
     url: 'https://bsky.app/profile/kshaheen.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4422,7 +4424,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ruslantrad.bsky.social',
     url: 'https://bsky.app/profile/ruslantrad.bsky.social',
-    postsPerDay: 1.6,
+    baselinePPD: 1.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4436,7 +4438,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bashareport.bsky.social',
     url: 'https://bsky.app/profile/bashareport.bsky.social',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4450,7 +4452,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/historian68.bsky.social',
     url: 'https://bsky.app/profile/historian68.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   // === MIDDLE EAST THINK TANKS (Added Jan 2026) ===
@@ -4465,7 +4467,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/washinstitute.bsky.social',
     url: 'https://bsky.app/profile/washinstitute.bsky.social',
-    postsPerDay: 2.7,
+    baselinePPD: 2.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4479,7 +4481,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mideast.csis.org',
     url: 'https://bsky.app/profile/mideast.csis.org',
-    postsPerDay: 0.6,
+    baselinePPD: 0.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4493,7 +4495,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/chmenap.bsky.social',
     url: 'https://bsky.app/profile/chmenap.bsky.social',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4507,7 +4509,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/al-monitor.bsky.social',
     url: 'https://bsky.app/profile/al-monitor.bsky.social',
-    postsPerDay: 15.5,
+    baselinePPD: 15.5,
     baselineMeasuredAt: '2026-02-07',
   },
   // === TELEGRAM - MIDDLE EAST (Added Jan 2026) ===
@@ -4522,7 +4524,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/Middle_East_Spectator',
     url: 'https://t.me/Middle_East_Spectator',
-    postsPerDay: 44.1,
+    baselinePPD: 44.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4536,7 +4538,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/ddgeopolitics',
     url: 'https://t.me/ddgeopolitics',
-    postsPerDay: 57.7,
+    baselinePPD: 57.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4550,7 +4552,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/gulfnewsUAE',
     url: 'https://t.me/gulfnewsUAE',
-    postsPerDay: 71.3,
+    baselinePPD: 71.3,
     baselineMeasuredAt: '2026-02-07',
   },
   // === REDDIT - MIDDLE EAST (Added Jan 2026) ===
@@ -4565,7 +4567,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/iran/.rss',
     url: 'https://www.reddit.com/r/iran',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'reddit-newiran',
@@ -4578,7 +4580,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/NewIran/.rss',
     url: 'https://www.reddit.com/r/NewIran',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
   {
     id: 'reddit-syriancivilwar',
@@ -4591,7 +4593,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/syriancivilwar/.rss',
     url: 'https://www.reddit.com/r/syriancivilwar',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   {
     id: 'reddit-credibledefense',
@@ -4604,7 +4606,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/CredibleDefense/.rss',
     url: 'https://www.reddit.com/r/CredibleDefense',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'reddit-combatfootage',
@@ -4617,7 +4619,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/CombatFootage/.rss',
     url: 'https://www.reddit.com/r/CombatFootage',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   // === REDDIT - REGIONAL EXPANSION (Added Feb 2026) ===
   {
@@ -4631,7 +4633,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/news/.rss',
     url: 'https://www.reddit.com/r/news',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   {
     id: 'reddit-europe',
@@ -4644,7 +4646,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/europe/.rss',
     url: 'https://www.reddit.com/r/europe',
-    postsPerDay: 40,
+    baselinePPD: 40,
   },
   {
     id: 'reddit-latinamerica',
@@ -4657,7 +4659,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/LatinAmerica/.rss',
     url: 'https://www.reddit.com/r/LatinAmerica',
-    postsPerDay: 15,
+    baselinePPD: 15,
   },
   {
     id: 'reddit-africa',
@@ -4670,7 +4672,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/Africa/.rss',
     url: 'https://www.reddit.com/r/Africa',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'reddit-northkoreanews',
@@ -4683,7 +4685,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/NorthKoreaNews/.rss',
     url: 'https://www.reddit.com/r/NorthKoreaNews',
-    postsPerDay: 8,
+    baselinePPD: 8,
   },
   {
     id: 'reddit-indianews',
@@ -4696,7 +4698,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/IndiaNews/.rss',
     url: 'https://www.reddit.com/r/IndiaNews',
-    postsPerDay: 20,
+    baselinePPD: 20,
   },
   {
     id: 'reddit-israelpalestine',
@@ -4709,7 +4711,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.reddit.com/r/IsraelPalestine/.rss',
     url: 'https://www.reddit.com/r/IsraelPalestine',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
   // === YOUTUBE - MIDDLE EAST (Added Jan 2026) ===
   {
@@ -4723,7 +4725,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCvHDpsWKADrDia0c99X37vg',
     url: 'https://www.youtube.com/@i24NEWS_EN',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'youtube-caspianreport',
@@ -4736,7 +4738,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCwnKziETDbHJtx78nIkfYug',
     url: 'https://www.youtube.com/@CaspianReport',
-    postsPerDay: 1,
+    baselinePPD: 1,
   },
   // MEMRI TV removed 2026-01-29: YouTube channel ID invalid (404)
   // === MASTODON - OSINT (Added Jan 2026) ===
@@ -4752,7 +4754,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://mastodon.social/@netblocks',
     url: 'https://mastodon.social/@netblocks',
-    postsPerDay: 0.6,
+    baselinePPD: 0.6,
     baselineMeasuredAt: '2026-02-07',
   },
   // === RSS - DEFENSE (Added Jan 2026) ===
@@ -4766,7 +4768,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.longwarjournal.org/feed',
     url: 'https://www.longwarjournal.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'fdd-feed',
@@ -4778,7 +4780,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.fdd.org/feed/',
     url: 'https://www.fdd.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // === NEW SOURCES (Jan 29, 2026 Discovery) ===
   {
@@ -4792,7 +4794,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ruthmichaelson.com/rss',
     url: 'https://bsky.app/profile/ruthmichaelson.com',
-    postsPerDay: 1.4,
+    baselinePPD: 1.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4806,7 +4808,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/vatniksoup.bsky.social/rss',
     url: 'https://bsky.app/profile/vatniksoup.bsky.social',
-    postsPerDay: 4.8,
+    baselinePPD: 4.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4820,7 +4822,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/chriso-wiki.bsky.social/rss',
     url: 'https://bsky.app/profile/chriso-wiki.bsky.social',
-    postsPerDay: 31.5,
+    baselinePPD: 31.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4834,7 +4836,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/shashj.bsky.social/rss',
     url: 'https://bsky.app/profile/shashj.bsky.social',
-    postsPerDay: 5.8,
+    baselinePPD: 5.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4848,7 +4850,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/colborne.bsky.social/rss',
     url: 'https://bsky.app/profile/colborne.bsky.social',
-    postsPerDay: 6.8,
+    baselinePPD: 6.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4862,7 +4864,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/militarynewsua.bsky.social/rss',
     url: 'https://bsky.app/profile/militarynewsua.bsky.social',
-    postsPerDay: 94.3,
+    baselinePPD: 94.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4876,7 +4878,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/occrp.org/rss',
     url: 'https://bsky.app/profile/occrp.org',
-    postsPerDay: 4,
+    baselinePPD: 4,
     baselineMeasuredAt: '2026-02-07',
   },
   // === NEW ADDITIONS - February 2026 (Agent Team Investigation) ===
@@ -4892,7 +4894,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/dropsitenews.com/rss',
     url: 'https://bsky.app/profile/dropsitenews.com',
-    postsPerDay: 65.2,
+    baselinePPD: 65.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4906,7 +4908,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/osinttechnical.bsky.social/rss',
     url: 'https://bsky.app/profile/osinttechnical.bsky.social',
-    postsPerDay: 2.4,
+    baselinePPD: 2.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4920,7 +4922,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/flightradar24.com/rss',
     url: 'https://bsky.app/profile/flightradar24.com',
-    postsPerDay: 1.3,
+    baselinePPD: 1.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4934,7 +4936,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/unusualwhales.bsky.social/rss',
     url: 'https://bsky.app/profile/unusualwhales.bsky.social',
-    postsPerDay: 8.1,
+    baselinePPD: 8.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4948,7 +4950,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/capitalweather.bsky.social/rss',
     url: 'https://bsky.app/profile/capitalweather.bsky.social',
-    postsPerDay: 11.2,
+    baselinePPD: 11.2,
     baselineMeasuredAt: '2026-02-07',
   },
   // WaPo/NYT Breaking News Reporters
@@ -4963,7 +4965,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/danlamothe.bsky.social/rss',
     url: 'https://bsky.app/profile/danlamothe.bsky.social',
-    postsPerDay: 0.8,
+    baselinePPD: 0.8,
     baselineMeasuredAt: '2026-02-07',
   },
 
@@ -4979,7 +4981,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/en.afp.com',
     url: 'https://bsky.app/profile/en.afp.com',
-    postsPerDay: 42,
+    baselinePPD: 42,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -4993,7 +4995,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/en.france24.com',
     url: 'https://bsky.app/profile/en.france24.com',
-    postsPerDay: 32.1,
+    baselinePPD: 32.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5007,7 +5009,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/shayan86.bsky.social',
     url: 'https://bsky.app/profile/shayan86.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5021,7 +5023,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/netblocks.org',
     url: 'https://bsky.app/profile/netblocks.org',
-    postsPerDay: 1.7,
+    baselinePPD: 1.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5035,7 +5037,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/middleeasteye-rss.bsky.social',
     url: 'https://bsky.app/profile/middleeasteye-rss.bsky.social',
-    postsPerDay: 18.3,
+    baselinePPD: 18.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5049,7 +5051,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/iwr.bsky.social',
     url: 'https://bsky.app/profile/iwr.bsky.social',
-    postsPerDay: 3.2,
+    baselinePPD: 3.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5063,7 +5065,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/itamilradar.com',
     url: 'https://bsky.app/profile/itamilradar.com',
-    postsPerDay: 2.3,
+    baselinePPD: 2.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5077,7 +5079,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/antongerashchenko.bsky.social',
     url: 'https://bsky.app/profile/antongerashchenko.bsky.social',
-    postsPerDay: 47.3,
+    baselinePPD: 47.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5091,7 +5093,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/aljazeeraenglishnews',
     url: 'https://t.me/aljazeeraenglishnews',
-    postsPerDay: 25.9,
+    baselinePPD: 25.9,
     baselineMeasuredAt: '2026-02-07',
     isStateSponsored: true, // Qatar state-funded
   },
@@ -5106,7 +5108,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/gazaalanpa',
     url: 'https://t.me/gazaalanpa',
-    postsPerDay: 30.5,
+    baselinePPD: 30.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5120,7 +5122,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/englishabuali',
     url: 'https://t.me/englishabuali',
-    postsPerDay: 48.2,
+    baselinePPD: 48.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5134,7 +5136,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/worldnews',
     url: 'https://t.me/worldnews',
-    postsPerDay: 77.7,
+    baselinePPD: 77.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5148,7 +5150,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/insiderpaper',
     url: 'https://t.me/insiderpaper',
-    postsPerDay: 16.8,
+    baselinePPD: 16.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5162,7 +5164,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/warmonitors',
     url: 'https://t.me/warmonitors',
-    postsPerDay: 32.4,
+    baselinePPD: 32.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5176,7 +5178,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/ourwarstoday',
     url: 'https://t.me/ourwarstoday',
-    postsPerDay: 6.9,
+    baselinePPD: 6.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5190,7 +5192,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/spectatorindexofficial',
     url: 'https://t.me/spectatorindexofficial',
-    postsPerDay: 18.7,
+    baselinePPD: 18.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5204,7 +5206,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/tglobaleye',
     url: 'https://t.me/tglobaleye',
-    postsPerDay: 58.9,
+    baselinePPD: 58.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5218,7 +5220,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/intelslava',
     url: 'https://t.me/intelslava',
-    postsPerDay: 27.9,
+    baselinePPD: 27.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5232,7 +5234,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/rybar_in_english',
     url: 'https://t.me/rybar_in_english',
-    postsPerDay: 36.8,
+    baselinePPD: 36.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -5246,7 +5248,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/KyivIndependent_official',
     url: 'https://t.me/KyivIndependent_official',
-    postsPerDay: 32.5,
+    baselinePPD: 32.5,
     baselineMeasuredAt: '2026-02-07',
   },
   // === UKRAINE / EUROPE-RUSSIA EXPANSION (2026-02-12) ===
@@ -5261,7 +5263,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/united24media.com/rss',
     url: 'https://bsky.app/profile/united24media.com',
-    postsPerDay: 38.9,
+    baselinePPD: 38.9,
   },
   {
     id: 'meanwhile-in-ukraine',
@@ -5274,7 +5276,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/meanwhileua.bsky.social/rss',
     url: 'https://bsky.app/profile/meanwhileua.bsky.social',
-    postsPerDay: 11.3,
+    baselinePPD: 11.3,
   },
   {
     id: 'kyiv-post',
@@ -5287,7 +5289,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kyivpost.com/rss',
     url: 'https://bsky.app/profile/kyivpost.com',
-    postsPerDay: 11.2,
+    baselinePPD: 11.2,
   },
 
   // === IRAN WAR WATCH - SOURCES ADDED 2026-02-25 ===
@@ -5306,7 +5308,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thrustwr.bsky.social',
     url: 'https://bsky.app/profile/thrustwr.bsky.social',
-    postsPerDay: 1,
+    baselinePPD: 1,
   },
   {
     id: 'mark-pyruz',
@@ -5319,7 +5321,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/markpyruz.bsky.social',
     url: 'https://bsky.app/profile/markpyruz.bsky.social',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
   },
   {
     id: 'joseph-trevithick',
@@ -5332,7 +5334,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/franticgoat.bsky.social',
     url: 'https://bsky.app/profile/franticgoat.bsky.social',
-    postsPerDay: 2.1,
+    baselinePPD: 2.1,
   },
   {
     id: 'sune-engel-rasmussen',
@@ -5345,7 +5347,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/suneengel.bsky.social',
     url: 'https://bsky.app/profile/suneengel.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
   },
   {
     id: 'franz-stefan-gady',
@@ -5358,7 +5360,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/hoanssolo.bsky.social',
     url: 'https://bsky.app/profile/hoanssolo.bsky.social',
-    postsPerDay: 1.2,
+    baselinePPD: 1.2,
   },
   {
     id: 'reconron',
@@ -5371,7 +5373,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thereccelizard.bsky.social',
     url: 'https://bsky.app/profile/thereccelizard.bsky.social',
-    postsPerDay: 6,
+    baselinePPD: 6,
   },
   {
     id: 'caroline-rose',
@@ -5384,7 +5386,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/carolinerose8.bsky.social',
     url: 'https://bsky.app/profile/carolinerose8.bsky.social',
-    postsPerDay: 0.8,
+    baselinePPD: 0.8,
   },
   {
     id: 'chris-panella',
@@ -5397,7 +5399,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/chrispanella.bsky.social',
     url: 'https://bsky.app/profile/chrispanella.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
   },
   {
     id: 'thord-iversen',
@@ -5410,7 +5412,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thelookout.bsky.social',
     url: 'https://bsky.app/profile/thelookout.bsky.social',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
   },
   {
     id: 'russia-maritime-watch',
@@ -5423,7 +5425,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/rfnosblog.bsky.social',
     url: 'https://bsky.app/profile/rfnosblog.bsky.social',
-    postsPerDay: 1.4,
+    baselinePPD: 1.4,
   },
   {
     id: 'tomi-mccluskey',
@@ -5436,7 +5438,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/tomi-mcc.bsky.social',
     url: 'https://bsky.app/profile/tomi-mcc.bsky.social',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
   },
   {
     id: 'the-military-analyst',
@@ -5449,7 +5451,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/militaryanalyst.bsky.social',
     url: 'https://bsky.app/profile/militaryanalyst.bsky.social',
-    postsPerDay: 6,
+    baselinePPD: 6,
   },
   {
     id: 'christopher-cavas',
@@ -5462,7 +5464,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cavasships.bsky.social',
     url: 'https://bsky.app/profile/cavasships.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
   },
 
   // --- NUCLEAR / NONPROLIFERATION / ARMS CONTROL ---
@@ -5477,7 +5479,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nktpnd.bsky.social',
     url: 'https://bsky.app/profile/nktpnd.bsky.social',
-    postsPerDay: 3.5,
+    baselinePPD: 3.5,
   },
   {
     id: 'caitlin-talmadge',
@@ -5490,7 +5492,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/proftalmadge.bsky.social',
     url: 'https://bsky.app/profile/proftalmadge.bsky.social',
-    postsPerDay: 0.6,
+    baselinePPD: 0.6,
   },
   {
     id: 'jon-wolfsthal',
@@ -5503,7 +5505,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jonatomic.bsky.social',
     url: 'https://bsky.app/profile/jonatomic.bsky.social',
-    postsPerDay: 6,
+    baselinePPD: 6,
   },
   {
     id: 'bulletin-atomic-scientists',
@@ -5516,7 +5518,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/thebulletin.org',
     url: 'https://bsky.app/profile/thebulletin.org',
-    postsPerDay: 2,
+    baselinePPD: 2,
   },
   {
     id: 'nicole-grajewski',
@@ -5529,7 +5531,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nicolegrajewski.bsky.social',
     url: 'https://bsky.app/profile/nicolegrajewski.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
   },
   {
     id: 'hanna-notte',
@@ -5542,7 +5544,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/hannanotte.bsky.social',
     url: 'https://bsky.app/profile/hannanotte.bsky.social',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
   },
   {
     id: 'stephen-schwartz',
@@ -5555,7 +5557,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/atomicanalyst.bsky.social',
     url: 'https://bsky.app/profile/atomicanalyst.bsky.social',
-    postsPerDay: 2.2,
+    baselinePPD: 2.2,
   },
   {
     id: 'john-carl-baker',
@@ -5568,7 +5570,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/johncarlbaker.bsky.social',
     url: 'https://bsky.app/profile/johncarlbaker.bsky.social',
-    postsPerDay: 10,
+    baselinePPD: 10,
   },
   {
     id: 'fas-org',
@@ -5581,7 +5583,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/scientistsorg.bsky.social',
     url: 'https://bsky.app/profile/scientistsorg.bsky.social',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
   },
   {
     id: 'nti-org',
@@ -5594,7 +5596,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nti.org',
     url: 'https://bsky.app/profile/nti.org',
-    postsPerDay: 1.5,
+    baselinePPD: 1.5,
   },
   {
     id: 'pavel-podvig',
@@ -5607,7 +5609,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/russianforces.org',
     url: 'https://bsky.app/profile/russianforces.org',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
   },
   {
     id: 'oliver-meier',
@@ -5620,7 +5622,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/olivermeier.bsky.social',
     url: 'https://bsky.app/profile/olivermeier.bsky.social',
-    postsPerDay: 1.5,
+    baselinePPD: 1.5,
   },
   {
     id: 'carnegie-npp',
@@ -5633,7 +5635,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/carnegienpp.bsky.social',
     url: 'https://bsky.app/profile/carnegienpp.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
   },
   {
     id: 'gregory-koblentz',
@@ -5646,7 +5648,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/gregkoblentz.bsky.social',
     url: 'https://bsky.app/profile/gregkoblentz.bsky.social',
-    postsPerDay: 1.5,
+    baselinePPD: 1.5,
   },
 
   // --- MARITIME / SHIPPING / ENERGY ---
@@ -5661,7 +5663,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/seanews.bsky.social',
     url: 'https://bsky.app/profile/seanews.bsky.social',
-    postsPerDay: 7.2,
+    baselinePPD: 7.2,
   },
   {
     id: 'fleetleaks',
@@ -5674,7 +5676,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/fleetleaks.bsky.social',
     url: 'https://bsky.app/profile/fleetleaks.bsky.social',
-    postsPerDay: 3.3,
+    baselinePPD: 3.3,
   },
   {
     id: 'rory-johnston',
@@ -5687,7 +5689,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/roryjohnston.bsky.social',
     url: 'https://bsky.app/profile/roryjohnston.bsky.social',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'ben-winkley',
@@ -5700,7 +5702,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/benwinkley.bsky.social',
     url: 'https://bsky.app/profile/benwinkley.bsky.social',
-    postsPerDay: 2.5,
+    baselinePPD: 2.5,
   },
   {
     id: 'tanker-watch-ie',
@@ -5713,7 +5715,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/galwaybaywatch.bsky.social',
     url: 'https://bsky.app/profile/galwaybaywatch.bsky.social',
-    postsPerDay: 7.5,
+    baselinePPD: 7.5,
   },
   {
     id: 'maritime-bell',
@@ -5726,7 +5728,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/maritimebell.com',
     url: 'https://bsky.app/profile/maritimebell.com',
-    postsPerDay: 4.3,
+    baselinePPD: 4.3,
   },
 
   // --- IRAN POLICY / DIPLOMACY / WAR POWERS ---
@@ -5741,7 +5743,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/crisisgroup.org',
     url: 'https://bsky.app/profile/crisisgroup.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'edward-wong',
@@ -5754,7 +5756,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ewong.bsky.social',
     url: 'https://bsky.app/profile/ewong.bsky.social',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
   },
   {
     id: 'akbar-shahid-ahmed',
@@ -5767,7 +5769,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/akbarshahidahmed.huffpost.com',
     url: 'https://bsky.app/profile/akbarshahidahmed.huffpost.com',
-    postsPerDay: 1.1,
+    baselinePPD: 1.1,
   },
   {
     id: 'dalia-dassa-kaye',
@@ -5780,7 +5782,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/dassakaye.bsky.social',
     url: 'https://bsky.app/profile/dassakaye.bsky.social',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'brian-finucane',
@@ -5793,7 +5795,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bcfinucane.bsky.social',
     url: 'https://bsky.app/profile/bcfinucane.bsky.social',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'daniel-larison',
@@ -5806,7 +5808,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/daniellarison.bsky.social',
     url: 'https://bsky.app/profile/daniellarison.bsky.social',
-    postsPerDay: 8,
+    baselinePPD: 8,
   },
   {
     id: 'kori-schake',
@@ -5819,7 +5821,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kschake.bsky.social',
     url: 'https://bsky.app/profile/kschake.bsky.social',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'michael-hanna-icg',
@@ -5832,7 +5834,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mwhanna.crisisgroup.org',
     url: 'https://bsky.app/profile/mwhanna.crisisgroup.org',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
   },
   {
     id: 'katherine-ebright',
@@ -5845,7 +5847,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ebrightyon.bsky.social',
     url: 'https://bsky.app/profile/ebrightyon.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
   },
   {
     id: 'dawn-mena',
@@ -5858,7 +5860,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/dawnmenaorg.bsky.social',
     url: 'https://bsky.app/profile/dawnmenaorg.bsky.social',
-    postsPerDay: 1.3,
+    baselinePPD: 1.3,
   },
   {
     id: 'heather-brandon-smith',
@@ -5871,7 +5873,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/hbrandon-smith.bsky.social',
     url: 'https://bsky.app/profile/hbrandon-smith.bsky.social',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
   },
   {
     id: 'center-intl-policy',
@@ -5884,7 +5886,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cipolicy.bsky.social',
     url: 'https://bsky.app/profile/cipolicy.bsky.social',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
   },
   {
     id: 'just-security',
@@ -5897,7 +5899,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/justsecurity.org',
     url: 'https://bsky.app/profile/justsecurity.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'rebecca-ingber',
@@ -5910,7 +5912,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/becingber.bsky.social',
     url: 'https://bsky.app/profile/becingber.bsky.social',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
   },
 
   // --- REGIONAL / GULF / DIASPORA ---
@@ -5925,7 +5927,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/miraalhussein.bsky.social',
     url: 'https://bsky.app/profile/miraalhussein.bsky.social',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'aron-lund',
@@ -5938,7 +5940,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/aronlund.bsky.social',
     url: 'https://bsky.app/profile/aronlund.bsky.social',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
   },
   {
     id: 'mutlu-civiroglu',
@@ -5951,7 +5953,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mutludc.bsky.social',
     url: 'https://bsky.app/profile/mutludc.bsky.social',
-    postsPerDay: 2.5,
+    baselinePPD: 2.5,
   },
   {
     id: 'me-tracker',
@@ -5964,7 +5966,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/me.skyfleet.blue',
     url: 'https://bsky.app/profile/me.skyfleet.blue',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   {
     id: 'reza-akbari',
@@ -5977,7 +5979,7 @@ export const tier1Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/rezahakbari.bsky.social',
     url: 'https://bsky.app/profile/rezahakbari.bsky.social',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
   },
 
 ];
@@ -5998,7 +6000,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bbcnewsnight.bsky.social',
     url: 'https://bsky.app/profile/bbcnewsnight.bsky.social',
-    postsPerDay: 1.2,
+    baselinePPD: 1.2,
     baselineMeasuredAt: '2026-02-07',
   },
   // === NEW OSINT ACCOUNTS (Jan 2026) ===
@@ -6013,7 +6015,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bellingcat.com',
     url: 'https://bsky.app/profile/bellingcat.com',
-    postsPerDay: 4,
+    baselinePPD: 4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6027,7 +6029,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/tatarigami.bsky.social',
     url: 'https://bsky.app/profile/tatarigami.bsky.social',
-    postsPerDay: 1.3,
+    baselinePPD: 1.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6041,7 +6043,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/geoconfirmed.org',
     url: 'https://bsky.app/profile/geoconfirmed.org',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6055,7 +6057,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/malachy.bsky.social',
     url: 'https://bsky.app/profile/malachy.bsky.social',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6069,7 +6071,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/yoruk.bsky.social',
     url: 'https://bsky.app/profile/yoruk.bsky.social',
-    postsPerDay: 3,
+    baselinePPD: 3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6083,7 +6085,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/allsourcenews.bsky.social',
     url: 'https://bsky.app/profile/allsourcenews.bsky.social',
-    postsPerDay: 1.4,
+    baselinePPD: 1.4,
     baselineMeasuredAt: '2026-02-07',
   },
   // === WESTERN EUROPE / NATO OFFICIALS (Feb 2026) ===
@@ -6098,7 +6100,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/andriuskubilius.ec.europa.eu',
     url: 'https://bsky.app/profile/andriuskubilius.ec.europa.eu',
-    postsPerDay: 2.5,
+    baselinePPD: 2.5,
   },
   {
     id: 'german-foreign-office',
@@ -6111,7 +6113,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/germany.diplo.de',
     url: 'https://bsky.app/profile/germany.diplo.de',
-    postsPerDay: 2.4,
+    baselinePPD: 2.4,
   },
   {
     id: 'poland-mfa',
@@ -6124,7 +6126,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/polandmfa.bsky.social',
     url: 'https://bsky.app/profile/polandmfa.bsky.social',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
   },
   {
     id: 'uk-house-of-commons',
@@ -6137,7 +6139,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/houseofcommons.parliament.uk',
     url: 'https://bsky.app/profile/houseofcommons.parliament.uk',
-    postsPerDay: 10.3,
+    baselinePPD: 10.3,
   },
   {
     id: 'eu-council',
@@ -6150,7 +6152,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/consilium.europa.eu',
     url: 'https://bsky.app/profile/consilium.europa.eu',
-    postsPerDay: 2.2,
+    baselinePPD: 2.2,
   },
   // === ORIGINAL T2 SOURCES ===
   {
@@ -6164,7 +6166,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/homelandgov.bsky.social',
     url: 'https://bsky.app/profile/homelandgov.bsky.social',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6178,7 +6180,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/eudiplomacy.bsky.social',
     url: 'https://bsky.app/profile/eudiplomacy.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6192,7 +6194,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/oalexanderdk.bsky.social',
     url: 'https://bsky.app/profile/oalexanderdk.bsky.social',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6206,7 +6208,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/michaelkofman.bsky.social',
     url: 'https://bsky.app/profile/michaelkofman.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6220,7 +6222,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/elintnews.bsky.social',
     url: 'https://bsky.app/profile/elintnews.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6234,7 +6236,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/merip.bsky.social',
     url: 'https://bsky.app/profile/merip.bsky.social',
-    postsPerDay: 1.1,
+    baselinePPD: 1.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6248,7 +6250,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ryanmcbeth.bsky.social',
     url: 'https://bsky.app/profile/ryanmcbeth.bsky.social',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6262,7 +6264,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/chinamediaproject.bsky.social',
     url: 'https://bsky.app/profile/chinamediaproject.bsky.social',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6276,7 +6278,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ncuscr.bsky.social',
     url: 'https://bsky.app/profile/ncuscr.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6290,7 +6292,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/andreinetto.bsky.social',
     url: 'https://bsky.app/profile/andreinetto.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6304,7 +6306,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/miweintraub83.bsky.social',
     url: 'https://bsky.app/profile/miweintraub83.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6318,7 +6320,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ianbremmer.com',
     url: 'https://bsky.app/profile/ianbremmer.com',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6332,7 +6334,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/armscontrolwonk.bsky.social',
     url: 'https://bsky.app/profile/armscontrolwonk.bsky.social',
-    postsPerDay: 0.6,
+    baselinePPD: 0.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6346,7 +6348,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/akmentt.bsky.social',
     url: 'https://bsky.app/profile/akmentt.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6360,7 +6362,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/genmhayden.bsky.social',
     url: 'https://bsky.app/profile/genmhayden.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6374,7 +6376,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/liveuamap.com',
     url: 'https://bsky.app/profile/liveuamap.com',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6388,7 +6390,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/christopherjm.ft.com',
     url: 'https://bsky.app/profile/christopherjm.ft.com',
-    postsPerDay: 1.1,
+    baselinePPD: 1.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6402,7 +6404,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bbcstever.bsky.social',
     url: 'https://bsky.app/profile/bbcstever.bsky.social',
-    postsPerDay: 0.8,
+    baselinePPD: 0.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6416,7 +6418,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ozkaterji.bsky.social',
     url: 'https://bsky.app/profile/ozkaterji.bsky.social',
-    postsPerDay: 1.2,
+    baselinePPD: 1.2,
     baselineMeasuredAt: '2026-02-07',
   },
   // === UKRAINE / EUROPE-RUSSIA EXPANSION (2026-02-12) ===
@@ -6431,7 +6433,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/osintukraine.com/rss',
     url: 'https://bsky.app/profile/osintukraine.com',
-    postsPerDay: 6.7,
+    baselinePPD: 6.7,
   },
   {
     id: 'tim-mak',
@@ -6444,7 +6446,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/timkmak.bsky.social/rss',
     url: 'https://bsky.app/profile/timkmak.bsky.social',
-    postsPerDay: 7.7,
+    baselinePPD: 7.7,
   },
   {
     id: 'dan-kaszeta',
@@ -6457,7 +6459,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/dankaszeta.bsky.social/rss',
     url: 'https://bsky.app/profile/dankaszeta.bsky.social',
-    postsPerDay: 100,
+    baselinePPD: 100,
   },
   {
     id: 'jake-broe',
@@ -6470,7 +6472,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/realjakebroe.bsky.social/rss',
     url: 'https://bsky.app/profile/realjakebroe.bsky.social',
-    postsPerDay: 10.3,
+    baselinePPD: 10.3,
   },
   {
     id: 'anders-puck-nielsen',
@@ -6483,7 +6485,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/anderspucknielsen.dk/rss',
     url: 'https://bsky.app/profile/anderspucknielsen.dk',
-    postsPerDay: 11.3,
+    baselinePPD: 11.3,
   },
   {
     id: 'lucian-kim',
@@ -6496,7 +6498,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/luciankim.bsky.social/rss',
     url: 'https://bsky.app/profile/luciankim.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
   },
   {
     id: 'platform-raam',
@@ -6509,7 +6511,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/platformraam.nl/rss',
     url: 'https://bsky.app/profile/platformraam.nl',
-    postsPerDay: 0.8,
+    baselinePPD: 0.8,
   },
   {
     id: 'desk-russia',
@@ -6522,7 +6524,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/deskrussia.bsky.social/rss',
     url: 'https://bsky.app/profile/deskrussia.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
   },
   {
     id: 'david-sanger',
@@ -6535,7 +6537,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/sangernyt.bsky.social',
     url: 'https://bsky.app/profile/sangernyt.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6549,7 +6551,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/charliesavage.bsky.social',
     url: 'https://bsky.app/profile/charliesavage.bsky.social',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6563,7 +6565,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/richardmilne.ft.com',
     url: 'https://bsky.app/profile/richardmilne.ft.com',
-    postsPerDay: 0,
+    baselinePPD: 0,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6577,7 +6579,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kateconger.com',
     url: 'https://bsky.app/profile/kateconger.com',
-    postsPerDay: 1.6,
+    baselinePPD: 1.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6591,7 +6593,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/trbrtc.bsky.social',
     url: 'https://bsky.app/profile/trbrtc.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6605,7 +6607,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/julianbarnes.bsky.social',
     url: 'https://bsky.app/profile/julianbarnes.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6619,7 +6621,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/joetidy.bsky.social',
     url: 'https://bsky.app/profile/joetidy.bsky.social',
-    postsPerDay: 1.1,
+    baselinePPD: 1.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6633,7 +6635,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/tomphillips.bsky.social',
     url: 'https://bsky.app/profile/tomphillips.bsky.social',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6647,7 +6649,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/andykroll.bsky.social',
     url: 'https://bsky.app/profile/andykroll.bsky.social',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6661,7 +6663,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/heathervogell.bsky.social',
     url: 'https://bsky.app/profile/heathervogell.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6675,7 +6677,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ioponomarenko.bsky.social',
     url: 'https://bsky.app/profile/ioponomarenko.bsky.social',
-    postsPerDay: 6.8,
+    baselinePPD: 6.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6689,7 +6691,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/simonallison.bsky.social',
     url: 'https://bsky.app/profile/simonallison.bsky.social',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6703,7 +6705,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kashhill.bsky.social',
     url: 'https://bsky.app/profile/kashhill.bsky.social',
-    postsPerDay: 1.9,
+    baselinePPD: 1.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6717,7 +6719,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/atlanticcouncil.bsky.social',
     url: 'https://bsky.app/profile/atlanticcouncil.bsky.social',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6731,7 +6733,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/tnsr.org',
     url: 'https://bsky.app/profile/tnsr.org',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6745,7 +6747,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kyivinsider.bsky.social',
     url: 'https://bsky.app/profile/kyivinsider.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6759,7 +6761,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/unhcr.org',
     url: 'https://bsky.app/profile/unhcr.org',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6773,7 +6775,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/juliaioffe.bsky.social',
     url: 'https://bsky.app/profile/juliaioffe.bsky.social',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6787,7 +6789,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/michaeldweiss.bsky.social',
     url: 'https://bsky.app/profile/michaeldweiss.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6801,7 +6803,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/abcnews.bsky.social',
     url: 'https://bsky.app/profile/abcnews.bsky.social',
-    postsPerDay: 0.6,
+    baselinePPD: 0.6,
   },
   {
     id: 'paul-krugman',
@@ -6814,7 +6816,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/pkrugman.bsky.social',
     url: 'https://bsky.app/profile/pkrugman.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6828,7 +6830,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/asiasociety.org',
     url: 'https://bsky.app/profile/asiasociety.org',
-    postsPerDay: 1,
+    baselinePPD: 1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6842,7 +6844,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nerizilber.bsky.social',
     url: 'https://bsky.app/profile/nerizilber.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6856,7 +6858,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/joycekaram.bsky.social',
     url: 'https://bsky.app/profile/joycekaram.bsky.social',
-    postsPerDay: 0.8,
+    baselinePPD: 0.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6870,7 +6872,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/armscontrolwonk.bsky.social',
     url: 'https://bsky.app/profile/armscontrolwonk.bsky.social',
-    postsPerDay: 0.6,
+    baselinePPD: 0.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6884,7 +6886,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/noaa.gov',
     url: 'https://bsky.app/profile/noaa.gov',
-    postsPerDay: 1.3,
+    baselinePPD: 1.3,
     baselineMeasuredAt: '2026-02-07',
   },
   // === BLUECRAWLER TOP 1000 T2 (Jan 2026) ===
@@ -6899,7 +6901,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/keithedwards.bsky.social',
     url: 'https://bsky.app/profile/keithedwards.bsky.social',
-    postsPerDay: 0.8,
+    baselinePPD: 0.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6913,7 +6915,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/markzaidesq.bsky.social',
     url: 'https://bsky.app/profile/markzaidesq.bsky.social',
-    postsPerDay: 2.9,
+    baselinePPD: 2.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6927,7 +6929,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/sanders.senate.gov',
     url: 'https://bsky.app/profile/sanders.senate.gov',
-    postsPerDay: 1.2,
+    baselinePPD: 1.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6941,7 +6943,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/wyden.senate.gov',
     url: 'https://bsky.app/profile/wyden.senate.gov',
-    postsPerDay: 1.6,
+    baselinePPD: 1.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6955,7 +6957,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/crockett.house.gov',
     url: 'https://bsky.app/profile/crockett.house.gov',
-    postsPerDay: 1.8,
+    baselinePPD: 1.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6969,7 +6971,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/raskin.house.gov',
     url: 'https://bsky.app/profile/raskin.house.gov',
-    postsPerDay: 1.5,
+    baselinePPD: 1.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6983,7 +6985,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/booker.senate.gov',
     url: 'https://bsky.app/profile/booker.senate.gov',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -6997,7 +6999,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/juliadavisnews.bsky.social',
     url: 'https://bsky.app/profile/juliadavisnews.bsky.social',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7011,7 +7013,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/algreen.house.gov',
     url: 'https://bsky.app/profile/algreen.house.gov',
-    postsPerDay: 1.8,
+    baselinePPD: 1.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7025,7 +7027,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/elonjet.net',
     url: 'https://bsky.app/profile/elonjet.net',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7039,7 +7041,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/petebuttigieg.bsky.social',
     url: 'https://bsky.app/profile/petebuttigieg.bsky.social',
-    postsPerDay: 1.2,
+    baselinePPD: 1.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7053,7 +7055,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/barackobama.bsky.social',
     url: 'https://bsky.app/profile/barackobama.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7067,7 +7069,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/hillaryclinton.bsky.social',
     url: 'https://bsky.app/profile/hillaryclinton.bsky.social',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7081,7 +7083,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ocasio-cortez.house.gov',
     url: 'https://bsky.app/profile/ocasio-cortez.house.gov',
-    postsPerDay: 0.6,
+    baselinePPD: 0.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7095,7 +7097,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/fiveminutenews.bsky.social',
     url: 'https://bsky.app/profile/fiveminutenews.bsky.social',
-    postsPerDay: 1.3,
+    baselinePPD: 1.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7109,7 +7111,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/weeklyshowpodcast.bsky.social',
     url: 'https://bsky.app/profile/weeklyshowpodcast.bsky.social',
-    postsPerDay: 1.1,
+    baselinePPD: 1.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7123,7 +7125,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/xkcd.com',
     url: 'https://bsky.app/profile/xkcd.com',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7137,7 +7139,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mindyanns.bsky.social',
     url: 'https://bsky.app/profile/mindyanns.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7151,7 +7153,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jemelehill.bsky.social',
     url: 'https://bsky.app/profile/jemelehill.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
   },
   // === NEW T2 RSS SOURCES - January 2026 Research ===
@@ -7166,7 +7168,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.gov.uk/government/organisations/ministry-of-defence.atom',
     url: 'https://www.gov.uk/mod',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'uk-ncsc-rss',
@@ -7178,7 +7180,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml',
     url: 'https://www.ncsc.gov.uk/',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'eu-parliament-rss',
@@ -7190,7 +7192,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.europarl.europa.eu/rss/doc/top-stories/en.xml',
     url: 'https://www.europarl.europa.eu/',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // State Dept Travel Advisories removed - republishes unchanged advisories
   // causing noise in feed and misleading AI summaries
@@ -7204,7 +7206,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.diplomatie.gouv.fr/spip.php?page=backend-fd&lang=en',
     url: 'https://www.diplomatie.gouv.fr/',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   // -- Think Tanks --
   {
@@ -7217,7 +7219,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.swp-berlin.org/en/SWPPublications.xml',
     url: 'https://www.swp-berlin.org/',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'aei-rss',
@@ -7229,7 +7231,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.aei.org/feed/',
     url: 'https://www.aei.org/',
-    postsPerDay: 8,
+    baselinePPD: 8,
   },
   {
     id: 'quincy-rss',
@@ -7241,7 +7243,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://quincyinst.org/feed/',
     url: 'https://quincyinst.org/',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'hudson-rss',
@@ -7253,7 +7255,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.hudson.org/rss.xml',
     url: 'https://www.hudson.org/',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'rand-commentary-rss',
@@ -7265,7 +7267,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.rand.org/pubs/commentary.xml',
     url: 'https://www.rand.org/',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   // -- Wire Services --
   {
@@ -7279,7 +7281,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://tass.com/rss/v2.xml',
     url: 'https://tass.com/',
-    postsPerDay: 100,
+    baselinePPD: 100,
   },
   {
     id: 'ansa-english-rss',
@@ -7291,7 +7293,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://www.ansa.it/english/news/english_nr_rss.xml',
     url: 'https://www.ansa.it/english/',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   {
     id: 'upi-rss',
@@ -7303,7 +7305,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://rss.upi.com/news/news.rss',
     url: 'https://www.upi.com/',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
   // -- Regional News --
   {
@@ -7316,7 +7318,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.dawn.com/feeds/home',
     url: 'https://www.dawn.com/',
-    postsPerDay: 30,
+    baselinePPD: 30,
   },
   // Daily Maverick removed - blacklisted
   {
@@ -7329,7 +7331,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://feeds.elpais.com/mrss-s/pages/ep/site/english.elpais.com/portada',
     url: 'https://english.elpais.com/',
-    postsPerDay: 25,
+    baselinePPD: 25,
   },
   // -- Investigative --
   {
@@ -7342,7 +7344,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://cpj.org/feed/',
     url: 'https://cpj.org/',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'citizen-lab-rss',
@@ -7354,7 +7356,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://citizenlab.ca/feed/',
     url: 'https://citizenlab.ca/',
-    postsPerDay: 1,
+    baselinePPD: 1,
   },
   {
     id: 'birn-rss',
@@ -7366,7 +7368,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://birn.eu.com/feed/',
     url: 'https://birn.eu.com/',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'correctiv-rss',
@@ -7378,7 +7380,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://correctiv.org/feed/',
     url: 'https://correctiv.org/',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   // -- Defense & Energy --
   {
@@ -7391,7 +7393,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://taskandpurpose.com/feed/',
     url: 'https://taskandpurpose.com/',
-    postsPerDay: 12,
+    baselinePPD: 12,
   },
   {
     id: 'shephard-media-rss',
@@ -7403,7 +7405,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.shephardmedia.com/news/feed/',
     url: 'https://www.shephardmedia.com/',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'eia-energy-rss',
@@ -7415,7 +7417,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://www.eia.gov/rss/todayinenergy.xml',
     url: 'https://www.eia.gov/todayinenergy/',
-    postsPerDay: 1,
+    baselinePPD: 1,
   },
   {
     id: 'world-nuclear-news-rss',
@@ -7427,7 +7429,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://world-nuclear-news.org/rss',
     url: 'https://world-nuclear-news.org/',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
   {
     id: 'maritime-executive-rss',
@@ -7439,7 +7441,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.maritime-executive.com/articles.rss',
     url: 'https://www.maritime-executive.com/',
-    postsPerDay: 50,
+    baselinePPD: 50,
   },
   // -- Security Analysis --
   {
@@ -7452,7 +7454,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://responsiblestatecraft.org/feed/',
     url: 'https://responsiblestatecraft.org/',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'small-wars-journal-rss',
@@ -7464,7 +7466,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://smallwarsjournal.com/feed/',
     url: 'https://smallwarsjournal.com/',
-    postsPerDay: 6,
+    baselinePPD: 6,
   },
   {
     id: 'geopolitical-futures-rss',
@@ -7476,7 +7478,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://geopoliticalfutures.com/feed',
     url: 'https://geopoliticalfutures.com/',
-    postsPerDay: 4,
+    baselinePPD: 4,
   },
   // -- More Substacks --
   {
@@ -7489,7 +7491,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://mickryan.substack.com/feed',
     url: 'https://mickryan.substack.com/',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
   },
   {
     id: 'substack-pekingnology-rss',
@@ -7501,7 +7503,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://www.pekingnology.com/feed',
     url: 'https://www.pekingnology.com/',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
   },
   {
     id: 'substack-chinainarms-rss',
@@ -7513,7 +7515,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://chinainarms.substack.com/feed',
     url: 'https://chinainarms.substack.com/',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
   },
   {
     id: 'substack-diplomatic-rss',
@@ -7525,7 +7527,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://diplomatic.substack.com/feed',
     url: 'https://diplomatic.substack.com/',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
   },
   {
     id: 'substack-geopoliticaldispatch-rss',
@@ -7537,7 +7539,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://www.geopoliticaldispatch.com/feed',
     url: 'https://www.geopoliticaldispatch.com/',
-    postsPerDay: 1,
+    baselinePPD: 1,
   },
   // === NEW ADDITIONS - February 2026 (Agent Team Investigation) ===
   // OSINT & Defense Sources
@@ -7552,7 +7554,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ukdefencejournal.org.uk/rss',
     url: 'https://bsky.app/profile/ukdefencejournal.org.uk',
-    postsPerDay: 10.4,
+    baselinePPD: 10.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7566,7 +7568,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/starboardintelligence.com/rss',
     url: 'https://bsky.app/profile/starboardintelligence.com',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7580,7 +7582,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/shipwreck75.bsky.social/rss',
     url: 'https://bsky.app/profile/shipwreck75.bsky.social',
-    postsPerDay: 30.5,
+    baselinePPD: 30.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7594,7 +7596,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/auonsson.bsky.social/rss',
     url: 'https://bsky.app/profile/auonsson.bsky.social',
-    postsPerDay: 8,
+    baselinePPD: 8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7608,7 +7610,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/tendar.bsky.social/rss',
     url: 'https://bsky.app/profile/tendar.bsky.social',
-    postsPerDay: 5.7,
+    baselinePPD: 5.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7622,7 +7624,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/warshipcam.bsky.social/rss',
     url: 'https://bsky.app/profile/warshipcam.bsky.social',
-    postsPerDay: 21.9,
+    baselinePPD: 21.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7636,7 +7638,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/specialkhersoncat.bsky.social/rss',
     url: 'https://bsky.app/profile/specialkhersoncat.bsky.social',
-    postsPerDay: 4.1,
+    baselinePPD: 4.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7650,7 +7652,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/vreij.bsky.social/rss',
     url: 'https://bsky.app/profile/vreij.bsky.social',
-    postsPerDay: 46.7,
+    baselinePPD: 46.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7664,7 +7666,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cna-poster.bsky.social/rss',
     url: 'https://bsky.app/profile/cna-poster.bsky.social',
-    postsPerDay: 141.2,
+    baselinePPD: 141.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7678,7 +7680,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ryangrim.bsky.social/rss',
     url: 'https://bsky.app/profile/ryangrim.bsky.social',
-    postsPerDay: 17.8,
+    baselinePPD: 17.8,
     baselineMeasuredAt: '2026-02-07',
   },
   // WaPo Journalists (Breaking News Beats)
@@ -7693,7 +7695,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/johnphudson.bsky.social/rss',
     url: 'https://bsky.app/profile/johnphudson.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7707,7 +7709,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/evanhill.bsky.social/rss',
     url: 'https://bsky.app/profile/evanhill.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7721,7 +7723,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/osviz-jarrett.bsky.social/rss',
     url: 'https://bsky.app/profile/osviz-jarrett.bsky.social',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7735,7 +7737,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/myhlee.bsky.social/rss',
     url: 'https://bsky.app/profile/myhlee.bsky.social',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7749,7 +7751,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId, // Africa bureau - no Africa region type yet
     feedUrl: 'https://bsky.app/profile/khoureld.bsky.social/rss',
     url: 'https://bsky.app/profile/khoureld.bsky.social',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7763,7 +7765,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kadiagoba.bsky.social/rss',
     url: 'https://bsky.app/profile/kadiagoba.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   // NYT Journalists
@@ -7778,7 +7780,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/zjmontague.bsky.social/rss',
     url: 'https://bsky.app/profile/zjmontague.bsky.social',
-    postsPerDay: 2.3,
+    baselinePPD: 2.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7792,7 +7794,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/pekingmikenyt.bsky.social/rss',
     url: 'https://bsky.app/profile/pekingmikenyt.bsky.social',
-    postsPerDay: 1.7,
+    baselinePPD: 1.7,
     baselineMeasuredAt: '2026-02-07',
   },
 
@@ -7808,7 +7810,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/zeteo.com',
     url: 'https://bsky.app/profile/zeteo.com',
-    postsPerDay: 8.6,
+    baselinePPD: 8.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7822,7 +7824,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bbcnews-world-rss.bsky.social',
     url: 'https://bsky.app/profile/bbcnews-world-rss.bsky.social',
-    postsPerDay: 26.5,
+    baselinePPD: 26.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7836,7 +7838,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/economist.com',
     url: 'https://bsky.app/profile/economist.com',
-    postsPerDay: 82.7,
+    baselinePPD: 82.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7850,7 +7852,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/foreignpolicy.com',
     url: 'https://bsky.app/profile/foreignpolicy.com',
-    postsPerDay: 6.8,
+    baselinePPD: 6.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7864,7 +7866,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/warmapper.org',
     url: 'https://bsky.app/profile/warmapper.org',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7878,7 +7880,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nukestrat.bsky.social',
     url: 'https://bsky.app/profile/nukestrat.bsky.social',
-    postsPerDay: 3.1,
+    baselinePPD: 3.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7892,7 +7894,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/brookings.edu',
     url: 'https://bsky.app/profile/brookings.edu',
-    postsPerDay: 1.1,
+    baselinePPD: 1.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7906,7 +7908,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/carnegieendowment.org',
     url: 'https://bsky.app/profile/carnegieendowment.org',
-    postsPerDay: 1.4,
+    baselinePPD: 1.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7920,7 +7922,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/rand.org',
     url: 'https://bsky.app/profile/rand.org',
-    postsPerDay: 1.6,
+    baselinePPD: 1.6,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7934,7 +7936,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cfr.org',
     url: 'https://bsky.app/profile/cfr.org',
-    postsPerDay: 2.5,
+    baselinePPD: 2.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7948,7 +7950,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/csis.org',
     url: 'https://bsky.app/profile/csis.org',
-    postsPerDay: 9.7,
+    baselinePPD: 9.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7962,7 +7964,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/warontherocks.bsky.social',
     url: 'https://bsky.app/profile/warontherocks.bsky.social',
-    postsPerDay: 27.3,
+    baselinePPD: 27.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7976,7 +7978,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/middleeastmonitor.bsky.social',
     url: 'https://bsky.app/profile/middleeastmonitor.bsky.social',
-    postsPerDay: 37.9,
+    baselinePPD: 37.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -7990,7 +7992,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/abujamajem.com',
     url: 'https://bsky.app/profile/abujamajem.com',
-    postsPerDay: 3.7,
+    baselinePPD: 3.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8004,7 +8006,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/azelin.bsky.social',
     url: 'https://bsky.app/profile/azelin.bsky.social',
-    postsPerDay: 1.6,
+    baselinePPD: 1.6,
   },
   {
     id: 'hussein-ibish',
@@ -8017,7 +8019,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ibishblog.bsky.social',
     url: 'https://bsky.app/profile/ibishblog.bsky.social',
-    postsPerDay: 0.8,
+    baselinePPD: 0.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8031,7 +8033,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/navylookout.bsky.social',
     url: 'https://bsky.app/profile/navylookout.bsky.social',
-    postsPerDay: 0.7,
+    baselinePPD: 0.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8045,7 +8047,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/frhoffmann.bsky.social',
     url: 'https://bsky.app/profile/frhoffmann.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8059,7 +8061,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/chathamhouse.org',
     url: 'https://bsky.app/profile/chathamhouse.org',
-    postsPerDay: 11.5,
+    baselinePPD: 11.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8073,7 +8075,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/rusi.bsky.social',
     url: 'https://bsky.app/profile/rusi.bsky.social',
-    postsPerDay: 3.5,
+    baselinePPD: 3.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8087,7 +8089,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/markgaleotti.bsky.social',
     url: 'https://bsky.app/profile/markgaleotti.bsky.social',
-    postsPerDay: 1.4,
+    baselinePPD: 1.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8101,7 +8103,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ldfreedman.bsky.social',
     url: 'https://bsky.app/profile/ldfreedman.bsky.social',
-    postsPerDay: 2.5,
+    baselinePPD: 2.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8115,7 +8117,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/timothysnyder.bsky.social',
     url: 'https://bsky.app/profile/timothysnyder.bsky.social',
-    postsPerDay: 5.2,
+    baselinePPD: 5.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8129,7 +8131,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/warspotting.bsky.social',
     url: 'https://bsky.app/profile/warspotting.bsky.social',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8143,7 +8145,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/maks23.bsky.social',
     url: 'https://bsky.app/profile/maks23.bsky.social',
-    postsPerDay: 155.7,
+    baselinePPD: 155.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8157,7 +8159,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nktpnd.bsky.social',
     url: 'https://bsky.app/profile/nktpnd.bsky.social',
-    postsPerDay: 4,
+    baselinePPD: 4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8171,7 +8173,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/dexeve.bsky.social',
     url: 'https://bsky.app/profile/dexeve.bsky.social',
-    postsPerDay: 0.4,
+    baselinePPD: 0.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8185,7 +8187,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cbsnews.com',
     url: 'https://bsky.app/profile/cbsnews.com',
-    postsPerDay: 28.7,
+    baselinePPD: 28.7,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8199,7 +8201,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/presstv',
     url: 'https://t.me/presstv',
-    postsPerDay: 80,
+    baselinePPD: 80,
     baselineMeasuredAt: '2026-02-07',
     isStateSponsored: true, // Iranian state media (IRIB)
   },
@@ -8214,7 +8216,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/KurdishFrontNews',
     url: 'https://t.me/KurdishFrontNews',
-    postsPerDay: 40.4,
+    baselinePPD: 40.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8228,7 +8230,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/BABalMANDAB',
     url: 'https://t.me/BABalMANDAB',
-    postsPerDay: 9.8,
+    baselinePPD: 9.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8242,7 +8244,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://t.me/s/anadoluagency_en',
     url: 'https://t.me/anadoluagency_en',
-    postsPerDay: 121.4,
+    baselinePPD: 121.4,
     baselineMeasuredAt: '2026-02-07',
     isStateSponsored: true, // Turkish state news agency
   },
@@ -8257,7 +8259,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://t.me/s/France24_en',
     url: 'https://t.me/France24_en',
-    postsPerDay: 20.2,
+    baselinePPD: 20.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8271,7 +8273,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/ukr_pics',
     url: 'https://t.me/ukr_pics',
-    postsPerDay: 1,
+    baselinePPD: 1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8285,7 +8287,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/pravdaGerashchenko_en',
     url: 'https://t.me/pravdaGerashchenko_en',
-    postsPerDay: 16.2,
+    baselinePPD: 16.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8299,7 +8301,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/mod_russia_en',
     url: 'https://t.me/mod_russia_en',
-    postsPerDay: 16.7,
+    baselinePPD: 16.7,
     baselineMeasuredAt: '2026-02-07',
     isStateSponsored: true, // Russian state
   },
@@ -8314,7 +8316,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/MFARussia',
     url: 'https://t.me/MFARussia',
-    postsPerDay: 26.3,
+    baselinePPD: 26.3,
     baselineMeasuredAt: '2026-02-07',
     isStateSponsored: true, // Russian state
   },
@@ -8329,7 +8331,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://t.me/s/tassagency_en',
     url: 'https://t.me/tassagency_en',
-    postsPerDay: 61.7,
+    baselinePPD: 61.7,
     baselineMeasuredAt: '2026-02-07',
     isStateSponsored: true, // Russian state media
   },
@@ -8344,7 +8346,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://t.me/s/xinhua_news_agency_en',
     url: 'https://t.me/xinhua_news_agency_en',
-    postsPerDay: 187.4,
+    baselinePPD: 187.4,
     baselineMeasuredAt: '2026-02-07',
     isStateSponsored: true, // Chinese state media
   },
@@ -8359,7 +8361,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://journa.host/@anneapplebaum',
     url: 'https://journa.host/@anneapplebaum',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
     baselineMeasuredAt: '2026-02-07',
   },
   // === NEW SOURCES (Feb 2026 additions) ===
@@ -8374,7 +8376,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://www.thenewhumanitarian.org/rss.xml',
     url: 'https://www.thenewhumanitarian.org',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'mercopress-rss',
@@ -8386,7 +8388,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'latam' as WatchpointId,
     feedUrl: 'https://en.mercopress.com/rss/',
     url: 'https://en.mercopress.com',
-    postsPerDay: 8,
+    baselinePPD: 8,
   },
   // -- Bluesky: OSINT & Environmental --
   {
@@ -8400,7 +8402,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bsonblast.bsky.social',
     url: 'https://bsky.app/profile/bsonblast.bsky.social',
-    postsPerDay: 1.8,
+    baselinePPD: 1.8,
   },
   {
     id: 'mongabay',
@@ -8413,7 +8415,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mongabay.com',
     url: 'https://bsky.app/profile/mongabay.com',
-    postsPerDay: 5.4,
+    baselinePPD: 5.4,
   },
 
   // === NATSEC / OSINT STARTER PACK ADDITIONS (Feb 2026) ===
@@ -8428,7 +8430,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jsrailton.bsky.social',
     url: 'https://bsky.app/profile/jsrailton.bsky.social',
-    postsPerDay: 2.7,
+    baselinePPD: 2.7,
   },
   {
     id: 'dustin-volz',
@@ -8441,7 +8443,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/dustinvolz.bsky.social',
     url: 'https://bsky.app/profile/dustinvolz.bsky.social',
-    postsPerDay: 0.8,
+    baselinePPD: 0.8,
   },
   {
     id: 'kim-zetter',
@@ -8454,7 +8456,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/kimzetter.bsky.social',
     url: 'https://bsky.app/profile/kimzetter.bsky.social',
-    postsPerDay: 1.4,
+    baselinePPD: 1.4,
   },
   {
     id: 'gerry-doyle',
@@ -8467,7 +8469,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mgerrydoyle.bsky.social',
     url: 'https://bsky.app/profile/mgerrydoyle.bsky.social',
-    postsPerDay: 20.7,
+    baselinePPD: 20.7,
   },
   {
     id: 'seamus-hughes',
@@ -8480,7 +8482,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/seamushughes.bsky.social',
     url: 'https://bsky.app/profile/seamushughes.bsky.social',
-    postsPerDay: 0.9,
+    baselinePPD: 0.9,
   },
   {
     id: 'mick-ryan',
@@ -8493,7 +8495,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/warinthefuture.bsky.social',
     url: 'https://bsky.app/profile/warinthefuture.bsky.social',
-    postsPerDay: 1.4,
+    baselinePPD: 1.4,
   },
   {
     id: 'stars-and-stripes',
@@ -8506,7 +8508,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/starsandstripes.bsky.social',
     url: 'https://bsky.app/profile/starsandstripes.bsky.social',
-    postsPerDay: 27.9,
+    baselinePPD: 27.9,
   },
   {
     id: 'michael-cruickshank',
@@ -8519,7 +8521,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/cruickshank.bsky.social',
     url: 'https://bsky.app/profile/cruickshank.bsky.social',
-    postsPerDay: 2.3,
+    baselinePPD: 2.3,
   },
   {
     id: 'jonathan-schroden',
@@ -8532,7 +8534,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/jjschroden.bsky.social',
     url: 'https://bsky.app/profile/jjschroden.bsky.social',
-    postsPerDay: 8,
+    baselinePPD: 8,
   },
   {
     id: 'zach-dorfman',
@@ -8545,7 +8547,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/zachsdorfman.bsky.social',
     url: 'https://bsky.app/profile/zachsdorfman.bsky.social',
-    postsPerDay: 5,
+    baselinePPD: 5,
   },
   {
     id: 'natasha-bertrand',
@@ -8558,7 +8560,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/natashabertrand.bsky.social',
     url: 'https://bsky.app/profile/natashabertrand.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
   },
   {
     id: 'wesley-morgan',
@@ -8571,7 +8573,7 @@ export const tier2Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/wesleymorgan.bsky.social',
     url: 'https://bsky.app/profile/wesleymorgan.bsky.social',
-    postsPerDay: 3,
+    baselinePPD: 3,
   },
 
 ];
@@ -8592,7 +8594,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/uacontrolmap.bsky.social',
     url: 'https://bsky.app/profile/uacontrolmap.bsky.social',
-    postsPerDay: 3.9,
+    baselinePPD: 3.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8606,7 +8608,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/aric.bsky.social',
     url: 'https://bsky.app/profile/aric.bsky.social',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8620,7 +8622,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/faytuks.bsky.social',
     url: 'https://bsky.app/profile/faytuks.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8634,7 +8636,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/alisonkilling.bsky.social',
     url: 'https://bsky.app/profile/alisonkilling.bsky.social',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
     baselineMeasuredAt: '2026-02-07',
   },
   // === ORIGINAL T3 SOURCES ===
@@ -8649,7 +8651,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ukrainemap.bsky.social',
     url: 'https://bsky.app/profile/ukrainemap.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8663,7 +8665,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/indopacificinsight.bsky.social',
     url: 'https://bsky.app/profile/indopacificinsight.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8677,7 +8679,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/geoinsider.bsky.social',
     url: 'https://bsky.app/profile/geoinsider.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8691,7 +8693,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/barakravid.bsky.social',
     url: 'https://bsky.app/profile/barakravid.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8705,7 +8707,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/avischarf.bsky.social',
     url: 'https://bsky.app/profile/avischarf.bsky.social',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8719,7 +8721,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/columlynch.bsky.social',
     url: 'https://bsky.app/profile/columlynch.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8733,7 +8735,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'us' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bcfinucane.bsky.social',
     url: 'https://bsky.app/profile/bcfinucane.bsky.social',
-    postsPerDay: 22.9,
+    baselinePPD: 22.9,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8747,7 +8749,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mshannahmurphy.bsky.social',
     url: 'https://bsky.app/profile/mshannahmurphy.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8761,7 +8763,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/zsk.bsky.social',
     url: 'https://bsky.app/profile/zsk.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8775,7 +8777,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bbcdaniels.bsky.social',
     url: 'https://bsky.app/profile/bbcdaniels.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8789,7 +8791,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/billbishop.bsky.social',
     url: 'https://bsky.app/profile/billbishop.bsky.social',
-    postsPerDay: 0,
+    baselinePPD: 0,
     baselineMeasuredAt: '2026-02-07',
   },
 
@@ -8805,7 +8807,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/mattkorda.bsky.social',
     url: 'https://bsky.app/profile/mattkorda.bsky.social',
-    postsPerDay: 0.3,
+    baselinePPD: 0.3,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8819,7 +8821,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/sipri.org',
     url: 'https://bsky.app/profile/sipri.org',
-    postsPerDay: 1.8,
+    baselinePPD: 1.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8833,7 +8835,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/nti.org',
     url: 'https://bsky.app/profile/nti.org',
-    postsPerDay: 1.1,
+    baselinePPD: 1.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8847,7 +8849,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/belfercenter.bsky.social',
     url: 'https://bsky.app/profile/belfercenter.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8861,7 +8863,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/fpri.bsky.social',
     url: 'https://bsky.app/profile/fpri.bsky.social',
-    postsPerDay: 2.8,
+    baselinePPD: 2.8,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8875,7 +8877,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/tariktoros.bsky.social',
     url: 'https://bsky.app/profile/tariktoros.bsky.social',
-    postsPerDay: 2,
+    baselinePPD: 2,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8889,7 +8891,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/amaramarasingam.bsky.social',
     url: 'https://bsky.app/profile/amaramarasingam.bsky.social',
-    postsPerDay: 2.5,
+    baselinePPD: 2.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8903,7 +8905,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/meganotoole.bsky.social',
     url: 'https://bsky.app/profile/meganotoole.bsky.social',
-    postsPerDay: 0.5,
+    baselinePPD: 0.5,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8917,7 +8919,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/carolrosenbergnyt.bsky.social',
     url: 'https://bsky.app/profile/carolrosenbergnyt.bsky.social',
-    postsPerDay: 2.1,
+    baselinePPD: 2.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8931,7 +8933,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/israelpolicyforum.bsky.social',
     url: 'https://bsky.app/profile/israelpolicyforum.bsky.social',
-    postsPerDay: 1.1,
+    baselinePPD: 1.1,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8945,7 +8947,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/timep.bsky.social',
     url: 'https://bsky.app/profile/timep.bsky.social',
-    postsPerDay: 2.4,
+    baselinePPD: 2.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8959,7 +8961,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/ecfr.eu',
     url: 'https://bsky.app/profile/ecfr.eu',
-    postsPerDay: 3.4,
+    baselinePPD: 3.4,
     baselineMeasuredAt: '2026-02-07',
   },
   {
@@ -8973,7 +8975,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'europe-russia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/gmfus.bsky.social',
     url: 'https://bsky.app/profile/gmfus.bsky.social',
-    postsPerDay: 3.5,
+    baselinePPD: 3.5,
     baselineMeasuredAt: '2026-02-07',
   },
 
@@ -8989,7 +8991,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'middle-east' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/akmckeever.bsky.social',
     url: 'https://bsky.app/profile/akmckeever.bsky.social',
-    postsPerDay: 2.4,
+    baselinePPD: 2.4,
   },
   {
     id: 'pawel-wojcik',
@@ -9002,7 +9004,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/saladinaldronni.bsky.social',
     url: 'https://bsky.app/profile/saladinaldronni.bsky.social',
-    postsPerDay: 2.4,
+    baselinePPD: 2.4,
   },
   {
     id: 'joanne-stocker',
@@ -9015,7 +9017,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/joannestocker.bsky.social',
     url: 'https://bsky.app/profile/joannestocker.bsky.social',
-    postsPerDay: 2.4,
+    baselinePPD: 2.4,
   },
   {
     id: 'brady-africk',
@@ -9028,7 +9030,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/bradyafr.bsky.social',
     url: 'https://bsky.app/profile/bradyafr.bsky.social',
-    postsPerDay: 0.6,
+    baselinePPD: 0.6,
   },
   {
     id: 'battle-order',
@@ -9041,7 +9043,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/battleorder.org',
     url: 'https://bsky.app/profile/battleorder.org',
-    postsPerDay: 0.2,
+    baselinePPD: 0.2,
   },
   {
     id: 'citizen-lab',
@@ -9054,7 +9056,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/citizenlab.ca',
     url: 'https://bsky.app/profile/citizenlab.ca',
-    postsPerDay: 0.8,
+    baselinePPD: 0.8,
   },
   {
     id: 'pwnallthethings',
@@ -9067,7 +9069,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/pwnallthethings.bsky.social',
     url: 'https://bsky.app/profile/pwnallthethings.bsky.social',
-    postsPerDay: 3.6,
+    baselinePPD: 3.6,
   },
   {
     id: 'tristan-lee',
@@ -9080,7 +9082,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'all' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/tristanl.ee',
     url: 'https://bsky.app/profile/tristanl.ee',
-    postsPerDay: 8.2,
+    baselinePPD: 8.2,
   },
   {
     id: 'john-culver',
@@ -9093,7 +9095,7 @@ export const tier3Sources: TieredSource[] = [
     region: 'asia' as WatchpointId,
     feedUrl: 'https://bsky.app/profile/johnculver689.bsky.social',
     url: 'https://bsky.app/profile/johnculver689.bsky.social',
-    postsPerDay: 0.1,
+    baselinePPD: 0.1,
   },
 
 ];

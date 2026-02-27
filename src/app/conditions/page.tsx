@@ -17,6 +17,7 @@ import {
   BookOpenIcon,
   NoSymbolIcon,
 } from '@heroicons/react/24/outline';
+import ActivityChart from '@/components/ActivityChart';
 
 // =============================================================================
 // TYPES
@@ -435,6 +436,9 @@ export default function ConditionsPage() {
                   );
                 })}
             </div>
+
+            {/* Feed Activity History */}
+            <ActivityChart />
 
             {/* Markets — global signal with sparklines */}
             {commoditiesData && commoditiesData.length > 0 && (

@@ -17,7 +17,7 @@ export interface SourceStats {
   lastPosted: string;
   lastPostedAgo: string;
   spanDays: number;
-  postsPerDay: number;
+  recentPPD: number;
   postsLast6h: number;
   postsLast12h: number;
   postsLast24h: number;
@@ -101,7 +101,7 @@ export function calculateStats(handle: string, platform: string, posts: PostTime
     return {
       handle, platform, totalPosts: 0,
       lastPosted: 'never', lastPostedAgo: 'n/a', spanDays: 0,
-      postsPerDay: 0, postsLast6h: 0, postsLast12h: 0,
+      recentPPD: 0, postsLast6h: 0, postsLast12h: 0,
       postsLast24h: 0, postsLast48h: 0, postsLast7d: 0, gapHoursAvg: 0, gapHoursMax: 0,
     };
   }
@@ -130,13 +130,13 @@ export function calculateStats(handle: string, platform: string, posts: PostTime
 
   // Fixed 7-day window when we have enough data, otherwise use actual span
   const WINDOW_DAYS = 7;
-  let postsPerDay: number;
+  let recentPPD: number;
   if (spanDays >= WINDOW_DAYS) {
-    postsPerDay = postsLast7d / WINDOW_DAYS;
+    recentPPD = postsLast7d / WINDOW_DAYS;
   } else if (spanDays > 0) {
-    postsPerDay = posts.length / spanDays;
+    recentPPD = posts.length / spanDays;
   } else {
-    postsPerDay = posts.length;
+    recentPPD = posts.length;
   }
 
   const gaps: number[] = [];
@@ -152,7 +152,7 @@ export function calculateStats(handle: string, platform: string, posts: PostTime
     lastPosted: newest.toISOString(),
     lastPostedAgo,
     spanDays: Math.round(spanDays * 10) / 10,
-    postsPerDay: Math.round(postsPerDay * 10) / 10,
+    recentPPD: Math.round(recentPPD * 10) / 10,
     postsLast6h, postsLast12h, postsLast24h, postsLast48h, postsLast7d,
     gapHoursAvg: Math.round(gapHoursAvg * 10) / 10,
     gapHoursMax: Math.round(gapHoursMax * 10) / 10,
@@ -181,7 +181,7 @@ export async function getStats(handle: string, platform: string): Promise<Source
   } catch (err: any) {
     return {
       handle, platform, totalPosts: 0, lastPosted: '', lastPostedAgo: '',
-      spanDays: 0, postsPerDay: 0, postsLast6h: 0, postsLast12h: 0,
+      spanDays: 0, recentPPD: 0, postsLast6h: 0, postsLast12h: 0,
       postsLast24h: 0, postsLast48h: 0, postsLast7d: 0, gapHoursAvg: 0, gapHoursMax: 0,
       error: err.message?.slice(0, 200),
     };

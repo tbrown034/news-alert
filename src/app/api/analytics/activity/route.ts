@@ -4,6 +4,7 @@ import {
   getRecentActivityLogs,
   getRollingAverages,
   getActivityTrend,
+  getRegionBaselineAverages,
 } from '@/lib/activityLogging';
 import { WatchpointId } from '@/types';
 
@@ -47,6 +48,43 @@ export async function GET(request: Request) {
         meta: {
           generatedAt: new Date().toISOString(),
           days,
+        },
+      });
+    }
+
+    if (view === 'history') {
+      const daysParam = Math.min(Math.max(1, days), 30);
+
+      const [trend, baselineAverages] = await Promise.all([
+        getActivityTrend('all' as WatchpointId, daysParam),
+        getRegionBaselineAverages(),
+      ]);
+
+      const dataPoints = trend
+        .filter(r => r.region_breakdown)
+        .map(r => ({
+          timestamp: r.bucket_timestamp,
+          total: r.post_count,
+          regions: r.region_breakdown!,
+        }))
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+      const baselines: Record<string, number> = {};
+      for (const avg of baselineAverages) {
+        baselines[avg.region] = Math.round(avg.avg_posts_6h);
+      }
+
+      return NextResponse.json({
+        dataPoints,
+        baselines,
+        meta: {
+          generatedAt: new Date().toISOString(),
+          days: daysParam,
+          bucketSizeHours: 6,
+        },
+      }, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
         },
       });
     }

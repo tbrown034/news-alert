@@ -23,7 +23,7 @@ const SOURCES_FILE = path.join(__dirname, '..', 'src', 'lib', 'sources-clean.ts'
 // Extended stats with CLI-only fields
 interface CLISourceStats extends SourceStats {
   id?: string;
-  oldPostsPerDay?: number;
+  oldBaselinePPD?: number;
 }
 
 // ── Display ──────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ function printStats(stats: CLISourceStats) {
   console.log(`${'─'.repeat(60)}`);
   console.log(`  Last posted:     ${stats.lastPostedAgo} (${stats.lastPosted})`);
   console.log(`  Posts sampled:   ${stats.totalPosts} over ${stats.spanDays} days`);
-  console.log(`  Avg posts/day:   ${stats.postsPerDay}${stats.spanDays >= 7 ? ' (7d window)' : ` (${stats.spanDays}d span)`}`);
+  console.log(`  Avg posts/day:   ${stats.recentPPD}${stats.spanDays >= 7 ? ' (7d window)' : ` (${stats.spanDays}d span)`}`);
   console.log(`  ┌─ Last 6h:      ${stats.postsLast6h}`);
   console.log(`  ├─ Last 12h:     ${stats.postsLast12h}`);
   console.log(`  ├─ Last 24h:     ${stats.postsLast24h}`);
@@ -50,7 +50,7 @@ function printStats(stats: CLISourceStats) {
 }
 
 function printTable(allStats: CLISourceStats[]) {
-  allStats.sort((a, b) => b.postsPerDay - a.postsPerDay);
+  allStats.sort((a, b) => b.recentPPD - a.recentPPD);
 
   console.log(`\n${'═'.repeat(100)}`);
   console.log(`  ${'Handle'.padEnd(35)} ${'Plat'.padEnd(10)} ${'Last'.padEnd(10)} ${'PPD'.padStart(6)} ${'6h'.padStart(4)} ${'24h'.padStart(5)} ${'48h'.padStart(5)} ${'Gap'.padStart(6)}`);
@@ -62,7 +62,7 @@ function printTable(allStats: CLISourceStats[]) {
       continue;
     }
     console.log(
-      `  ${s.handle.slice(0, 34).padEnd(35)} ${s.platform.padEnd(10)} ${s.lastPostedAgo.padEnd(10)} ${String(s.postsPerDay).padStart(6)} ${String(s.postsLast6h).padStart(4)} ${String(s.postsLast24h).padStart(5)} ${String(s.postsLast48h).padStart(5)} ${(s.gapHoursAvg + 'h').padStart(6)}`
+      `  ${s.handle.slice(0, 34).padEnd(35)} ${s.platform.padEnd(10)} ${s.lastPostedAgo.padEnd(10)} ${String(s.recentPPD).padStart(6)} ${String(s.postsLast6h).padStart(4)} ${String(s.postsLast24h).padStart(5)} ${String(s.postsLast48h).padStart(5)} ${(s.gapHoursAvg + 'h').padStart(6)}`
     );
   }
   console.log(`${'═'.repeat(100)}`);
@@ -97,7 +97,7 @@ function updateSourcesFile(statsMap: Map<string, CLISourceStats>, dryRun: boolea
       continue;
     }
 
-    // Find the postsPerDay line within the next ~15 lines after the id
+    // Find the baselinePPD line within the next ~15 lines after the id
     const searchStart = idMatch.index;
     const searchEnd = content.indexOf('},', searchStart);
     if (searchEnd === -1) {
@@ -107,15 +107,15 @@ function updateSourcesFile(statsMap: Map<string, CLISourceStats>, dryRun: boolea
 
     const block = content.substring(searchStart, searchEnd);
 
-    // Replace postsPerDay value
-    const ppdRegex = /postsPerDay:\s*[\d.]+/;
+    // Replace baselinePPD value
+    const ppdRegex = /baselinePPD:\s*[\d.]+/;
     const ppdMatch = ppdRegex.exec(block);
     if (!ppdMatch) {
       notFound++;
       continue;
     }
 
-    const newPpd = `postsPerDay: ${stats.postsPerDay}`;
+    const newPpd = `baselinePPD: ${stats.recentPPD}`;
     const newBlock = block.replace(ppdRegex, newPpd);
 
     // Add or update baselineMeasuredAt
@@ -127,10 +127,10 @@ function updateSourcesFile(statsMap: Map<string, CLISourceStats>, dryRun: boolea
       // Update existing
       finalBlock = newBlock.replace(bmaRegex, newBma);
     } else {
-      // Add after postsPerDay line
+      // Add after baselinePPD line
       finalBlock = newBlock.replace(
-        /postsPerDay:\s*[\d.]+,/,
-        `postsPerDay: ${stats.postsPerDay},\n    ${newBma},`
+        /baselinePPD:\s*[\d.]+,/,
+        `baselinePPD: ${stats.recentPPD},\n    ${newBma},`
       );
     }
 
@@ -188,7 +188,7 @@ async function fetchAllStats(sources: any[], platformFilter?: string): Promise<C
       const results = await Promise.all(
         batch.map((s: any) => {
           return getStats(s.handle, s.platform).then(stats => {
-            const cliStats: CLISourceStats = { ...stats, id: s.id, oldPostsPerDay: s.postsPerDay };
+            const cliStats: CLISourceStats = { ...stats, id: s.id, oldBaselinePPD: s.baselinePPD };
             return cliStats;
           });
         })
@@ -239,8 +239,8 @@ async function main() {
     const changes: { id: string; old: number; new_: number; handle: string }[] = [];
     for (const [id, stats] of statsMap) {
       if (stats.error || stats.totalPosts === 0) continue;
-      if (stats.oldPostsPerDay !== undefined && stats.oldPostsPerDay !== stats.postsPerDay) {
-        changes.push({ id, old: stats.oldPostsPerDay, new_: stats.postsPerDay, handle: stats.handle });
+      if (stats.oldBaselinePPD !== undefined && stats.oldBaselinePPD !== stats.recentPPD) {
+        changes.push({ id, old: stats.oldBaselinePPD, new_: stats.recentPPD, handle: stats.handle });
       }
     }
 
@@ -253,7 +253,7 @@ async function main() {
 
     console.log(`  Measured:    ${successful.length} sources`);
     console.log(`  Errors:      ${errors.length} sources`);
-    console.log(`  Changes:     ${changes.length} sources with new postsPerDay values`);
+    console.log(`  Changes:     ${changes.length} sources with new baselinePPD values`);
 
     if (changes.length > 0) {
       console.log(`\n  ${'Source'.padEnd(40)} ${'Old PPD'.padStart(8)} ${'New PPD'.padStart(8)} ${'Change'.padStart(10)}`);
@@ -298,7 +298,7 @@ async function main() {
     }
 
     if (spammyThreshold) {
-      filtered = allStats.filter(s => s.postsPerDay > spammyThreshold);
+      filtered = allStats.filter(s => s.recentPPD > spammyThreshold);
       console.log(`\n🔊 Sources averaging >${spammyThreshold} posts/day:`);
     }
 

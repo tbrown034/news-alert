@@ -154,3 +154,31 @@ export async function getActivityTrend(
     [region, days]
   );
 }
+
+export interface RegionBaselineAverage {
+  region: string;
+  avg_posts_6h: number;
+  sample_count: number;
+}
+
+/**
+ * Get per-region baseline averages from the 'all' region rows.
+ * The 'all' rows contain region_breakdown JSONB with per-region counts
+ * that reflect the ACTUAL post distribution after region reclassification.
+ * Uses 14-day rolling average.
+ */
+export async function getRegionBaselineAverages(): Promise<RegionBaselineAverage[]> {
+  return query<RegionBaselineAverage>(
+    `SELECT
+       breakdown.key as region,
+       ROUND(AVG(breakdown.value::numeric), 1) as avg_posts_6h,
+       COUNT(*) as sample_count
+     FROM post_activity_logs,
+       jsonb_each_text(region_breakdown) as breakdown(key, value)
+     WHERE region = 'all'
+       AND bucket_timestamp > NOW() - INTERVAL '14 days'
+       AND region_breakdown IS NOT NULL
+     GROUP BY breakdown.key
+     ORDER BY breakdown.key`
+  );
+}
