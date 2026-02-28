@@ -7,6 +7,9 @@ import {
   ArrowPathIcon,
   ExclamationTriangleIcon,
   GlobeAltIcon,
+  GlobeAmericasIcon,
+  GlobeEuropeAfricaIcon,
+  GlobeAsiaAustraliaIcon,
   CloudIcon,
   FireIcon,
   MapPinIcon,
@@ -16,6 +19,7 @@ import {
   CurrencyDollarIcon,
   BookOpenIcon,
   NoSymbolIcon,
+  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import ActivityChart from '@/components/ActivityChart';
 
@@ -193,47 +197,60 @@ const REGIONS: { id: string; name: string }[] = [
   { id: 'africa', name: 'Africa' },
 ];
 
+const REGION_COLORS: Record<string, {
+  color: string;
+  icon: typeof GlobeAltIcon;
+  abbr: string;
+}> = {
+  'us':            { color: '#3b82f6', icon: GlobeAmericasIcon, abbr: 'US' },
+  'latam':         { color: '#22c55e', icon: GlobeAmericasIcon, abbr: 'LA' },
+  'middle-east':   { color: '#f97316', icon: GlobeEuropeAfricaIcon, abbr: 'ME' },
+  'europe-russia': { color: '#a855f7', icon: GlobeEuropeAfricaIcon, abbr: 'EU' },
+  'asia':          { color: '#06b6d4', icon: GlobeAsiaAustraliaIcon, abbr: 'AP' },
+  'africa':        { color: '#eab308', icon: GlobeEuropeAfricaIcon, abbr: 'AF' },
+};
+
 const categoryConfig = {
   seismic: {
     icon: GlobeAltIcon,
-    color: 'text-blue-400',
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/20',
+    color: 'text-[var(--foreground-muted)]',
+    bg: 'bg-[var(--background-secondary)]',
+    border: 'border-[var(--border-light)]',
     label: 'Seismic',
   },
   weather: {
     icon: CloudIcon,
-    color: 'text-purple-400',
-    bg: 'bg-purple-500/10',
-    border: 'border-purple-500/20',
+    color: 'text-[var(--foreground-muted)]',
+    bg: 'bg-[var(--background-secondary)]',
+    border: 'border-[var(--border-light)]',
     label: 'Weather',
   },
   fires: {
     icon: FireIcon,
-    color: 'text-orange-400',
-    bg: 'bg-orange-500/10',
-    border: 'border-orange-500/20',
+    color: 'text-[var(--foreground-muted)]',
+    bg: 'bg-[var(--background-secondary)]',
+    border: 'border-[var(--border-light)]',
     label: 'Fires',
   },
   travel: {
     icon: MapPinIcon,
-    color: 'text-rose-400',
-    bg: 'bg-rose-500/10',
-    border: 'border-rose-500/20',
+    color: 'text-[var(--foreground-muted)]',
+    bg: 'bg-[var(--background-secondary)]',
+    border: 'border-[var(--border-light)]',
     label: 'Travel Advisories',
   },
   outages: {
     icon: WifiIcon,
-    color: 'text-cyan-400',
-    bg: 'bg-cyan-500/10',
-    border: 'border-cyan-500/20',
+    color: 'text-[var(--foreground-muted)]',
+    bg: 'bg-[var(--background-secondary)]',
+    border: 'border-[var(--border-light)]',
     label: 'Outages',
   },
   tfrs: {
     icon: NoSymbolIcon,
-    color: 'text-sky-400',
-    bg: 'bg-sky-500/10',
-    border: 'border-sky-500/20',
+    color: 'text-[var(--foreground-muted)]',
+    bg: 'bg-[var(--background-secondary)]',
+    border: 'border-[var(--border-light)]',
     label: 'Flight Restrictions',
   },
 };
@@ -360,7 +377,7 @@ export default function ConditionsPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Loading */}
         {isLoading && !data && (
           <div className="flex items-center justify-center py-20">
@@ -392,62 +409,111 @@ export default function ConditionsPage() {
 
         {data && (
           <>
-            {/* Summary stats */}
-            <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-1">
-              <StatPill
-                value={data.summary.totalThreats}
-                label="events"
-                color="text-(--foreground)"
-              />
-              {data.summary.criticalCount > 0 && (
-                <StatPill
-                  value={data.summary.criticalCount}
-                  label="critical"
-                  color="text-red-400"
-                />
-              )}
-              {data.summary.severeCount > 0 && (
-                <StatPill
-                  value={data.summary.severeCount}
-                  label="severe"
-                  color="text-amber-400"
-                />
-              )}
-              <span className="ml-auto text-caption whitespace-nowrap">
-                Updated {formatTimeAgo(data.fetchedAt)}
-              </span>
-            </div>
+            {/* Summary Card */}
+            <div className="card overflow-hidden">
+              <div className="px-4 sm:px-5 py-4">
+                {/* Headline stat + update time */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl sm:text-3xl font-semibold tabular-nums text-[var(--foreground)]">
+                      {data.summary.totalThreats}
+                    </span>
+                    <span className="text-label text-[var(--foreground-muted)]">active events</span>
+                  </div>
+                  <span className="text-caption whitespace-nowrap">
+                    Updated {formatTimeAgo(data.fetchedAt)}
+                  </span>
+                </div>
 
-            {/* Type breakdown - mini pills */}
-            <div className="flex flex-wrap gap-2">
-              {(Object.entries(data.summary.byType) as [CategoryKey, number][])
-                .filter(([, count]) => count > 0)
-                .map(([type, count]) => {
-                  const config = categoryConfig[type];
-                  const Icon = config.icon;
-                  return (
-                    <div
-                      key={type}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border ${config.bg} ${config.border}`}
-                    >
-                      <Icon className={`w-3.5 h-3.5 ${config.color}`} />
-                      <span className={`text-micro font-medium ${config.color}`}>{count}</span>
-                      <span className="text-micro text-(--foreground-light)">{config.label}</span>
+                {/* Severity distribution bar */}
+                {data.summary.totalThreats > 0 && (
+                  <div className="mb-4">
+                    <div className="flex h-2 rounded-full overflow-hidden bg-[var(--background-secondary)]">
+                      {data.summary.criticalCount > 0 && (
+                        <div
+                          className="bg-red-500 transition-all duration-500"
+                          style={{ width: `${(data.summary.criticalCount / data.summary.totalThreats) * 100}%` }}
+                        />
+                      )}
+                      {data.summary.severeCount > 0 && (
+                        <div
+                          className="bg-amber-500 transition-all duration-500"
+                          style={{ width: `${(data.summary.severeCount / data.summary.totalThreats) * 100}%` }}
+                        />
+                      )}
+                      <div
+                        className="bg-slate-600 transition-all duration-500"
+                        style={{
+                          width: `${((data.summary.totalThreats - data.summary.criticalCount - data.summary.severeCount) / data.summary.totalThreats) * 100}%`,
+                        }}
+                      />
                     </div>
-                  );
-                })}
+                    {/* Severity legend */}
+                    <div className="flex gap-4 mt-2">
+                      {data.summary.criticalCount > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-red-500" />
+                          <span className="text-micro text-red-400 font-medium tabular-nums">{data.summary.criticalCount} critical</span>
+                        </div>
+                      )}
+                      {data.summary.severeCount > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500" />
+                          <span className="text-micro text-amber-400 font-medium tabular-nums">{data.summary.severeCount} severe</span>
+                        </div>
+                      )}
+                      {(data.summary.totalThreats - data.summary.criticalCount - data.summary.severeCount) > 0 && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-slate-600" />
+                          <span className="text-micro text-[var(--foreground-light)] tabular-nums">
+                            {data.summary.totalThreats - data.summary.criticalCount - data.summary.severeCount} other
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Type breakdown grid */}
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  {(Object.entries(data.summary.byType) as [CategoryKey, number][])
+                    .filter(([, count]) => count > 0)
+                    .map(([type, count]) => {
+                      const config = categoryConfig[type];
+                      const Icon = config.icon;
+                      return (
+                        <div
+                          key={type}
+                          className="flex flex-col items-center gap-1 py-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border-light)]"
+                        >
+                          <Icon className="w-4 h-4 text-[var(--foreground-muted)]" />
+                          <span className="text-sm font-semibold tabular-nums text-[var(--foreground)]">{count}</span>
+                          <span className="text-micro text-[var(--foreground-light)]">{config.label}</span>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
             </div>
 
-            {/* Feed Activity History */}
+            {/* Section: Activity */}
+            <div className="section-header">
+              <span className="section-label">Activity</span>
+            </div>
             <ActivityChart />
 
-            {/* Markets — global signal with sparklines */}
+            {/* Section: Markets */}
+            {commoditiesData && commoditiesData.length > 0 && (
+              <div className="section-header">
+                <span className="section-label">Markets</span>
+              </div>
+            )}
             {commoditiesData && commoditiesData.length > 0 && (
               <div className="card overflow-hidden">
                 <div className="px-4 py-3">
                   <div className="flex items-center gap-2 mb-3">
-                    <CurrencyDollarIcon className="w-4 h-4 text-emerald-400" />
-                    <span className="text-label text-emerald-400">Markets</span>
+                    <CurrencyDollarIcon className="w-4 h-4 text-[var(--foreground-muted)]" />
+                    <span className="text-label text-[var(--foreground-muted)]">Markets</span>
                     <span className="text-caption">30-day</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -459,44 +525,37 @@ export default function ConditionsPage() {
               </div>
             )}
 
-            {/* Region cards */}
+            {/* Section: Regional Breakdown */}
+            <div className="section-header">
+              <span className="section-label">Regional Breakdown</span>
+            </div>
             <div className="space-y-4">
-              {sortedRegions.map((region) => {
+              {sortedRegions.map((region, index) => {
                 const rd = data.byRegion[region.id];
                 if (!rd) return null;
 
                 return (
-                  <RegionCard
+                  <div
                     key={region.id}
-                    regionId={region.id}
-                    name={region.name}
-                    data={rd}
-                    activity={activityData?.[region.id] ?? null}
-                    trends={trendsData?.[region.id]?.terms ?? null}
-                    wikiPages={wikiData?.filter(p => p.region === region.id) ?? null}
-                    formatTimeAgo={formatTimeAgo}
-                  />
+                    className="animate-fade-up"
+                    style={{ animationDelay: `${index * 60}ms`, opacity: 0 }}
+                  >
+                    <RegionCard
+                      regionId={region.id}
+                      name={region.name}
+                      data={rd}
+                      activity={activityData?.[region.id] ?? null}
+                      trends={trendsData?.[region.id]?.terms ?? null}
+                      wikiPages={wikiData?.filter(p => p.region === region.id) ?? null}
+                      formatTimeAgo={formatTimeAgo}
+                    />
+                  </div>
                 );
               })}
             </div>
           </>
         )}
       </main>
-    </div>
-  );
-}
-
-// =============================================================================
-// STAT PILL
-// =============================================================================
-
-function StatPill({ value, label, color }: { value: number; label: string; color: string }) {
-  return (
-    <div className="flex items-baseline gap-1.5 whitespace-nowrap">
-      <span className={`text-lg font-semibold tabular-nums font-[family-name:var(--font-geist-mono)] ${color}`}>
-        {value}
-      </span>
-      <span className="text-caption">{label}</span>
     </div>
   );
 }
@@ -515,7 +574,7 @@ interface RegionCardProps {
   formatTimeAgo: (dateStr: string) => string;
 }
 
-function RegionCard({ name, data, activity, trends, wikiPages, formatTimeAgo }: RegionCardProps) {
+function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatTimeAgo }: RegionCardProps) {
   const hasTrends = trends && trends.length > 0;
   const hasWiki = wikiPages && wikiPages.length > 0;
   const isEmpty = data.totalCount === 0 && (!activity || activity.level === 'normal') && !hasTrends && !hasWiki;
@@ -523,6 +582,21 @@ function RegionCard({ name, data, activity, trends, wikiPages, formatTimeAgo }: 
   const categories = (['seismic', 'weather', 'fires', 'travel', 'outages', 'tfrs'] as CategoryKey[]).filter(
     (cat) => data[cat] && data[cat].length > 0,
   );
+
+  const regionColor = REGION_COLORS[regionId] || { color: '#6c757d', icon: GlobeAltIcon, abbr: '??' };
+  const RegionIcon = regionColor.icon;
+
+  // Count severities across all categories
+  const severityCounts = useMemo(() => {
+    const counts = { critical: 0, severe: 0, moderate: 0, minor: 0 };
+    for (const cat of ['seismic', 'weather', 'fires', 'travel', 'outages', 'tfrs'] as CategoryKey[]) {
+      for (const item of (data[cat] || [])) {
+        const sev = (item as any).severity as keyof typeof counts;
+        if (sev in counts) counts[sev]++;
+      }
+    }
+    return counts;
+  }, [data]);
 
   const activityColor = activity?.level === 'critical'
     ? 'text-red-400'
@@ -536,10 +610,6 @@ function RegionCard({ name, data, activity, trends, wikiPages, formatTimeAgo }: 
       ? { bg: 'bg-orange-500/15', border: 'border-orange-500/30', text: 'text-orange-400' }
       : { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', text: 'text-emerald-400' };
 
-  const activityText = activity
-    ? `${activity.count} posts vs ${activity.baseline} baseline`
-    : null;
-
   const activityBadgeText = activity
     ? activity.percentChange > 0
       ? `+${activity.percentChange}%`
@@ -548,103 +618,143 @@ function RegionCard({ name, data, activity, trends, wikiPages, formatTimeAgo }: 
         : 'Normal'
     : null;
 
-  // Accent line color based on severity
-  const accentColor = data.criticalCount > 0
-    ? 'bg-red-500'
-    : data.totalCount > 0
-      ? 'bg-amber-500'
-      : 'bg-(--border)';
-
   return (
     <div className="card overflow-hidden">
-      {/* Accent top line */}
-      <div className={`h-0.5 ${accentColor}`} />
+      {/* Accent top line — region color, red when critical */}
+      <div
+        className={`${data.criticalCount > 0 ? 'h-[2px]' : 'h-px'}`}
+        style={{
+          backgroundColor: data.criticalCount > 0
+            ? '#ef4444'
+            : data.totalCount > 0
+              ? regionColor.color
+              : 'var(--border)',
+        }}
+      />
 
       {/* Region header */}
       <div className="px-4 sm:px-5 pt-3.5 pb-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="headline text-base sm:text-lg">{name}</h2>
-          {data.criticalCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-micro font-semibold uppercase tracking-wider bg-red-500/15 text-red-400 border border-red-500/30 rounded-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
-              {data.criticalCount} critical
-            </span>
-          )}
-          {data.totalCount > 0 && data.criticalCount === 0 && (
-            <span className="text-caption">{data.totalCount} events</span>
-          )}
+          {/* Region icon badge */}
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+            style={{ backgroundColor: `${regionColor.color}15` }}
+          >
+            <RegionIcon className="w-4.5 h-4.5" style={{ color: regionColor.color }} />
+          </div>
+          <div className="flex items-center gap-2.5">
+            <h2 className="headline text-base sm:text-lg">{name}</h2>
+            {data.criticalCount > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-micro font-semibold bg-red-500/15 text-red-400 rounded-md">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                {data.criticalCount} critical
+              </span>
+            )}
+            {data.totalCount > 0 && data.criticalCount === 0 && (
+              <span className="text-caption">{data.totalCount} events</span>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Severity distribution bar */}
+      {data.totalCount > 0 && (
+        <div className="px-4 sm:px-5 pb-3">
+          <div className="flex h-1.5 rounded-full overflow-hidden bg-[var(--background-secondary)]">
+            {severityCounts.critical > 0 && (
+              <div className="bg-red-500" style={{ width: `${(severityCounts.critical / data.totalCount) * 100}%` }} />
+            )}
+            {severityCounts.severe > 0 && (
+              <div className="bg-amber-500" style={{ width: `${(severityCounts.severe / data.totalCount) * 100}%` }} />
+            )}
+            {severityCounts.moderate > 0 && (
+              <div className="bg-yellow-500" style={{ width: `${(severityCounts.moderate / data.totalCount) * 100}%` }} />
+            )}
+            {severityCounts.minor > 0 && (
+              <div className="bg-slate-600" style={{ width: `${(severityCounts.minor / data.totalCount) * 100}%` }} />
+            )}
+          </div>
+        </div>
+      )}
+
       {isEmpty ? (
-        <div className="px-4 sm:px-5 pb-4">
-          <p className="text-caption italic">No active conditions</p>
+        <div className="px-4 sm:px-5 pb-4 flex items-center gap-2">
+          <ShieldCheckIcon className="w-4 h-4 text-emerald-500/60" />
+          <p className="text-caption">No active conditions</p>
         </div>
       ) : (
         <div className="border-t border-(--border-light)">
-          {/* Signals row — Feed Activity, Trends, Wiki in a compact strip */}
+          {/* Signals row — polished layout */}
           {(activity || hasTrends || hasWiki) && (
-            <div className="px-4 sm:px-5 py-3 space-y-2.5 border-b border-(--border-light)">
-              {/* Feed Activity */}
-              {activity && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="flex items-center gap-1.5">
-                    <SignalIcon className={`w-3.5 h-3.5 ${activityColor}`} />
-                    <span className={`text-micro font-medium ${activityColor}`}>Feed Activity</span>
+            <div className="px-4 sm:px-5 py-3 border-b border-[var(--border-light)]">
+              <div className="grid gap-2.5">
+                {/* Feed Activity — promoted to mini stat row */}
+                {activity && (
+                  <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-[var(--background-secondary)]">
+                    <div className="flex items-center gap-2">
+                      <SignalIcon className={`w-3.5 h-3.5 ${activityColor}`} />
+                      <span className="text-micro font-medium text-[var(--foreground-muted)]">Feed Activity</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-1.5 py-0.5 text-micro font-semibold rounded border ${activityBadge.bg} ${activityBadge.border} ${activityBadge.text}`}>
+                        {activityBadgeText}
+                      </span>
+                      <span className="text-caption tabular-nums">{activity.count} / {activity.baseline} baseline</span>
+                    </div>
                   </div>
-                  <span className={`inline-flex items-center px-1.5 py-0.5 text-micro font-semibold rounded border ${activityBadge.bg} ${activityBadge.border} ${activityBadge.text}`}>
-                    {activityBadgeText}
-                  </span>
-                  <span className="text-caption">{activityText}</span>
-                </div>
-              )}
+                )}
 
-              {/* Google Trends */}
-              {hasTrends && (
-                <div className="flex items-start gap-2">
-                  <div className="flex items-center gap-1.5 pt-0.5 shrink-0">
-                    <ArrowTrendingUpIcon className="w-3.5 h-3.5 text-sky-400" />
-                    <span className="text-micro font-medium text-sky-400">Trending</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {trends!.slice(0, 5).map((t) => (
-                      <a
-                        key={t.term}
-                        href={t.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-0.5 text-micro bg-sky-500/8 text-sky-300 hover:bg-sky-500/15 border border-sky-500/15 hover:border-sky-500/30 rounded transition-colors"
-                      >
-                        {t.term}
-                        {t.traffic && <span className="text-sky-400/50">{t.traffic}</span>}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
+                {/* Trends + Wiki side-by-side on desktop */}
+                {(hasTrends || hasWiki) && (
+                  <div className="grid sm:grid-cols-2 gap-2.5">
+                    {hasTrends && (
+                      <div className="px-3 py-2 rounded-lg bg-[var(--background-secondary)]">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <ArrowTrendingUpIcon className="w-3.5 h-3.5 text-[var(--foreground-muted)]" />
+                          <span className="text-micro font-medium text-[var(--foreground-muted)]">Trending</span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-2 gap-y-1">
+                          {trends!.slice(0, 5).map((t) => (
+                            <a
+                              key={t.term}
+                              href={t.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-micro text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                            >
+                              {t.term}
+                              {t.traffic && <span className="text-[var(--foreground-light)] ml-0.5">{t.traffic}</span>}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-              {/* Wikipedia spikes */}
-              {hasWiki && (
-                <div className="flex items-start gap-2">
-                  <div className="flex items-center gap-1.5 pt-0.5 shrink-0">
-                    <BookOpenIcon className="w-3.5 h-3.5 text-violet-400" />
-                    <span className="text-micro font-medium text-violet-400">Wiki spikes</span>
+                    {hasWiki && (
+                      <div className="px-3 py-2 rounded-lg bg-[var(--background-secondary)]">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                          <BookOpenIcon className="w-3.5 h-3.5 text-[var(--foreground-muted)]" />
+                          <span className="text-micro font-medium text-[var(--foreground-muted)]">Wiki Spikes</span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-2 gap-y-1">
+                          {wikiPages!.slice(0, 3).map((p) => (
+                            <a
+                              key={p.title}
+                              href={p.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-micro text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                            >
+                              {p.title}
+                              <span className="text-[var(--foreground-light)] ml-0.5">{p.views.toLocaleString()}</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                    {wikiPages!.slice(0, 3).map((p) => (
-                      <a
-                        key={p.title}
-                        href={p.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-micro text-(--foreground-muted) hover:text-violet-300 transition-colors"
-                      >
-                        {p.title} <span className="text-(--foreground-light)">{p.views.toLocaleString()}</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
 
@@ -691,14 +801,14 @@ function CategorySection({ category, items, formatTimeAgo }: CategorySectionProp
   const overflow = sorted.length - MAX_ITEMS;
 
   return (
-    <div className="px-4 sm:px-5 py-3">
+    <div className="px-4 sm:px-5 py-3.5">
       {/* Category header */}
       <div className="flex items-center gap-2 mb-2">
         <div className={`w-5 h-5 rounded flex items-center justify-center ${config.bg}`}>
           <Icon className={`w-3.5 h-3.5 ${config.color}`} />
         </div>
         <span className={`text-label ${config.color}`}>{config.label}</span>
-        <span className="text-micro text-(--foreground-light) font-[family-name:var(--font-geist-mono)]">{items.length}</span>
+        <span className="text-micro text-(--foreground-light) tabular-nums">{items.length}</span>
       </div>
 
       {/* Items */}
@@ -738,17 +848,17 @@ function ConditionItem({ item, category, formatTimeAgo }: ConditionItemProps) {
   }
 
   return (
-    <div className="flex items-center gap-2.5 min-w-0 group">
+    <div className="flex items-center gap-2.5 min-w-0 group px-1.5 -mx-1.5 py-0.5 rounded hover:bg-[var(--background-secondary)] transition-colors">
       {/* Severity dot */}
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${sev.dot}`} />
       {/* Label */}
       <span className="text-body text-sm truncate flex-1 group-hover:text-(--foreground) transition-colors">{label}</span>
       {/* Severity badge */}
-      <span className={`hidden sm:inline-flex px-1.5 py-0.5 text-micro uppercase tracking-wider rounded shrink-0 ${sev.bg} ${sev.text} border ${sev.border}`}>
+      <span className={`hidden sm:inline-flex px-1.5 py-0.5 text-micro rounded shrink-0 ${sev.bg} ${sev.text}`}>
         {severity}
       </span>
       {/* Time */}
-      <span className="text-caption whitespace-nowrap shrink-0 tabular-nums font-[family-name:var(--font-geist-mono)]">
+      <span className="text-caption whitespace-nowrap shrink-0 tabular-nums">
         {formatTimeAgo(item.timestamp)}
       </span>
     </div>
@@ -761,10 +871,7 @@ function ConditionItem({ item, category, formatTimeAgo }: ConditionItemProps) {
 
 function CommodityCard({ commodity: c }: { commodity: CommodityData }) {
   const isUp = c.changePercent > 0;
-  const isSignificant = Math.abs(c.changePercent) >= 3;
-  const changeColor = isSignificant
-    ? isUp ? 'text-red-400' : 'text-emerald-400'
-    : isUp ? 'text-emerald-400/70' : 'text-red-400/70';
+  const changeColor = isUp ? 'text-emerald-400' : 'text-red-400';
   const strokeColor = isUp ? '#34d399' : '#f87171';
 
   const formattedPrice = c.price >= 1000
@@ -794,11 +901,11 @@ function CommodityCard({ commodity: c }: { commodity: CommodityData }) {
     <div className="bg-(--background-secondary) rounded-lg px-3 py-2.5 flex flex-col gap-1 border border-(--border-light)">
       <div className="flex items-center justify-between">
         <span className="text-micro font-medium text-(--foreground-muted) truncate">{c.name}</span>
-        <span className={`text-micro font-semibold tabular-nums font-[family-name:var(--font-geist-mono)] ${changeColor}`}>
+        <span className={`text-micro font-semibold tabular-nums ${changeColor}`}>
           {isUp ? '+' : ''}{c.changePercent.toFixed(2)}%
         </span>
       </div>
-      <div className="text-sm font-semibold text-(--foreground) tabular-nums font-[family-name:var(--font-geist-mono)]">
+      <div className="text-sm font-semibold text-(--foreground) tabular-nums">
         {c.unit === 'USD' || c.unit.startsWith('USD/') ? '$' : ''}{formattedPrice}
       </div>
       {sparklinePath && (

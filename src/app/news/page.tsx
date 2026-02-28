@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
@@ -240,6 +240,15 @@ export default function NewsPage() {
     setDisplayLimit(PAGE_SIZE);
   }, []);
 
+  const regionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const a of articles) {
+      const r = a._sourceRegion || a.region;
+      counts[r] = (counts[r] || 0) + 1;
+    }
+    return counts;
+  }, [articles]);
+
   const filtered = selectedRegion === 'all'
     ? articles
     : articles.filter(a => a._sourceRegion === selectedRegion || a.region === selectedRegion);
@@ -298,6 +307,7 @@ export default function NewsPage() {
               onSelect={handleRegionSelect}
               showTimes={false}
               showZoomControls={false}
+              regionCounts={regionCounts}
             />
           </div>
         </div>

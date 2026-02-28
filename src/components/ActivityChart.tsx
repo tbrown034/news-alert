@@ -120,7 +120,7 @@ export default function ActivityChart() {
             <span className="text-[var(--foreground-muted)]">
               {REGION_CONFIG[entry.name]?.label || entry.name}
             </span>
-            <span className="font-semibold text-[var(--foreground)] ml-auto tabular-nums font-[family-name:var(--font-geist-mono)]">
+            <span className="font-semibold text-[var(--foreground)] ml-auto tabular-nums">
               {entry.value ?? 0}
             </span>
           </div>
@@ -136,8 +136,8 @@ export default function ActivityChart() {
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <SignalIcon className="w-4 h-4 text-sky-400" />
-            <span className="text-label text-sky-400">Feed Activity</span>
+            <SignalIcon className="w-4 h-4 text-[var(--foreground-muted)]" />
+            <span className="text-label text-[var(--foreground-muted)]">Feed Activity</span>
           </div>
           <div className="flex items-center gap-1 bg-[var(--background)] rounded-md p-0.5">
             {TIME_RANGES.map(r => (
@@ -186,7 +186,7 @@ export default function ActivityChart() {
           </div>
         ) : chartData.length === 0 ? (
           <div className="flex items-center justify-center h-48">
-            <span className="text-caption">No activity data yet — check back after a few hours</span>
+            <span className="text-caption text-[var(--foreground-light)]">No activity data yet — check back after a few hours</span>
           </div>
         ) : (
           <div className="h-56 sm:h-64">

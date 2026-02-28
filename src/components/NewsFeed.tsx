@@ -7,6 +7,7 @@ import { EditorialCard, isEditorialItem } from './EditorialCard';
 import { BriefingCard } from './BriefingCard';
 import { ArrowPathIcon, ExclamationTriangleIcon, GlobeAltIcon, ChevronDownIcon, SignalIcon, FireIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { regionDisplayNames } from '@/lib/regionDetection';
+import Link from 'next/link';
 import { getTrendingKeywords } from '@/lib/trendingKeywords';
 
 interface ActivityData {
@@ -460,6 +461,11 @@ export const NewsFeed = memo(function NewsFeed({
                     : <> in last <span className="font-semibold text-slate-700 dark:text-slate-300">six hours</span> {selectedTab === 'all' ? 'globally' : `in ${regionDisplayNames[selectedTab] || selectedTab}`}</>
                   }
                 </div>
+                <p className="hidden sm:block text-xs text-slate-400 dark:text-slate-500 mt-1.5">
+                  Sources are hand-picked from Bluesky, Telegram, Mastodon, and RSS — all through free, open APIs.
+                  This is a work in progress.{' '}
+                  <Link href="/about" className="text-blue-500 dark:text-blue-400 hover:underline">About sources</Link>
+                </p>
                 {/* Activity indicator - show for both global and regional views */}
                 {!isFiltered && activity && activity[selectedTab] && (
                   <div className="italic mt-0.5">
@@ -487,7 +493,6 @@ export const NewsFeed = memo(function NewsFeed({
                         <FireIcon className="w-3 h-3 text-amber-500" />
                         <span>Trending</span>
                       </div>
-                      <span className="text-slate-300 dark:text-slate-600">|</span>
                       <span className="text-sm text-slate-500 dark:text-slate-400">
                         {trendingKeywords.map((kw, i) => (
                           <span key={kw.keyword}>

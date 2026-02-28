@@ -68,6 +68,17 @@ export const regionBadges: Record<WatchpointId, { label: string; color: string }
   'all': { label: 'GLOBAL', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
 };
 
+// Region accent colors — used for card accent lines, matching ActivityChart palette
+export const regionAccentColors: Record<string, string> = {
+  'us': '#3b82f6',
+  'latam': '#22c55e',
+  'middle-east': '#f97316',
+  'europe-russia': '#a855f7',
+  'asia': '#06b6d4',
+  'africa': '#eab308',
+  'all': '#6b7280',
+};
+
 // Region badge colors — Tailwind colored variant (used by EditorialCard)
 export const editorialRegionBadges: Record<WatchpointId, { label: string; color: string }> = {
   'us': { label: 'US', color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400' },

@@ -180,20 +180,6 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
             </div>
           )}
 
-          {/* Confidence */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-[var(--foreground-light)]">Confidence</span>
-              <span className="text-xs font-medium text-[var(--foreground-muted)]">{source.confidence}/100</span>
-            </div>
-            <div className="w-full h-1.5 bg-[var(--background-secondary)] rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-emerald-500 transition-all"
-                style={{ width: `${source.confidence}%` }}
-              />
-            </div>
-          </div>
-
           {/* External link */}
           {source.url && (
             <a

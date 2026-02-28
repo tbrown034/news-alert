@@ -117,10 +117,16 @@ export async function GET(request: Request) {
     if (view === 'history') {
       const daysParam = Math.min(Math.max(1, days), 30);
 
-      // Try DB first
-      const trend = await getActivityTrend('all' as WatchpointId, daysParam);
+      // Try DB first, fall back to cache if unavailable
+      let dbTrend: Awaited<ReturnType<typeof getActivityTrend>> = [];
+      try {
+        dbTrend = await getActivityTrend('all' as WatchpointId, daysParam);
+      } catch (dbErr) {
+        console.warn('[Analytics API] DB unavailable, falling back to cache:',
+          dbErr instanceof Error ? dbErr.message : dbErr);
+      }
 
-      let dataPoints: { timestamp: string; total: number; regions: Record<string, number> }[] = trend
+      let dataPoints: { timestamp: string; total: number; regions: Record<string, number> }[] = dbTrend
         .filter(r => r.region_breakdown)
         .map(r => {
           const regions: Record<string, number> = {};

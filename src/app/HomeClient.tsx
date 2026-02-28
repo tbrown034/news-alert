@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { NewsFeed, WorldMap, SeismicMap, WeatherMap, OutagesMap, TravelMap, FiresMap, AuthButton } from '@/components';
+import { NewsFeed, WorldMap, SeismicMap, WeatherMap, OutagesMap, TravelMap, FiresMap } from '@/components';
 import type { TFRMarker, FireMarker } from '@/components/WorldMap';
 import { EditorialFAB } from '@/components/EditorialFAB';
 import { ErrorBoundary, FeedSkeleton, MapSkeleton } from '@/components/ErrorBoundary';
@@ -14,6 +14,7 @@ import { MapPinIcon } from '@heroicons/react/24/solid';
 import { RegionActivity } from '@/lib/activityDetection';
 import { formatTimeAgo } from '@/lib/formatUtils';
 import { tier1Sources, tier2Sources, tier3Sources } from '@/lib/sources-clean';
+import Link from 'next/link';
 
 interface ApiResponse {
   items: NewsItem[];
@@ -97,7 +98,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const [seismicLoading, setSeismicLoading] = useState(false);
   const [seismicLastFetched, setSeismicLastFetched] = useState<Date | null>(null);
   const [showMoreTabs, setShowMoreTabs] = useState(false);
-  const [showPanel, setShowPanel] = useState<'activity' | 'details' | null>('activity');
+  const [showPanel, setShowPanel] = useState<'activity' | 'details' | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [useUTC, setUseUTC] = useState(false);
@@ -409,11 +410,15 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   // Handler for changing hero view - fetches data when needed (not in useEffect)
   const handleHeroViewChange = useCallback((view: HeroView) => {
     setHeroView(view);
+    // Close details panel when switching to main (no details content for main view)
+    if (view === 'main' && showPanel === 'details') {
+      setShowPanel(null);
+    }
     // Fetch earthquake data when seismic tab is opened (if not already loaded)
     if ((view === 'seismic' || view === 'combined') && earthquakes.length === 0) {
       fetchEarthquakes();
     }
-  }, [earthquakes.length, fetchEarthquakes]);
+  }, [earthquakes.length, fetchEarthquakes, showPanel]);
 
   // Fetch significant earthquakes (6.0+) for Main view on mount
   useEffect(() => {
@@ -506,6 +511,14 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
 
   const uniqueSources = useMemo(() => new Set(newsItems.map(i => i.source.id)).size, [newsItems]);
 
+  const regionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of newsItems) {
+      counts[item.region] = (counts[item.region] || 0) + 1;
+    }
+    return counts;
+  }, [newsItems]);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
       {/* Header */}
@@ -580,7 +593,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   <MoonIcon className="w-5 h-5" />
                 )}
               </button>
-              <AuthButton />
             </nav>
 
             {/* Mobile Menu Button */}
@@ -665,11 +677,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
 
                 {/* Divider */}
                 <div className="border-t border-slate-200 dark:border-slate-700" />
-
-                {/* Account */}
-                <div className="py-1">
-                  <AuthButton variant="dropdown" onNavigate={() => setMobileMenuOpen(false)} />
-                </div>
               </div>
             </>
           )}
@@ -809,6 +816,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   hoursWindow={hoursWindow}
                   useUTC={useUTC}
                   initialFocus={initialMapFocus}
+                  regionCounts={regionCounts}
                 />
               )}
               {heroView === 'seismic' && (
@@ -836,6 +844,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   fires={fireMarkers}
                   hoursWindow={hoursWindow}
                   useUTC={useUTC}
+                  regionCounts={regionCounts}
                 />
               )}
               </ErrorBoundary>
@@ -1080,18 +1089,20 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               <ChartBarIcon className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Activity</span>
             </button>
-            <button
-              onClick={() => setShowPanel(showPanel === 'details' ? null : 'details')}
-              className={`flex items-center gap-1 px-2 py-1 text-2xs font-medium rounded transition-colors ${
-                showPanel === 'details'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
-              }`}
-              aria-expanded={showPanel === 'details'}
-            >
-              <InformationCircleIcon className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{heroView === 'main' ? 'Info' : 'Details'}</span>
-            </button>
+            {heroView !== 'main' && (
+              <button
+                onClick={() => setShowPanel(showPanel === 'details' ? null : 'details')}
+                className={`flex items-center gap-1 px-2 py-1 text-2xs font-medium rounded transition-colors ${
+                  showPanel === 'details'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
+                }`}
+                aria-expanded={showPanel === 'details'}
+              >
+                <InformationCircleIcon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Details</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1109,6 +1120,13 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Normal</span>
                 <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Elevated</span>
                 <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />Critical</span>
+                <button
+                  onClick={() => setShowPanel(null)}
+                  className="ml-1 p-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                  aria-label="Close activity panel"
+                >
+                  <XMarkIcon className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
@@ -1165,13 +1183,13 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                       />
                     </div>
 
-                    {/* Multiplier (hero number) + post counts */}
+                    {/* Post count + multiplier context */}
                     <div className="w-28 sm:w-36 flex items-baseline gap-1.5 shrink-0">
                       <span className={`text-sm font-semibold tabular-nums leading-none ${multiplierColor}`}>
-                        {multiplier.toFixed(1)}×
+                        {count}
                       </span>
                       <span className="text-2xs text-slate-400 dark:text-slate-500 tabular-nums">
-                        {count}<span className="mx-px opacity-40">/</span>{baseline}
+                        posts · {multiplier.toFixed(1)}× typical
                       </span>
                     </div>
                   </div>
@@ -1193,7 +1211,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                       </div>
                     </div>
                     <div className="w-28 sm:w-36 shrink-0 text-2xs text-slate-400 dark:text-slate-500">
-                      actual<span className="mx-px opacity-40">/</span>baseline
+                      posts / typical
                     </div>
                   </div>
                 </div>
@@ -1208,64 +1226,18 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             )}
 
             {/* Explanation */}
-            <p className="text-2xs text-slate-400 dark:text-slate-500 leading-relaxed pt-1">
+            <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed pt-1">
               Every region has a measured baseline — how many posts typically come in over a 6-hour window.
               When posts spike above that baseline, the bar grows and changes color.
-              Nobody decides what&apos;s &quot;breaking.&quot; The volume does.
+              Nobody decides what&apos;s &quot;breaking.&quot; The volume does.{' '}
+              <Link href="/about" className="text-blue-500 dark:text-blue-400 hover:underline">Learn more</Link>
             </p>
-
-            {/* Close */}
-            <div className="pt-1 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-end">
-              <button
-                onClick={() => setShowPanel(null)}
-                className="text-2xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-              >
-                Close
-              </button>
-            </div>
           </div>
         )}
 
         {/* Details Panel - view-specific content */}
         {showPanel === 'details' && (
           <div className="px-3 py-3 border-t border-slate-200 dark:border-slate-700 space-y-2">
-
-            {/* Main view: Map key */}
-            {heroView === 'main' && (
-              <div>
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Map Key</div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 text-2xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Normal activity</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Elevated activity</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Critical activity</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                    <span className="text-slate-600 dark:text-slate-300">M6+ earthquake</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span className="text-slate-600 dark:text-slate-300">OSINT source</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-cyan-500" />
-                    <span className="text-slate-600 dark:text-slate-300">News org</span>
-                  </div>
-                </div>
-                <div className="mt-2 text-2xs text-slate-400 dark:text-slate-500">
-                  Activity levels are frequency-based — comparing post volume against measured baselines.
-                  Monitoring {totalSources} sources across 6 platforms.
-                </div>
-              </div>
-            )}
 
             {/* Seismic view: Earthquake list */}
             {heroView === 'seismic' && (

@@ -7,7 +7,7 @@ import { ArrowTopRightOnSquareIcon, ShareIcon, BuildingLibraryIcon } from '@hero
 import { CheckBadgeIcon as CheckBadgeSolid } from '@heroicons/react/24/solid';
 import { NewsItem, WatchpointId, MediaAttachment } from '@/types';
 import { PlatformIcon, platformColors } from './PlatformIcon';
-import { formatTimeAgo, regionBadges, sourceTypeColors, sourceTypeLabels, platformNames } from '@/lib/formatUtils';
+import { formatTimeAgo, regionBadges, regionAccentColors, sourceTypeColors, sourceTypeLabels, platformNames } from '@/lib/formatUtils';
 
 interface NewsCardProps {
   item: NewsItem;
@@ -85,7 +85,7 @@ function MediaDisplay({ media }: { media: MediaAttachment[] }) {
     <>
       {/* Visual media (images/videos) */}
       {visualMedia.length === 1 && !failedImages.has(0) && (
-        <div className="mt-2 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+        <div className="mt-2 rounded-lg overflow-hidden border border-[var(--border-card)]">
           <a
             href={visualMedia[0].url}
             target="_blank"
@@ -116,7 +116,7 @@ function MediaDisplay({ media }: { media: MediaAttachment[] }) {
 
       {/* Multiple images: 2x2 grid */}
       {visualMedia.length > 1 && (
-        <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+        <div className="mt-2 grid grid-cols-2 gap-1 rounded-lg overflow-hidden border border-[var(--border-card)]">
           {visualMedia.slice(0, 4).map((item, index) => {
             if (failedImages.has(index)) return null;
             return (
@@ -273,14 +273,19 @@ export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
   return (
     <article
       className={`
-        relative px-3 py-3 sm:px-4 sm:py-4
+        relative flex gap-3 px-3 py-3.5 sm:px-4 sm:py-4
         bg-[var(--background-card)] rounded-xl
         border border-[var(--border-card)]
         hover:border-[var(--border)]
         transition-all duration-200
       `}
     >
-      <div className="flex flex-col gap-2">
+      {/* Accent line — region-colored */}
+      <div
+        className="w-0.5 self-stretch rounded-full shrink-0"
+        style={{ backgroundColor: regionAccentColors[item.region] || 'var(--border-card)' }}
+      />
+      <div className="flex flex-col gap-2 min-w-0 flex-1">
         {/* Repost indicator */}
         {item.repostContext && (
           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 -mb-1">
@@ -438,7 +443,7 @@ export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
         )}
 
         {/* Row 3: Tags + Actions */}
-        <div className="flex items-center justify-between pt-1.5">
+        <div className="flex items-center justify-between pt-2 mt-1 border-t border-[var(--border-light)]">
           {/* Source type (styled) + Platform (icon + name) */}
           <div className="flex items-center gap-2">
             <span className={`px-2 py-0.5 text-[10px] tracking-wide uppercase rounded-sm ${sourceTypeStyle}`}>
@@ -457,7 +462,7 @@ export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
               aria-label="Share this post"
             >
               <ShareIcon className="w-4 h-4" />
-              <span className="text-caption font-medium">Share</span>
+              <span className="text-caption font-medium hidden sm:inline">Share</span>
             </button>
             {item.url && (
               <button
@@ -466,7 +471,7 @@ export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
                 aria-label="Open source"
               >
                 <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-                <span className="text-caption font-medium">Source</span>
+                <span className="text-caption font-medium hidden sm:inline">Source</span>
               </button>
             )}
           </div>

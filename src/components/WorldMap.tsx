@@ -78,6 +78,7 @@ interface WorldMapProps {
   showZoomControls?: boolean; // Show zoom +/- and globe buttons (default: true)
   tfrs?: TFRMarker[]; // Active TFRs for map markers
   fires?: FireMarker[]; // Active wildfire detections
+  regionCounts?: Record<string, number>; // Article counts per region
 }
 
 // Activity level colors - visual language:
@@ -102,7 +103,7 @@ const regionMarkers: Record<string, { coordinates: [number, number]; label: stri
 const DEFAULT_CENTER: [number, number] = [20, 30];
 const DEFAULT_ZOOM = 1.6;
 
-function WorldMapComponent({ watchpoints, selected, onSelect, activity = {}, significantQuakes = [], hoursWindow = 6, hotspotsOnly = false, useUTC = false, initialFocus, showTimes = true, showZoomControls = true, tfrs = [], fires = [] }: WorldMapProps) {
+function WorldMapComponent({ watchpoints, selected, onSelect, activity = {}, significantQuakes = [], hoursWindow = 6, hotspotsOnly = false, useUTC = false, initialFocus, showTimes = true, showZoomControls = true, tfrs = [], fires = [], regionCounts }: WorldMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hasAppliedInitialFocus, setHasAppliedInitialFocus] = useState(false);
@@ -351,6 +352,33 @@ function WorldMapComponent({ watchpoints, selected, onSelect, activity = {}, sig
                 >
                   {marker.label}
                 </text>
+
+                {/* Article count badge */}
+                {regionCounts && regionCounts[id] !== undefined && (
+                  <g>
+                    <rect
+                      x={-14}
+                      y={-28}
+                      width={28}
+                      height={18}
+                      rx={9}
+                      fill="rgba(0,0,0,0.75)"
+                      stroke={colors.fill}
+                      strokeWidth={1.5}
+                    />
+                    <text
+                      y={-15}
+                      textAnchor="middle"
+                      fill="#fff"
+                      fontSize={11}
+                      fontWeight="700"
+                      fontFamily="system-ui, sans-serif"
+                      style={{ pointerEvents: 'none' }}
+                    >
+                      {regionCounts[id]}
+                    </text>
+                  </g>
+                )}
 
                 {/* Local Time with City */}
                 {showTimes && (
