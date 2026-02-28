@@ -537,15 +537,15 @@ function RegionCard({ name, data, activity, trends, wikiPages, formatTimeAgo }: 
       : { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', text: 'text-emerald-400' };
 
   const activityText = activity
-    ? activity.level === 'normal'
-      ? 'Typical pace'
-      : `${activity.count} posts vs ${activity.baseline} baseline`
+    ? `${activity.count} posts vs ${activity.baseline} baseline`
     : null;
 
   const activityBadgeText = activity
-    ? activity.level === 'normal'
-      ? 'Normal'
-      : `+${activity.percentChange}%`
+    ? activity.percentChange > 0
+      ? `+${activity.percentChange}%`
+      : activity.percentChange < 0
+        ? `${activity.percentChange}%`
+        : 'Normal'
     : null;
 
   // Accent line color based on severity

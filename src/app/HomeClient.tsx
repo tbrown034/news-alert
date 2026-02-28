@@ -1207,6 +1207,13 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               </div>
             )}
 
+            {/* Explanation */}
+            <p className="text-2xs text-slate-400 dark:text-slate-500 leading-relaxed pt-1">
+              Every region has a measured baseline — how many posts typically come in over a 6-hour window.
+              When posts spike above that baseline, the bar grows and changes color.
+              Nobody decides what&apos;s &quot;breaking.&quot; The volume does.
+            </p>
+
             {/* Close */}
             <div className="pt-1 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-end">
               <button
