@@ -8,10 +8,11 @@ import { ErrorBoundary, FeedSkeleton, MapSkeleton } from '@/components/ErrorBoun
 import { watchpoints as defaultWatchpoints } from '@/lib/mockData';
 import { NewsItem, WatchpointId, Watchpoint, Earthquake } from '@/types';
 import { useClock } from '@/hooks/useClock';
-import { GlobeAltIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon, EllipsisHorizontalIcon, Bars3Icon, XMarkIcon, ChevronDownIcon, SunIcon, MoonIcon, InformationCircleIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { GlobeAltIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon, EllipsisHorizontalIcon, Bars3Icon, XMarkIcon, ChevronDownIcon, SunIcon, MoonIcon, ChartBarIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useSession } from '@/lib/auth-client';
 import { MapPinIcon } from '@heroicons/react/24/solid';
 import { RegionActivity } from '@/lib/activityDetection';
+import { formatTimeAgo } from '@/lib/formatUtils';
 import { tier1Sources, tier2Sources, tier3Sources } from '@/lib/sources-clean';
 
 interface ApiResponse {
@@ -96,7 +97,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const [seismicLoading, setSeismicLoading] = useState(false);
   const [seismicLastFetched, setSeismicLastFetched] = useState<Date | null>(null);
   const [showMoreTabs, setShowMoreTabs] = useState(false);
-  const [showPanel, setShowPanel] = useState<'activity' | 'info' | null>(null);
+  const [showPanel, setShowPanel] = useState<'activity' | 'details' | null>('activity');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [useUTC, setUseUTC] = useState(false);
@@ -414,11 +415,11 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
     }
   }, [earthquakes.length, fetchEarthquakes]);
 
-  // Fetch significant earthquakes (5.0+) for Main view on mount
+  // Fetch significant earthquakes (6.0+) for Main view on mount
   useEffect(() => {
     const fetchSignificantQuakes = async () => {
       try {
-        const response = await fetch('/api/seismic?period=day&minMag=5');
+        const response = await fetch('/api/seismic?period=day&minMag=6');
         if (!response.ok) return;
         const data = await response.json();
         if (data.earthquakes) {
@@ -542,18 +543,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-4">
               <a
-                href="#map"
-                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
-              >
-                Map
-              </a>
-              <a
-                href="#feed"
-                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
-              >
-                Feed
-              </a>
-              <a
                 href="/news"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
               >
@@ -623,20 +612,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               <div className="absolute top-full right-4 mt-2 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 md:hidden overflow-hidden">
                 {/* Navigation */}
                 <div className="py-1">
-                  <a
-                    href="#map"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    Map
-                  </a>
-                  <a
-                    href="#feed"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    Feed
-                  </a>
                   <a
                     href="/news"
                     onClick={() => setMobileMenuOpen(false)}
@@ -867,8 +842,9 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             </div>
           </div>
 
-        {/* Status Bar - flush against map bottom */}
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 bg-slate-100 dark:bg-slate-900 rounded-b-2xl border-x border-b border-slate-300 dark:border-slate-600 -mt-[1px] text-xs text-slate-500 dark:text-slate-400 shadow-lg shadow-black/5 dark:shadow-black/30">
+        {/* Status Bar + Panels container - flush against map bottom */}
+          <div className="bg-slate-100 dark:bg-slate-900 rounded-b-2xl border-x border-b border-slate-300 dark:border-slate-600 -mt-[1px] shadow-lg shadow-black/5 dark:shadow-black/30">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-x-3">
 
             {/* Seismic Legend */}
@@ -1039,16 +1015,14 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-x-3">
                   <div className="flex items-center gap-1.5">
                     <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                      hasCritical ? 'bg-red-500 animate-pulse' : hasElevated ? 'bg-orange-500' : 'bg-green-500'
+                      hasCritical ? 'bg-red-500 animate-pulse' : hasElevated ? 'bg-amber-400/70' : 'bg-emerald-400/70'
                     }`} />
                     <span className={`font-medium ${
                       hasCritical
                         ? 'text-red-600 dark:text-red-400'
-                        : hasElevated
-                          ? 'text-orange-600 dark:text-orange-400'
-                          : 'text-slate-700 dark:text-slate-300'
+                        : 'text-slate-600 dark:text-slate-300'
                     }`}>
-                      Feed Activity: {hasCritical ? 'Surging Across Regions' : hasElevated ? 'Above Typical Levels' : 'Normal'}
+                      Feed Activity: {hasCritical ? 'Surging Across Regions' : hasElevated ? 'Elevated' : 'Normal'}
                     </span>
                     {!hasElevated && (
                       <span className="text-slate-500 dark:text-slate-500 text-xs">across all regions</span>
@@ -1059,7 +1033,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                         className="text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 text-xs ml-1 transition-colors"
                         title="View seismic activity"
                       >
-                        · {significantQuakes.length} quake{significantQuakes.length !== 1 ? 's' : ''} M5+
+                        · {significantQuakes.length} quake{significantQuakes.length !== 1 ? 's' : ''} M6+
                       </button>
                     )}
                   </div>
@@ -1067,9 +1041,9 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   {/* Show elevated regions - clickable to filter */}
                   {elevatedRegions.slice(0, 3).map(([regionId, data]) => {
                     const isCritical = data.level === 'critical';
-                    const color = isCritical ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400';
-                    const hoverColor = isCritical ? 'hover:text-red-500 dark:hover:text-red-300' : 'hover:text-orange-500 dark:hover:text-orange-300';
-                    const dotColor = isCritical ? 'bg-red-500' : 'bg-orange-500';
+                    const color = isCritical ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400';
+                    const hoverColor = isCritical ? 'hover:text-red-500 dark:hover:text-red-300' : 'hover:text-slate-700 dark:hover:text-slate-200';
+                    const dotColor = isCritical ? 'bg-red-500' : 'bg-amber-400/70';
                     const pctText = data.percentChange ? `+${data.percentChange}%` : '';
                     return (
                       <button
@@ -1107,23 +1081,23 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               <span className="hidden sm:inline">Activity</span>
             </button>
             <button
-              onClick={() => setShowPanel(showPanel === 'info' ? null : 'info')}
+              onClick={() => setShowPanel(showPanel === 'details' ? null : 'details')}
               className={`flex items-center gap-1 px-2 py-1 text-2xs font-medium rounded transition-colors ${
-                showPanel === 'info'
+                showPanel === 'details'
                   ? 'bg-blue-600 text-white'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
               }`}
-              aria-expanded={showPanel === 'info'}
+              aria-expanded={showPanel === 'details'}
             >
               <InformationCircleIcon className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Info</span>
+              <span className="hidden sm:inline">{heroView === 'main' ? 'Info' : 'Details'}</span>
             </button>
           </div>
         </div>
 
         {/* Activity Panel */}
         {showPanel === 'activity' && (
-          <div className="mt-1 px-3 py-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800 space-y-2.5">
+          <div className="px-3 py-3 border-t border-slate-200 dark:border-slate-700 space-y-2.5">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">Feed Activity</div>
@@ -1133,7 +1107,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               </div>
               <div className="flex items-center gap-3 text-2xs text-slate-400 dark:text-slate-500">
                 <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Normal</span>
-                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-orange-500" />Elevated</span>
+                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Elevated</span>
                 <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />Critical</span>
               </div>
             </div>
@@ -1161,7 +1135,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 const barColor = level === 'critical'
                   ? 'bg-red-500'
                   : level === 'elevated'
-                    ? 'bg-orange-500'
+                    ? 'bg-amber-500'
                     : multiplier < 0.5
                       ? 'bg-blue-400 dark:bg-blue-500'
                       : 'bg-emerald-500';
@@ -1169,7 +1143,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 const multiplierColor = level === 'critical'
                   ? 'text-red-500'
                   : level === 'elevated'
-                    ? 'text-orange-600 dark:text-orange-400'
+                    ? 'text-amber-600 dark:text-amber-400'
                     : 'text-slate-600 dark:text-slate-300';
 
                 return (
@@ -1232,137 +1206,263 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 Waiting for fresh data...
               </div>
             )}
+
+            {/* Close */}
+            <div className="pt-1 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-end">
+              <button
+                onClick={() => setShowPanel(null)}
+                className="text-2xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Info Panel (stats, views, map key) */}
-        {showPanel === 'info' && (
-          <div className="mt-1 px-3 py-2 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800 space-y-3">
-            {/* Quick links to views */}
-            <div>
-              <div className="text-2xs text-slate-400 dark:text-slate-500 mb-1.5 font-medium">Views</div>
-              <div className="flex flex-wrap gap-2">
-                {HERO_ALL_TABS.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = heroView === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => handleHeroViewChange(tab.id as HeroView)}
-                      className={`flex items-center gap-1.5 px-2 py-1 text-xs rounded-md transition-colors ${
-                        isActive
-                          ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {/* Stats */}
-            <div>
-              <div className="text-2xs text-slate-400 dark:text-slate-500 mb-1.5 font-medium">Stats</div>
-              <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 flex-wrap">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-400 dark:text-slate-500">Window:</span>
-                  <span className="font-mono text-slate-700 dark:text-slate-300">{hoursWindow}h</span>
+        {/* Details Panel - view-specific content */}
+        {showPanel === 'details' && (
+          <div className="px-3 py-3 border-t border-slate-200 dark:border-slate-700 space-y-2">
+
+            {/* Main view: Map key */}
+            {heroView === 'main' && (
+              <div>
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Map Key</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 text-2xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Normal activity</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Elevated activity</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Critical activity</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span className="text-slate-600 dark:text-slate-300">M6+ earthquake</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-slate-600 dark:text-slate-300">OSINT source</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-cyan-500" />
+                    <span className="text-slate-600 dark:text-slate-300">News org</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-400 dark:text-slate-500">Latency:</span>
-                  <span className="font-mono text-slate-700 dark:text-slate-300">{newsLoadTimeMs ? `${(newsLoadTimeMs / 1000).toFixed(1)}s` : '—'}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-400 dark:text-slate-500">Sources:</span>
-                  <span className="font-mono text-slate-700 dark:text-slate-300">{totalSources}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-slate-400 dark:text-slate-500">Map Time:</span>
-                  <button
-                    onClick={() => setUseUTC(!useUTC)}
-                    className="font-mono text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 underline decoration-dotted underline-offset-2 transition-colors"
-                  >
-                    {useUTC ? 'UTC' : 'Local'}
-                  </button>
+                <div className="mt-2 text-2xs text-slate-400 dark:text-slate-500">
+                  Activity levels are frequency-based — comparing post volume against measured baselines.
+                  Monitoring {totalSources} sources across 6 platforms.
                 </div>
               </div>
-            </div>
-            {/* Map Key - view-specific */}
-            <div>
-              <div className="text-2xs text-slate-400 dark:text-slate-500 mb-1.5 font-medium">Map Key</div>
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 dark:text-slate-400">
-                {heroView === 'main' && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400 dark:text-slate-500 text-2xs">({hoursWindow}h)</span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-green-500" />
-                      <span>Typical</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-orange-500" />
-                      <span>2x+</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-red-500" />
-                      <span>4x+</span>
-                    </span>
+            )}
+
+            {/* Seismic view: Earthquake list */}
+            {heroView === 'seismic' && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    Recent Earthquakes
+                    {earthquakes.length > 0 && <span className="ml-1 font-normal text-slate-400">({earthquakes.length})</span>}
                   </div>
-                )}
-                {heroView === 'seismic' && (
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /><span>M2.5+</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>M4.5+</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>M6+</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>M7+</span></span>
+                  <span className="text-2xs text-slate-400 dark:text-slate-500">M4.5+ · Last 24h</span>
+                </div>
+                {earthquakes.length === 0 ? (
+                  <div className="text-2xs text-slate-400 dark:text-slate-500 py-2">
+                    {seismicLoading ? 'Loading...' : 'No significant earthquakes in the last 24 hours.'}
                   </div>
-                )}
-                {heroView === 'weather' && (
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-sky-500" /><span>Advisory</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>Watch</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Warning</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>Emergency</span></span>
-                  </div>
-                )}
-                {heroView === 'outages' && (
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>Minor</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Significant</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>Major</span></span>
-                  </div>
-                )}
-                {heroView === 'travel' && (
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" /><span>Level 1</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>Level 2</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Level 3</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>Level 4</span></span>
-                  </div>
-                )}
-                {heroView === 'fires' && (
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>Low</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Moderate</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>High</span></span>
-                  </div>
-                )}
-                {heroView === 'combined' && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500" /><span>Normal</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-500" /><span>Elevated</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /><span>Critical</span></span>
-                    <span className="text-slate-300 dark:text-slate-600">|</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500" /><span>Quake</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-orange-400" /><span>Fire</span></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-400" /><span>TFR</span></span>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto space-y-0.5 -mx-1 px-1">
+                    {[...earthquakes]
+                      .sort((a, b) => b.time.getTime() - a.time.getTime())
+                      .slice(0, 20)
+                      .map((eq) => {
+                        const isSelected = selectedQuake?.id === eq.id;
+                        const magColor = eq.magnitude >= 7 ? 'bg-red-500' : eq.magnitude >= 6 ? 'bg-orange-500' : eq.magnitude >= 5 ? 'bg-amber-500' : 'bg-yellow-500';
+                        return (
+                          <button
+                            key={eq.id}
+                            onClick={() => setSelectedQuake(isSelected ? null : eq)}
+                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${
+                              isSelected
+                                ? 'bg-blue-500/10 dark:bg-blue-500/20 ring-1 ring-blue-500/30'
+                                : 'hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                            }`}
+                          >
+                            <span className={`w-8 text-center text-2xs font-bold text-white rounded px-1 py-0.5 shrink-0 ${magColor}`}>
+                              {eq.magnitude.toFixed(1)}
+                            </span>
+                            <span className="text-2xs text-slate-700 dark:text-slate-200 truncate flex-1">
+                              {eq.place}
+                            </span>
+                            <span className="text-2xs text-slate-400 dark:text-slate-500 shrink-0 tabular-nums">
+                              {eq.depth.toFixed(0)}km
+                            </span>
+                            <span className="text-2xs text-slate-400 dark:text-slate-500 shrink-0">
+                              {formatTimeAgo(eq.time)}
+                            </span>
+                          </button>
+                        );
+                      })}
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Weather view: Severity legend + sources */}
+            {heroView === 'weather' && (
+              <div>
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Severity Levels</div>
+                <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 text-2xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Extreme</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Severe</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Moderate</span>
+                  </div>
+                </div>
+                <div className="mt-2 text-2xs text-slate-400 dark:text-slate-500">
+                  Sources: NWS (US alerts), GDACS (global disasters), EONET (natural events)
+                </div>
+              </div>
+            )}
+
+            {/* Outages view: Severity legend + sources */}
+            {heroView === 'outages' && (
+              <div>
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Severity Levels</div>
+                <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 text-2xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Critical</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Severe</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Moderate</span>
+                  </div>
+                </div>
+                <div className="mt-2 text-2xs text-slate-400 dark:text-slate-500">
+                  Sources: IODA (Internet Outage Detection & Analysis), Cloudflare Radar
+                </div>
+              </div>
+            )}
+
+            {/* Travel view: Advisory levels */}
+            {heroView === 'travel' && (
+              <div>
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Advisory Levels</div>
+                <div className="space-y-1.5 text-2xs">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 text-center font-bold text-red-500">4</span>
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Do Not Travel</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 text-center font-bold text-orange-500">3</span>
+                    <span className="w-2 h-2 rounded-full bg-orange-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Reconsider Travel</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 text-center font-bold text-amber-500">2</span>
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Exercise Increased Caution</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 text-center font-bold text-blue-500">1</span>
+                    <span className="w-2 h-2 rounded-full bg-blue-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Exercise Normal Precautions</span>
+                  </div>
+                </div>
+                <div className="mt-2 text-2xs text-slate-400 dark:text-slate-500">
+                  Source: U.S. Department of State
+                </div>
+              </div>
+            )}
+
+            {/* Fires view: Severity legend + source */}
+            {heroView === 'fires' && (
+              <div>
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Severity Levels</div>
+                <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 text-2xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Critical</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-orange-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Severe</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Moderate</span>
+                  </div>
+                </div>
+                <div className="mt-2 text-2xs text-slate-400 dark:text-slate-500">
+                  Source: NASA FIRMS (Fire Information for Resource Management System)
+                </div>
+              </div>
+            )}
+
+            {/* Combined view: Combined legend */}
+            {heroView === 'combined' && (
+              <div>
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Combined Legend</div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 text-2xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Normal activity</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Elevated activity</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Critical activity</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span className="text-slate-600 dark:text-slate-300">Earthquake</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-orange-400" />
+                    <span className="text-slate-600 dark:text-slate-300">Wildfire</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                    <span className="text-slate-600 dark:text-slate-300">TFR (flight restriction)</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Close */}
+            <div className="pt-1 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-end">
+              <button
+                onClick={() => setShowPanel(null)}
+                className="text-2xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         )}
+
+          </div>{/* end Status Bar + Panels container */}
+
       </section>
 
       {/* Main Content */}
