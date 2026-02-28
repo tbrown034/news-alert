@@ -115,28 +115,39 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
     // Return placeholder during SSR/hydration to avoid mismatch
     if (!currentTime) return '—';
 
+    // AP style: Friday, Feb. 27, 2026, 9:16 p.m. EST
+    const AP_MONTHS = ['Jan.', 'Feb.', 'March', 'April', 'May', 'June', 'July', 'Aug.', 'Sept.', 'Oct.', 'Nov.', 'Dec.'];
+
+    const formatAP = (d: Date, tz?: string) => {
+      // Use Intl to get parts in the target timezone
+      const parts = new Intl.DateTimeFormat('en-US', {
+        ...(tz ? { timeZone: tz } : {}),
+        weekday: 'long', month: 'numeric', day: 'numeric', year: 'numeric',
+        hour: 'numeric', minute: '2-digit', hour12: true,
+      }).formatToParts(d);
+
+      const get = (type: string) => parts.find(p => p.type === type)?.value ?? '';
+      const month = AP_MONTHS[parseInt(get('month')) - 1];
+      const day = get('day');
+      const year = get('year');
+      const dayOfWeek = get('weekday');
+      const hour = get('hour');
+      const minute = get('minute');
+      const period = get('dayPeriod').toLowerCase().replace('am', 'a.m.').replace('pm', 'p.m.');
+
+      return `${dayOfWeek}, ${month} ${day}, ${year}, ${hour}:${minute} ${period}`;
+    };
+
     if (useUTC) {
-      return currentTime.toLocaleString('en-US', {
-        timeZone: 'UTC',
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      }) + ' UTC';
+      return formatAP(currentTime, 'UTC') + ' UTC';
     }
-    return currentTime.toLocaleString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-      timeZoneName: 'short',
-    });
+
+    // Get local timezone abbreviation
+    const tzAbbr = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
+      .formatToParts(currentTime)
+      .find(p => p.type === 'timeZoneName')?.value ?? '';
+
+    return formatAP(currentTime) + ' ' + tzAbbr;
   };
 
   // Initialize autoUpdate preference from localStorage (after hydration)
@@ -504,9 +515,10 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               onClick={() => {
                 setSelectedWatchpoint('all');
                 setMobileMenuOpen(false);
+                fetchNews();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className="flex items-center gap-2 sm:gap-4 hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-lg"
+              className="keycap-press flex items-center gap-2 sm:gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-lg"
               aria-label="News Pulse home - reset to all regions"
             >
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-black rounded-xl flex items-center justify-center shadow-md shadow-black/30 border border-slate-700">
@@ -1013,10 +1025,10 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 );
               }
 
-              // Get all regions with elevated or critical activity
+              // Get specific regions with elevated or critical activity (exclude 'all' — it has its own thermometer bar)
               const elevatedRegions = activityData
                 ? Object.entries(activityData)
-                    .filter(([, data]) => data.level === 'elevated' || data.level === 'critical')
+                    .filter(([id, data]) => id !== 'all' && (data.level === 'elevated' || data.level === 'critical'))
                     .sort((a, b) => (b[1].multiplier || 0) - (a[1].multiplier || 0)) // Sort by multiplier desc
                 : [];
 
@@ -1109,118 +1121,83 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
           </div>
         </div>
 
-        {/* Activity Thermometer Panel */}
+        {/* Activity Panel */}
         {showPanel === 'activity' && (
-          <div className="mt-1 px-3 py-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="mt-1 px-3 py-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-800 space-y-2.5">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">Feed Activity Monitor</div>
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">Feed Activity</div>
                 <div className="text-2xs text-slate-400 dark:text-slate-500 mt-0.5">
-                  How many posts we collected vs how many we&apos;d expect right now
+                  Posts in the last {hoursWindow}h vs measured baseline
                 </div>
               </div>
               <div className="flex items-center gap-3 text-2xs text-slate-400 dark:text-slate-500">
                 <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Normal</span>
-                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Elevated</span>
+                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-orange-500" />Elevated</span>
                 <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />Critical</span>
               </div>
             </div>
 
-            {/* Thermometer bars per region */}
+            {/* Activity bars — linear 0-5× scale, 1× baseline mark at 20% */}
             {activityData && (() => {
               const scoredRegions = [
+                { id: 'all', label: 'All' },
                 { id: 'us', label: 'US' },
                 { id: 'middle-east', label: 'MidEast' },
                 { id: 'europe-russia', label: 'Europe' },
               ] as const;
-              // Asia, LatAm, Africa excluded — low source coverage, not assessed
 
-              const renderBar = (regionId: string, label: string, excluded: boolean = false) => {
+              const MAX_SCALE = 5; // 5× = full bar width
+              const BASELINE_PCT = (1 / MAX_SCALE) * 100; // 1× mark at 20%
+
+              const renderBar = (regionId: string, label: string) => {
                 const data = activityData[regionId as WatchpointId];
                 if (!data) return null;
 
                 const { count, baseline, multiplier, level } = data;
-                // Scale: 6x baseline gives room to show critical (5x) marker visibly
-                const maxScale = Math.max(6 * baseline, count * 1.1, baseline);
-                const fillPct = Math.min((count / maxScale) * 100, 100);
-                const baselinePct = (baseline / maxScale) * 100;
-                const elevatedPct = ((2.5 * baseline) / maxScale) * 100;
-                const criticalPct = ((5 * baseline) / maxScale) * 100;
+                // Bar width directly represents the multiplier on a 0-5× scale
+                const fillPct = Math.min((multiplier / MAX_SCALE) * 100, 100);
 
-                const barColor = excluded
-                  ? 'bg-slate-400 dark:bg-slate-500'
-                  : level === 'critical'
-                    ? 'bg-red-500'
-                    : level === 'elevated'
-                      ? 'bg-amber-500'
-                      : multiplier < 0.5
-                        ? 'bg-blue-400 dark:bg-blue-500'
-                        : 'bg-emerald-500';
+                const barColor = level === 'critical'
+                  ? 'bg-red-500'
+                  : level === 'elevated'
+                    ? 'bg-orange-500'
+                    : multiplier < 0.5
+                      ? 'bg-blue-400 dark:bg-blue-500'
+                      : 'bg-emerald-500';
 
-                const labelColor = excluded
-                  ? 'text-slate-400 dark:text-slate-500'
-                  : level === 'critical'
-                    ? 'text-red-500'
-                    : level === 'elevated'
-                      ? 'text-amber-500'
-                      : 'text-slate-600 dark:text-slate-300';
+                const multiplierColor = level === 'critical'
+                  ? 'text-red-500'
+                  : level === 'elevated'
+                    ? 'text-orange-600 dark:text-orange-400'
+                    : 'text-slate-600 dark:text-slate-300';
 
                 return (
                   <div key={regionId} className="flex items-center gap-2">
-                    {/* Region label */}
-                    <div className={`w-14 text-right text-2xs font-medium ${labelColor} tabular-nums shrink-0`}>
+                    <div className="w-14 text-right text-2xs font-medium text-slate-500 dark:text-slate-400 shrink-0">
                       {label}
                     </div>
 
-                    {/* Thermometer bar */}
-                    <div className="flex-1 relative h-4 bg-slate-200/60 dark:bg-slate-800/80 rounded-full overflow-hidden">
-                      {/* Fill */}
+                    {/* Bar — longer = more activity, tick at 1× baseline */}
+                    <div className="flex-1 relative h-2.5 bg-slate-200/60 dark:bg-slate-800/80 rounded-full overflow-hidden">
                       <div
                         className={`absolute inset-y-0 left-0 rounded-full ${barColor} transition-all duration-700 ease-out`}
                         style={{ width: `${fillPct}%` }}
                       />
-
-                      {/* Baseline marker (1x) */}
+                      {/* 1× baseline tick */}
                       <div
-                        className="absolute top-0 bottom-0 w-px bg-slate-500 dark:bg-slate-400 z-10"
-                        style={{ left: `${baselinePct}%` }}
-                        title={`Baseline: ${baseline} posts per 6h (14-day avg)`}
-                      >
-                        <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-slate-500 dark:bg-slate-400" />
-                      </div>
-
-                      {/* Elevated threshold marker (2.5x) — only for scored regions */}
-                      {!excluded && elevatedPct < 98 && (
-                        <div
-                          className="absolute top-0 bottom-0 w-px bg-amber-500/40 z-10"
-                          style={{ left: `${elevatedPct}%` }}
-                          title="Elevated: 2.5× expected volume"
-                        />
-                      )}
-
-                      {/* Critical threshold marker (5x) — only for scored regions */}
-                      {!excluded && criticalPct < 98 && (
-                        <div
-                          className="absolute top-0 bottom-0 w-px bg-red-500/40 z-10"
-                          style={{ left: `${criticalPct}%` }}
-                          title="Critical: 5× expected volume"
-                        />
-                      )}
+                        className="absolute top-0 bottom-0 w-0.5 bg-slate-900/20 dark:bg-white/20 z-10"
+                        style={{ left: `${BASELINE_PCT}%` }}
+                      />
                     </div>
 
-                    {/* Numeric readout */}
-                    <div className="w-28 sm:w-36 flex items-center gap-1 shrink-0">
-                      <span className={`text-2xs font-mono tabular-nums ${labelColor}`}>
-                        {count} <span className="font-sans text-slate-400 dark:text-slate-500">posts</span> / {baseline} <span className="font-sans text-slate-400 dark:text-slate-500">exp</span>
+                    {/* Multiplier (hero number) + post counts */}
+                    <div className="w-28 sm:w-36 flex items-baseline gap-1.5 shrink-0">
+                      <span className={`text-sm font-semibold tabular-nums leading-none ${multiplierColor}`}>
+                        {multiplier.toFixed(1)}×
                       </span>
-                      <span className={`text-2xs font-mono tabular-nums ${
-                        excluded ? 'text-slate-400 dark:text-slate-500' :
-                        multiplier >= 5 ? 'text-red-500 font-semibold' :
-                        multiplier >= 2.5 ? 'text-amber-500 font-semibold' :
-                        multiplier < 0.5 ? 'text-blue-400' :
-                        'text-slate-500 dark:text-slate-400'
-                      }`}>
-                        ({multiplier.toFixed(1)}x)
+                      <span className="text-2xs text-slate-400 dark:text-slate-500 tabular-nums">
+                        {count}<span className="mx-px opacity-40">/</span>{baseline}
                       </span>
                     </div>
                   </div>
@@ -1228,8 +1205,23 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               };
 
               return (
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {scoredRegions.map(r => renderBar(r.id, r.label))}
+                  {/* Baseline label below bars */}
+                  <div className="flex items-center gap-2 -mt-0.5">
+                    <div className="w-14 shrink-0" />
+                    <div className="flex-1 relative">
+                      <div
+                        className="text-[9px] text-slate-400 dark:text-slate-500 leading-none"
+                        style={{ paddingLeft: `calc(${BASELINE_PCT}% - 6px)` }}
+                      >
+                        1×
+                      </div>
+                    </div>
+                    <div className="w-28 sm:w-36 shrink-0 text-2xs text-slate-400 dark:text-slate-500">
+                      actual<span className="mx-px opacity-40">/</span>baseline
+                    </div>
+                  </div>
                 </div>
               );
             })()}
@@ -1240,17 +1232,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 Waiting for fresh data...
               </div>
             )}
-
-            {/* How it works explanation */}
-            <div className="pt-2 border-t border-slate-200/50 dark:border-slate-700/30">
-              <div className="text-2xs text-slate-400 dark:text-slate-500 leading-relaxed">
-                <span className="font-medium text-slate-500 dark:text-slate-400">How it works:</span>{' '}
-                We compare the last {hoursWindow} hours of posts against a 14-day rolling average baseline.
-                The <span className="inline-flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-slate-500 dark:bg-slate-400 inline-block" /></span> marker
-                shows the baseline. When actual posts reach 2.5× baseline (and 25+ posts),
-                activity is elevated. At 5× (and 50+ posts), it&apos;s critical.
-              </div>
-            </div>
           </div>
         )}
 

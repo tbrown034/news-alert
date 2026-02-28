@@ -527,13 +527,13 @@ function RegionCard({ name, data, activity, trends, wikiPages, formatTimeAgo }: 
   const activityColor = activity?.level === 'critical'
     ? 'text-red-400'
     : activity?.level === 'elevated'
-      ? 'text-amber-400'
+      ? 'text-orange-400'
       : 'text-emerald-400';
 
   const activityBadge = activity?.level === 'critical'
     ? { bg: 'bg-red-500/15', border: 'border-red-500/30', text: 'text-red-400' }
     : activity?.level === 'elevated'
-      ? { bg: 'bg-amber-500/15', border: 'border-amber-500/30', text: 'text-amber-400' }
+      ? { bg: 'bg-orange-500/15', border: 'border-orange-500/30', text: 'text-orange-400' }
       : { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', text: 'text-emerald-400' };
 
   const activityText = activity
