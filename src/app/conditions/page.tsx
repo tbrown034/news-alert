@@ -498,35 +498,34 @@ export default function ConditionsPage() {
               </div>
             </div>
 
-            {/* Map with post counts */}
-            {activityData && (
-              <div className="card overflow-hidden">
-                <div className="h-[200px] sm:h-[240px]">
-                  <WorldMap
-                    watchpoints={REGIONS.map((r, i) => ({
+            {/* Map with event counts */}
+            <div className="card overflow-hidden">
+              <div className="h-[200px] sm:h-[240px]">
+                <WorldMap
+                  watchpoints={REGIONS.map((r, i) => {
+                    const rd = data.byRegion[r.id];
+                    const hasCritical = rd && rd.criticalCount > 0;
+                    const hasEvents = rd && rd.totalCount > 0;
+                    return {
                       id: r.id as WatchpointId,
                       name: r.name,
                       shortName: r.name,
                       priority: i,
-                      activityLevel: (activityData[r.id]?.level || 'normal') as Watchpoint['activityLevel'],
-                      color: activityData[r.id]?.level === 'critical'
-                        ? '#ef4444'
-                        : activityData[r.id]?.level === 'elevated'
-                          ? '#f97316'
-                          : '#22c55e',
-                    }))}
-                    selected="all"
-                    onSelect={() => {}}
-                    activity={activityData}
-                    showTimes={false}
-                    showZoomControls={false}
-                    regionCounts={Object.fromEntries(
-                      REGIONS.map(r => [r.id, activityData[r.id]?.count ?? 0])
-                    )}
-                  />
-                </div>
+                      activityLevel: (hasCritical ? 'critical' : hasEvents ? 'elevated' : 'normal') as Watchpoint['activityLevel'],
+                      color: hasCritical ? '#ef4444' : hasEvents ? '#f97316' : '#22c55e',
+                    };
+                  })}
+                  selected="all"
+                  onSelect={() => {}}
+                  activity={activityData || undefined}
+                  showTimes={false}
+                  showZoomControls={false}
+                  regionCounts={Object.fromEntries(
+                    REGIONS.map(r => [r.id, data.byRegion[r.id]?.totalCount ?? 0])
+                  )}
+                />
               </div>
-            )}
+            </div>
 
             {/* Section: Activity */}
             <div className="section-header">
