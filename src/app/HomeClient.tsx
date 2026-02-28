@@ -95,7 +95,8 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const [seismicLoading, setSeismicLoading] = useState(false);
   const [seismicLastFetched, setSeismicLastFetched] = useState<Date | null>(null);
   const [showMoreTabs, setShowMoreTabs] = useState(false);
-  const [showPanel, setShowPanel] = useState<'activity' | 'details' | null>(null);
+  const [showPanel, setShowPanel] = useState<'activity' | 'details' | null>('activity');
+  const [activityHistory, setActivityHistory] = useState<{ timestamp: string; total: number; regions: Record<string, number> }[] | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [useUTC] = useState(false);
@@ -362,6 +363,14 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
       // No SSR data (failed or timed out) - do a full fetch
       fetchNewsRef.current();
     }
+  }, []);
+
+  // Fetch activity history for sparklines (24h trend)
+  useEffect(() => {
+    fetch('/api/analytics/activity?view=history&days=1')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.dataPoints) setActivityHistory(data.dataPoints); })
+      .catch(() => {}); // Sparklines are optional — fail silently
   }, []);
 
   // Auto-refresh every 5 minutes using incremental updates
@@ -680,7 +689,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
                         <GlobeAltIcon className="w-4 h-4 text-blue-500" />
-                        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Global Monitor</h2>
+                        <h2 className="text-subhead">Global Monitor</h2>
                       </div>
                       <span className="text-xs font-mono text-slate-500 dark:text-slate-400 ml-6">{formatHeaderTime()}</span>
                     </div>
@@ -688,37 +697,37 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   {heroView === 'seismic' && (
                     <>
                       <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse" />
-                      <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Seismic Activity</h2>
+                      <h2 className="text-subhead">Seismic Activity</h2>
                     </>
                   )}
                   {heroView === 'weather' && (
                     <>
                       <CloudIcon className="w-4 h-4 text-sky-500" />
-                      <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Weather Alerts</h2>
+                      <h2 className="text-subhead">Weather Alerts</h2>
                     </>
                   )}
                   {heroView === 'outages' && (
                     <>
                       <SignalIcon className="w-4 h-4 text-purple-500" />
-                      <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Internet Outages</h2>
+                      <h2 className="text-subhead">Internet Outages</h2>
                     </>
                   )}
                   {heroView === 'travel' && (
                     <>
                       <ExclamationTriangleIcon className="w-4 h-4 text-amber-500" />
-                      <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Travel Advisories</h2>
+                      <h2 className="text-subhead">Travel Advisories</h2>
                     </>
                   )}
                   {heroView === 'fires' && (
                     <>
                       <FireIcon className="w-4 h-4 text-orange-500" />
-                      <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Wildfire Tracker</h2>
+                      <h2 className="text-subhead">Wildfire Tracker</h2>
                     </>
                   )}
                   {heroView === 'combined' && (
                     <>
                       <GlobeAltIcon className="w-4 h-4 text-blue-500" />
-                      <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Combined Monitor</h2>
+                      <h2 className="text-subhead">Combined Monitor</h2>
                     </>
                   )}
                 </div>
@@ -1017,7 +1026,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                       Feed Activity: {hasCritical ? 'Surging Across Regions' : hasElevated ? 'Elevated' : 'Normal'}
                     </span>
                     {!hasElevated && (
-                      <span className="text-slate-500 dark:text-slate-500 text-xs">across all regions</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-xs">across all regions</span>
                     )}
                     {significantQuakes.length > 0 && (
                       <button
@@ -1091,29 +1100,25 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
 
         {/* Activity Panel */}
         {showPanel === 'activity' && (
-          <div className="px-3 py-3 border-t border-slate-200 dark:border-slate-700 space-y-2.5">
-            <div className="flex items-center justify-between">
+          <div className="px-3 py-3 border-t border-slate-200 dark:border-slate-700 space-y-2.5" role="region" aria-label="Feed activity">
+            {/* Header: title + subtitle + close button */}
+            <div className="flex items-start justify-between">
               <div>
                 <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">Feed Activity</div>
-                <div className="text-2xs text-slate-400 dark:text-slate-500 mt-0.5">
+                <div className="text-2xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Posts in the last {hoursWindow}h vs measured baseline
                 </div>
               </div>
-              <div className="flex items-center gap-3 text-2xs text-slate-400 dark:text-slate-500">
-                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Normal</span>
-                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Elevated</span>
-                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />Critical</span>
-                <button
-                  onClick={() => setShowPanel(null)}
-                  className="ml-1 p-0.5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                  aria-label="Close activity panel"
-                >
-                  <XMarkIcon className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                onClick={() => setShowPanel(null)}
+                className="p-1.5 min-w-9 min-h-9 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                aria-label="Close activity panel"
+              >
+                <XMarkIcon className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Activity bars — linear 0-5× scale, 1× baseline mark at 20% */}
+            {/* Activity bars — linear 0-6× scale, threshold ticks at 1×, 2.5×, 5× */}
             {activityData && (() => {
               const scoredRegions = [
                 { id: 'all', label: 'All' },
@@ -1122,16 +1127,39 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 { id: 'europe-russia', label: 'Europe' },
               ] as const;
 
-              const MAX_SCALE = 5; // 5× = full bar width
-              const BASELINE_PCT = (1 / MAX_SCALE) * 100; // 1× mark at 20%
+              const MAX_SCALE = 6; // 6× = full bar width
+              const BASELINE_PCT = (1 / MAX_SCALE) * 100;       // 1× at ~16.7%
+              const ELEVATED_PCT = (2.5 / MAX_SCALE) * 100;     // 2.5× at ~41.7%
+              const CRITICAL_PCT = (5 / MAX_SCALE) * 100;       // 5× at ~83.3%
+
+              // Build sparkline SVG path from activity history
+              const getSparklinePath = (regionId: string): string | null => {
+                if (!activityHistory || activityHistory.length < 3) return null;
+                const points = activityHistory.map(dp =>
+                  regionId === 'all' ? dp.total : (dp.regions[regionId] ?? 0)
+                );
+                const max = Math.max(...points, 1);
+                const w = 52, h = 18, pad = 2;
+                const stepX = (w - pad * 2) / (points.length - 1);
+                return points
+                  .map((v, i) => `${pad + i * stepX},${pad + (h - pad * 2) * (1 - v / max)}`)
+                  .join(' ');
+              };
+
+              const getSparklineStroke = (level: string, multiplier: number): string => {
+                if (level === 'critical') return '#ef4444';
+                if (level === 'elevated') return '#f59e0b';
+                if (multiplier < 0.5) return '#60a5fa';
+                return '#10b981';
+              };
 
               const renderBar = (regionId: string, label: string) => {
                 const data = activityData[regionId as WatchpointId];
                 if (!data) return null;
 
                 const { count, multiplier, level } = data;
-                // Bar width directly represents the multiplier on a 0-5× scale
                 const fillPct = Math.min((multiplier / MAX_SCALE) * 100, 100);
+                const isOverflow = multiplier > MAX_SCALE;
 
                 const barColor = level === 'critical'
                   ? 'bg-red-500'
@@ -1141,39 +1169,75 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                       ? 'bg-blue-400 dark:bg-blue-500'
                       : 'bg-emerald-500';
 
-                const multiplierColor = level === 'critical'
+                const countColor = level === 'critical'
                   ? 'text-red-500'
                   : level === 'elevated'
                     ? 'text-amber-600 dark:text-amber-400'
                     : 'text-slate-600 dark:text-slate-300';
 
+                const sparkline = getSparklinePath(regionId);
+                const strokeColor = getSparklineStroke(level, multiplier);
+
                 return (
-                  <div key={regionId} className="flex items-center gap-2">
+                  <div key={regionId} className="flex items-center gap-2" role="group" aria-label={`${label}: ${count} posts, ${multiplier.toFixed(1)} times typical, ${level} activity`}>
                     <div className="w-14 text-right text-2xs font-medium text-slate-500 dark:text-slate-400 shrink-0">
                       {label}
                     </div>
 
-                    {/* Bar — longer = more activity, tick at 1× baseline */}
-                    <div className="flex-1 relative h-2.5 bg-slate-200/60 dark:bg-slate-800/80 rounded-full overflow-hidden">
+                    {/* Bar with threshold ticks */}
+                    <div className="flex-1 relative h-3 bg-slate-200/60 dark:bg-slate-800/80 rounded-full overflow-hidden">
                       <div
                         className={`absolute inset-y-0 left-0 rounded-full ${barColor} transition-all duration-700 ease-out`}
                         style={{ width: `${fillPct}%` }}
                       />
-                      {/* 1× baseline tick */}
+                      {/* Overflow pulse — bar exceeds scale */}
+                      {isOverflow && (
+                        <div className="absolute inset-y-0 right-0 w-4 z-10 animate-pulse"
+                          style={{ background: `linear-gradient(to right, transparent, ${level === 'critical' ? 'rgba(239,68,68,0.5)' : 'rgba(245,158,11,0.5)'})` }}
+                        />
+                      )}
+                      {/* 1× baseline tick — solid */}
                       <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-slate-900/20 dark:bg-white/20 z-10"
+                        className="absolute top-0 bottom-0 w-0.5 bg-slate-900/25 dark:bg-white/25 z-10"
                         style={{ left: `${BASELINE_PCT}%` }}
+                      />
+                      {/* 2.5× elevated tick — dashed */}
+                      <div
+                        className="absolute top-0 bottom-0 border-l border-dashed border-slate-400/30 dark:border-slate-500/30 z-10"
+                        style={{ left: `${ELEVATED_PCT}%` }}
+                      />
+                      {/* 5× critical tick — dashed */}
+                      <div
+                        className="absolute top-0 bottom-0 border-l border-dashed border-slate-400/30 dark:border-slate-500/30 z-10"
+                        style={{ left: `${CRITICAL_PCT}%` }}
                       />
                     </div>
 
-                    {/* Post count + multiplier context */}
-                    <div className="w-28 sm:w-36 flex items-baseline gap-1.5 shrink-0">
-                      <span className={`text-sm font-semibold tabular-nums leading-none ${multiplierColor}`}>
-                        {count}
-                      </span>
-                      <span className="text-2xs text-slate-400 dark:text-slate-500 tabular-nums">
-                        posts · {multiplier.toFixed(1)}× typical
-                      </span>
+                    {/* Sparkline (24h trend) */}
+                    {sparkline ? (
+                      <svg width={52} height={18} className="shrink-0 hidden sm:block" viewBox="0 0 52 18" fill="none" role="img" aria-label={`${label} 24-hour trend`}>
+                        <polyline
+                          points={sparkline}
+                          stroke={strokeColor}
+                          strokeWidth={1.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          fill="none"
+                          opacity={0.8}
+                        />
+                      </svg>
+                    ) : (
+                      <div className="w-13 shrink-0 hidden sm:block" />
+                    )}
+
+                    {/* Stats — stacked: count on top, multiplier below */}
+                    <div className="w-28 sm:w-32 shrink-0 text-right">
+                      <div className={`text-sm font-semibold tabular-nums leading-tight ${countColor}`}>
+                        {count} <span className="text-2xs font-normal text-slate-500 dark:text-slate-400">posts</span>
+                      </div>
+                      <div className={`text-2xs tabular-nums leading-tight ${isOverflow ? countColor + ' font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
+                        {multiplier.toFixed(1)}× typical
+                      </div>
                     </div>
                   </div>
                 );
@@ -1182,19 +1246,19 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               return (
                 <div className="space-y-2">
                   {scoredRegions.map(r => renderBar(r.id, r.label))}
-                  {/* Baseline label below bars */}
+                  {/* Threshold labels + legend below bars — single row */}
                   <div className="flex items-center gap-2 -mt-0.5">
                     <div className="w-14 shrink-0" />
-                    <div className="flex-1 relative">
-                      <div
-                        className="text-[9px] text-slate-400 dark:text-slate-500 leading-none"
-                        style={{ paddingLeft: `calc(${BASELINE_PCT}% - 6px)` }}
-                      >
-                        1×
-                      </div>
+                    <div className="flex-1 relative flex text-[10px] text-slate-500 dark:text-slate-400 leading-none">
+                      <span style={{ paddingLeft: `calc(${BASELINE_PCT}% - 6px)` }}>1×</span>
+                      <span className="hidden sm:inline" style={{ position: 'absolute', left: `calc(${ELEVATED_PCT}% - 9px)` }}>2.5×</span>
+                      <span style={{ position: 'absolute', left: `calc(${CRITICAL_PCT}% - 7px)` }}>5×</span>
                     </div>
-                    <div className="w-28 sm:w-36 shrink-0 text-2xs text-slate-400 dark:text-slate-500">
-                      posts / typical
+                    <div className="w-13 shrink-0 hidden sm:block" />
+                    <div className="w-28 sm:w-32 shrink-0 flex items-center justify-end gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                      <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Normal</span>
+                      <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Elevated</span>
+                      <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />Critical</span>
                     </div>
                   </div>
                 </div>
@@ -1202,14 +1266,14 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             })()}
 
             {!activityConfirmed && (
-              <div className="text-2xs text-slate-400 dark:text-slate-500 italic flex items-center gap-1.5">
+              <div className="text-2xs text-slate-500 dark:text-slate-400 italic flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" />
                 Waiting for fresh data...
               </div>
             )}
 
             {/* Explanation */}
-            <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed pt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pt-1">
               Every region has a measured baseline — how many posts typically come in over a 6-hour window.
               When posts spike above that baseline, the bar grows and changes color.
               Nobody decides what&apos;s &quot;breaking.&quot; The volume does.{' '}
@@ -1230,10 +1294,10 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     Recent Earthquakes
                     {earthquakes.length > 0 && <span className="ml-1 font-normal text-slate-400">({earthquakes.length})</span>}
                   </div>
-                  <span className="text-2xs text-slate-400 dark:text-slate-500">M4.5+ · Last 24h</span>
+                  <span className="text-2xs text-slate-500 dark:text-slate-400">M4.5+ · Last 24h</span>
                 </div>
                 {earthquakes.length === 0 ? (
-                  <div className="text-2xs text-slate-400 dark:text-slate-500 py-2">
+                  <div className="text-2xs text-slate-500 dark:text-slate-400 py-2">
                     {seismicLoading ? 'Loading...' : 'No significant earthquakes in the last 24 hours.'}
                   </div>
                 ) : (
@@ -1260,10 +1324,10 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                             <span className="text-2xs text-slate-700 dark:text-slate-200 truncate flex-1">
                               {eq.place}
                             </span>
-                            <span className="text-2xs text-slate-400 dark:text-slate-500 shrink-0 tabular-nums">
+                            <span className="text-2xs text-slate-500 dark:text-slate-400 shrink-0 tabular-nums">
                               {eq.depth.toFixed(0)}km
                             </span>
-                            <span className="text-2xs text-slate-400 dark:text-slate-500 shrink-0">
+                            <span className="text-2xs text-slate-500 dark:text-slate-400 shrink-0">
                               {formatTimeAgo(eq.time)}
                             </span>
                           </button>
@@ -1292,7 +1356,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     <span className="text-slate-600 dark:text-slate-300">Moderate</span>
                   </div>
                 </div>
-                <div className="mt-2 text-2xs text-slate-400 dark:text-slate-500">
+                <div className="mt-2 text-2xs text-slate-500 dark:text-slate-400">
                   Sources: NWS (US alerts), GDACS (global disasters), EONET (natural events)
                 </div>
               </div>
@@ -1316,7 +1380,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     <span className="text-slate-600 dark:text-slate-300">Moderate</span>
                   </div>
                 </div>
-                <div className="mt-2 text-2xs text-slate-400 dark:text-slate-500">
+                <div className="mt-2 text-2xs text-slate-500 dark:text-slate-400">
                   Sources: IODA (Internet Outage Detection & Analysis), Cloudflare Radar
                 </div>
               </div>
@@ -1348,7 +1412,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     <span className="text-slate-600 dark:text-slate-300">Exercise Normal Precautions</span>
                   </div>
                 </div>
-                <div className="mt-2 text-2xs text-slate-400 dark:text-slate-500">
+                <div className="mt-2 text-2xs text-slate-500 dark:text-slate-400">
                   Source: U.S. Department of State
                 </div>
               </div>
@@ -1372,7 +1436,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     <span className="text-slate-600 dark:text-slate-300">Moderate</span>
                   </div>
                 </div>
-                <div className="mt-2 text-2xs text-slate-400 dark:text-slate-500">
+                <div className="mt-2 text-2xs text-slate-500 dark:text-slate-400">
                   Source: NASA FIRMS (Fire Information for Resource Management System)
                 </div>
               </div>
@@ -1415,7 +1479,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             <div className="pt-1 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-end">
               <button
                 onClick={() => setShowPanel(null)}
-                className="text-2xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                className="text-2xs text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
                 Close
               </button>

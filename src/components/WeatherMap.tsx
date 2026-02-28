@@ -218,7 +218,7 @@ function WeatherMapComponent({ onEventSelect, focusOnId }: WeatherMapProps) {
     return (
       <div className={`relative w-full ${theme.water} overflow-hidden`}>
         <div className={`relative ${mapDimensions.height} flex items-center justify-center`}>
-          <div className="text-gray-500 dark:text-gray-600 text-sm">Loading weather map...</div>
+          <div className="text-gray-500 dark:text-gray-400 text-sm">Loading weather map...</div>
         </div>
       </div>
     );

@@ -113,7 +113,7 @@ export default function AboutPage() {
             <div className="bg-[var(--background-secondary)] rounded-lg border border-[var(--border-light)] p-4 space-y-2">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">Feed Activity</span>
-                <div className="flex items-center gap-3 text-[10px] text-slate-400 dark:text-slate-500">
+                <div className="flex items-center gap-3 text-[10px] text-slate-500 dark:text-slate-400">
                   <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Normal</span>
                   <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Elevated</span>
                   <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />Critical</span>
@@ -129,7 +129,7 @@ export default function AboutPage() {
                 <div className="w-14 shrink-0" />
                 <div className="flex-1 relative">
                   <div
-                    className="text-[9px] text-slate-400 dark:text-slate-500 leading-none"
+                    className="text-[9px] text-slate-500 dark:text-slate-400 leading-none"
                     style={{ paddingLeft: `calc(${BASELINE_PCT}% - 6px)` }}
                   >
                     1×

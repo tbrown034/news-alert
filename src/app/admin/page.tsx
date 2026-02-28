@@ -90,9 +90,9 @@ export default function AdminPage() {
               <div>
                 <p className="text-sm font-medium text-slate-900 dark:text-white">{s.label}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.detail}</p>
-                {s.sub && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{s.sub}</p>}
+                {s.sub && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.sub}</p>}
               </div>
-              <ChevronRightIcon className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+              <ChevronRightIcon className="w-4 h-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
             </Link>
           ))}
         </div>

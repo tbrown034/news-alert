@@ -139,7 +139,7 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
     return (
       <div className={`relative w-full ${theme.water} overflow-hidden`}>
         <div className={`relative ${mapDimensions.height} flex items-center justify-center`}>
-          <div className="text-gray-500 dark:text-gray-600 text-sm">Loading seismic map...</div>
+          <div className="text-gray-500 dark:text-gray-400 text-sm">Loading seismic map...</div>
         </div>
       </div>
     );
@@ -273,7 +273,7 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
         <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <div className="text-sm text-slate-700 dark:text-slate-200 bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-lg font-medium shadow-sm border border-slate-200 dark:border-slate-700">
-              {filteredEarthquakes.length} quakes {filterMode === 'major' ? 'M5+' : 'M4+'} <span className="text-slate-400 dark:text-slate-500">(24h)</span>
+              {filteredEarthquakes.length} quakes {filterMode === 'major' ? 'M5+' : 'M4+'} <span className="text-slate-500 dark:text-slate-400">(24h)</span>
             </div>
             <div className="flex bg-white/90 dark:bg-slate-800/90 rounded-lg overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700">
               <button

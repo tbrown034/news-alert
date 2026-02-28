@@ -16,7 +16,7 @@
   /* Foreground hierarchy */
   --foreground: #1a1a2e;
   --foreground-muted: #495057;
-  --foreground-light: #868e96;
+  --foreground-light: #6e767f;
 
   /* Borders */
   --border: #dee2e6;
@@ -62,7 +62,8 @@
   --space-2xl: 32px;
 
   /* Type scale - Mobile first */
-  --text-display: 1.5rem;      /* 24px */
+  --text-display: 1.75rem;     /* 28px */
+  --text-subhead: 1.125rem;    /* 18px */
   --text-title: 1.0625rem;     /* 17px */
   --text-body: 0.9375rem;      /* 15px */
   --text-label: 0.8125rem;     /* 13px */
@@ -83,7 +84,7 @@
   /* Foreground hierarchy - warm off-white, not harsh */
   --foreground: #f1f3f5;
   --foreground-muted: #adb5bd;
-  --foreground-light: #6c757d;
+  --foreground-light: #8b939b;
 
   /* Borders - subtle, low contrast */
   --border: #2a2a2a;
@@ -158,6 +159,7 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Serif headlines */
@@ -173,8 +175,9 @@ h1, h2, h3, .font-serif {
    Source Serif for headlines = brand signature.
 
    Mobile-First Scale:
-   - Display: 24px → 30px (section headers)
-   - Title:   17px → 19px (news headlines)
+   - Display: 28px → 36px (page headers)
+   - Subhead: 18px → 20px (section headers)
+   - Title:   15px → 16px (news headlines)
    - Body:    15px → 16px (content)
    - Label:   13px → 14px (source names)
    - Caption: 12px        (timestamps)
@@ -183,19 +186,35 @@ h1, h2, h3, .font-serif {
 
 /* === TYPE SCALE CLASSES === */
 
-/* Display - Section headers like "Live Wire" */
+/* Display - Page-level headers */
 .text-display {
   font-family: var(--font-serif);
   font-size: var(--text-display);
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   color: var(--foreground);
 }
 
 @media (min-width: 640px) {
   .text-display {
-    font-size: 1.875rem; /* 30px */
+    font-size: 2.25rem; /* 36px */
+  }
+}
+
+/* Subhead - Section headers like "Global Monitor", "Live Wire" */
+.text-subhead {
+  font-family: var(--font-serif);
+  font-size: var(--text-subhead);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--foreground);
+}
+
+@media (min-width: 640px) {
+  .text-subhead {
+    font-size: 1.25rem; /* 20px */
   }
 }
 
@@ -261,7 +280,7 @@ h1, h2, h3, .font-serif {
   font-size: var(--text-micro);
   font-weight: 500;
   line-height: 1.3;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
   color: var(--foreground-light);
 }
 
@@ -298,9 +317,9 @@ h1, h2, h3, .font-serif {
 /* Headline - serif with tight tracking */
 .headline {
   font-family: var(--font-serif);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
   color: var(--foreground);
 }
 
@@ -317,7 +336,7 @@ h1, h2, h3, .font-serif {
   font-family: var(--font-sans);
   font-size: var(--text-caption);
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--foreground-light);
 }
@@ -352,10 +371,10 @@ h1, h2, h3, .font-serif {
 
 /* === SECTION LABELS - Brand element === */
 .section-label {
-  font-family: var(--font-serif);
-  font-size: var(--text-label);
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-family: var(--font-sans);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--foreground-muted);
 }
@@ -420,7 +439,7 @@ h1, h2, h3, .font-serif {
   font-size: var(--text-micro);
   font-weight: 500;
   border-radius: 4px;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
 }
 
 /* Semantic badge variants */

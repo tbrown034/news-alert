@@ -357,7 +357,7 @@ export const NewsFeed = memo(function NewsFeed({
             {/* Title */}
             <div className="flex items-center gap-2">
               <SignalIcon className="w-4 h-4 text-emerald-500" />
-              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Live Wire</h2>
+              <h2 className="text-subhead">Live Wire</h2>
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
             {/* Refresh button with timestamp */}
@@ -374,7 +374,7 @@ export const NewsFeed = memo(function NewsFeed({
                 </button>
                 {lastUpdated && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-2xs text-slate-400 dark:text-slate-500" suppressHydrationWarning>
+                    <span className="text-2xs text-slate-500 dark:text-slate-400" suppressHydrationWarning>
                       Last updated {formatActualTime(lastUpdated)}
                     </span>
                     <button
@@ -382,7 +382,7 @@ export const NewsFeed = memo(function NewsFeed({
                       className={`p-0.5 rounded transition-colors ${
                         showFeedStats
                           ? 'text-blue-500 dark:text-blue-400'
-                          : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                       }`}
                       aria-label="Toggle feed stats"
                       aria-expanded={showFeedStats}
@@ -400,13 +400,13 @@ export const NewsFeed = memo(function NewsFeed({
             <div className="mb-2 p-2.5 bg-white/60 dark:bg-slate-800/60 rounded-lg border border-slate-200/50 dark:border-slate-700/50 space-y-2">
               {/* Platform breakdown */}
               <div>
-                <div className="text-2xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">By Platform</div>
+                <div className="text-2xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">By Platform</div>
                 <div className="grid grid-cols-1 xs:grid-cols-3 gap-1.5">
                   {feedStats.platforms.map(({ name, posts, sources }) => (
                     <div key={name} className="flex items-center justify-between px-2 py-1 bg-slate-50 dark:bg-slate-900/50 rounded text-xs">
                       <span className="font-medium text-slate-700 dark:text-slate-300 capitalize">{name}</span>
                       <span className="text-slate-500 dark:text-slate-400">
-                        {posts} <span className="text-slate-400 dark:text-slate-500">/ {sources} src</span>
+                        {posts} <span className="text-slate-500 dark:text-slate-400">/ {sources} src</span>
                       </span>
                     </div>
                   ))}
@@ -414,12 +414,12 @@ export const NewsFeed = memo(function NewsFeed({
               </div>
               {/* Source type breakdown */}
               <div>
-                <div className="text-2xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">By Source Type</div>
+                <div className="text-2xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">By Source Type</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
                   {feedStats.types.map(({ name, count }) => (
                     <span key={name} className="text-slate-600 dark:text-slate-400">
                       <span className="capitalize">{name}</span>{' '}
-                      <span className="font-mono text-slate-500 dark:text-slate-500">{count}</span>
+                      <span className="font-mono text-slate-500 dark:text-slate-400">{count}</span>
                     </span>
                   ))}
                 </div>
@@ -461,7 +461,7 @@ export const NewsFeed = memo(function NewsFeed({
                     : <> in last <span className="font-semibold text-slate-700 dark:text-slate-300">six hours</span> {selectedTab === 'all' ? 'globally' : `in ${regionDisplayNames[selectedTab] || selectedTab}`}</>
                   }
                 </div>
-                <p className="hidden sm:block text-xs text-slate-400 dark:text-slate-500 mt-1.5">
+                <p className="hidden sm:block text-xs text-slate-500 dark:text-slate-400 mt-1.5">
                   Sources are hand-picked from Bluesky, Telegram, Mastodon, and RSS — all through free, open APIs.
                   This is a work in progress.{' '}
                   <Link href="/about" className="text-blue-500 dark:text-blue-400 hover:underline">About sources</Link>
@@ -489,7 +489,7 @@ export const NewsFeed = memo(function NewsFeed({
                 {trendingKeywords.length > 0 && (
                   <div className="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-slate-700/30">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wide">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                         <FireIcon className="w-3 h-3 text-amber-500" />
                         <span>Trending</span>
                       </div>
@@ -497,7 +497,7 @@ export const NewsFeed = memo(function NewsFeed({
                         {trendingKeywords.map((kw, i) => (
                           <span key={kw.keyword}>
                             {i > 0 && '  ·  '}
-                            {kw.keyword} <span className="text-slate-400 dark:text-slate-500">({kw.count})</span>
+                            {kw.keyword} <span className="text-slate-500 dark:text-slate-400">({kw.count})</span>
                           </span>
                         ))}
                       </span>
@@ -538,14 +538,14 @@ export const NewsFeed = memo(function NewsFeed({
                     >
                       <span className="relative z-10 flex items-center gap-2">
                         {tab.id === 'all' && (
-                          <GlobeAltIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                          <GlobeAltIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`} />
                         )}
                         <span>{tab.label}</span>
                         <span className={`
                           hidden sm:inline-flex text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
                           ${isSelected
                             ? 'bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300'
-                            : 'bg-transparent text-slate-400 dark:text-slate-500 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50'
+                            : 'bg-transparent text-slate-500 dark:text-slate-400 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50'
                           }
                         `}>
                           {count}
@@ -585,7 +585,7 @@ export const NewsFeed = memo(function NewsFeed({
                           hidden sm:inline-flex text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
                           ${isSelected
                             ? 'bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300'
-                            : 'bg-transparent text-slate-400 dark:text-slate-500 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50'
+                            : 'bg-transparent text-slate-500 dark:text-slate-400 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50'
                           }
                         `}>
                           {count}
@@ -614,7 +614,7 @@ export const NewsFeed = memo(function NewsFeed({
 
             {/* Loading indicator */}
             {isPending && (
-              <span className="ml-3 inline-flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
+              <span className="ml-3 inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                 <span className="w-3 h-3 border-2 border-slate-300 dark:border-slate-600 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin" />
                 <span>Filtering...</span>
               </span>
@@ -639,7 +639,7 @@ export const NewsFeed = memo(function NewsFeed({
         {!isLoading && !error && sortedItems.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
             <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
-              <GlobeAltIcon className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+              <GlobeAltIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />
             </div>
             <span className="text-slate-800 dark:text-slate-100 text-base sm:text-lg font-medium mb-1">No updates yet</span>
             <span className="text-slate-500 dark:text-slate-400 text-sm text-center max-w-xs">

@@ -238,10 +238,10 @@ export default function FeedSourcesPage() {
                       {(source.baselinePPD ?? source.estimatedPPD ?? 0) > 0 ? (
                         <span className="text-sm font-mono text-slate-600 dark:text-slate-300">{source.baselinePPD ?? source.estimatedPPD}</span>
                       ) : (
-                        <span className="text-xs text-slate-400 dark:text-slate-500">{source.baselineMeasuredAt ? 'inactive' : '–'}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{source.baselineMeasuredAt ? 'inactive' : '–'}</span>
                       )}
-                      {source.baselineMeasuredAt && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">{source.baselineMeasuredAt}</p>}
-                      {!source.baselineMeasuredAt && source.estimatedAt && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">est {source.estimatedAt}</p>}
+                      {source.baselineMeasuredAt && <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{source.baselineMeasuredAt}</p>}
+                      {!source.baselineMeasuredAt && source.estimatedAt && <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">est {source.estimatedAt}</p>}
                     </td>
                   </tr>
                 ))}
@@ -278,7 +278,7 @@ export default function FeedSourcesPage() {
                   {selectedSource.baselinePPD && selectedSource.baselinePPD > 0 ? (
                     <p className="font-mono font-bold text-slate-900 dark:text-white">{selectedSource.baselinePPD}</p>
                   ) : (
-                    <p className="text-sm text-slate-400 dark:text-slate-500">{selectedSource.baselineMeasuredAt ? 'inactive' : '–'}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{selectedSource.baselineMeasuredAt ? 'inactive' : '–'}</p>
                   )}
                   {selectedSource.baselineMeasuredAt && <p className="text-[10px] text-slate-500 dark:text-slate-400">measured {selectedSource.baselineMeasuredAt}</p>}
                 </div>
@@ -287,7 +287,7 @@ export default function FeedSourcesPage() {
                   {selectedSource.estimatedPPD && selectedSource.estimatedPPD > 0 ? (
                     <p className="font-mono font-bold text-slate-900 dark:text-white">{selectedSource.estimatedPPD}</p>
                   ) : (
-                    <p className="text-sm text-slate-400 dark:text-slate-500">–</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">–</p>
                   )}
                   {selectedSource.estimatedAt && <p className="text-[10px] text-slate-500 dark:text-slate-400">{selectedSource.estimatedAt}</p>}
                 </div>

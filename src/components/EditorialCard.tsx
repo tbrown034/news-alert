@@ -173,7 +173,7 @@ export function EditorialCard({ item, onDismiss }: EditorialCardProps) {
           {onDismiss && (
             <button
               onClick={handleDismiss}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors"
+              className="p-1 rounded-lg text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 transition-colors"
               aria-label="Dismiss alert"
             >
               <XMarkIcon className="w-5 h-5" />

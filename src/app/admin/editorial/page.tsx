@@ -265,7 +265,7 @@ export default function EditorialAdminPage() {
           <button
             onClick={fetchData}
             disabled={isLoading}
-            className="ml-auto p-2 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors"
+            className="ml-auto p-2 text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 transition-colors"
             title="Refresh"
           >
             <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -360,14 +360,14 @@ export default function EditorialAdminPage() {
                               <>
                                 <button
                                   onClick={() => setEditingPost(post)}
-                                  className="p-1.5 text-slate-400 hover:text-blue-500 dark:text-slate-500 dark:hover:text-blue-400 transition-colors"
+                                  className="p-1.5 text-slate-500 hover:text-blue-500 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
                                   title="Edit"
                                 >
                                   <PencilIcon className="w-4 h-4" />
                                 </button>
                                 <button
                                   onClick={() => handleArchive(post.id)}
-                                  className="p-1.5 text-slate-400 hover:text-amber-500 dark:text-slate-500 dark:hover:text-amber-400 transition-colors"
+                                  className="p-1.5 text-slate-500 hover:text-amber-500 dark:text-slate-400 dark:hover:text-amber-400 transition-colors"
                                   title="Archive"
                                 >
                                   <ArchiveBoxIcon className="w-4 h-4" />
@@ -377,14 +377,14 @@ export default function EditorialAdminPage() {
                               <>
                                 <button
                                   onClick={() => handleRestore(post.id)}
-                                  className="p-1.5 text-slate-400 hover:text-green-500 dark:text-slate-500 dark:hover:text-green-400 transition-colors"
+                                  className="p-1.5 text-slate-500 hover:text-green-500 dark:text-slate-400 dark:hover:text-green-400 transition-colors"
                                   title="Restore"
                                 >
                                   <ArrowPathIcon className="w-4 h-4" />
                                 </button>
                                 <button
                                   onClick={() => handleDelete(post.id)}
-                                  className="p-1.5 text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors"
+                                  className="p-1.5 text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 transition-colors"
                                   title="Delete permanently"
                                 >
                                   <TrashIcon className="w-4 h-4" />
