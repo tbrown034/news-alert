@@ -7,6 +7,7 @@ import { WatchpointId } from '@/types';
 interface NewsItemForLogging {
   region: WatchpointId;
   platform?: string;
+  source?: { platform?: string };
 }
 
 /**
@@ -52,8 +53,10 @@ async function logActivityAsync(
 
   for (const item of items) {
     regionBreakdown[item.region] = (regionBreakdown[item.region] || 0) + 1;
-    if (item.platform) {
-      platformBreakdown[item.platform] = (platformBreakdown[item.platform] || 0) + 1;
+    // Platform lives in item.source.platform (NewsItem) or item.platform (flat)
+    const platform = item.source?.platform || item.platform;
+    if (platform) {
+      platformBreakdown[platform] = (platformBreakdown[platform] || 0) + 1;
     }
   }
 
@@ -119,28 +122,39 @@ export async function getRecentActivityLogs(
 }
 
 /**
- * Get rolling averages by region (14-day window)
+ * Get rolling averages by region (14-day window).
+ * Only reads 'all' rows and extracts per-region data from region_breakdown JSONB,
+ * consistent with getRegionBaselineAverages().
  */
 export async function getRollingAverages(): Promise<RollingAverage[]> {
   return query<RollingAverage>(
     `SELECT
-       region,
-       ROUND(AVG(post_count)::numeric, 1) as avg_posts_6h,
+       breakdown.key as region,
+       ROUND(AVG(breakdown.value::numeric), 1) as avg_posts_6h,
        COUNT(*) as sample_count,
-       MIN(post_count) as min_posts,
-       MAX(post_count) as max_posts,
-       (SELECT post_count FROM post_activity_logs p2
-        WHERE p2.region = post_activity_logs.region
-        ORDER BY bucket_timestamp DESC LIMIT 1) as latest_count
-     FROM post_activity_logs
-     WHERE bucket_timestamp > NOW() - INTERVAL '14 days'
-     GROUP BY region
-     ORDER BY region`
+       MIN(breakdown.value::int) as min_posts,
+       MAX(breakdown.value::int) as max_posts,
+       (SELECT (rb.value)::int
+        FROM post_activity_logs p2,
+          jsonb_each_text(p2.region_breakdown) as rb(key, value)
+        WHERE p2.region = 'all'
+          AND p2.region_breakdown IS NOT NULL
+          AND rb.key = breakdown.key
+        ORDER BY p2.bucket_timestamp DESC LIMIT 1) as latest_count
+     FROM post_activity_logs,
+       jsonb_each_text(region_breakdown) as breakdown(key, value)
+     WHERE region = 'all'
+       AND bucket_timestamp > NOW() - INTERVAL '14 days'
+       AND region_breakdown IS NOT NULL
+     GROUP BY breakdown.key
+     ORDER BY breakdown.key`
   );
 }
 
 /**
- * Get activity trend for a specific region
+ * Get activity trend for a specific region.
+ * Always queries from 'all' rows and extracts per-region counts from region_breakdown JSONB,
+ * since 'all' rows are logged most consistently and contain the full region breakdown.
  */
 export async function getActivityTrend(
   region: WatchpointId,
@@ -148,10 +162,10 @@ export async function getActivityTrend(
 ): Promise<ActivityLogEntry[]> {
   return query<ActivityLogEntry>(
     `SELECT * FROM post_activity_logs
-     WHERE region = $1
-       AND bucket_timestamp > NOW() - INTERVAL '1 day' * $2
+     WHERE region = 'all'
+       AND bucket_timestamp > NOW() - INTERVAL '1 day' * $1
      ORDER BY bucket_timestamp DESC`,
-    [region, days]
+    [days]
   );
 }
 

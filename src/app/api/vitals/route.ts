@@ -27,12 +27,12 @@ export async function POST(request: Request) {
       tableEnsured = true;
     }
 
-    // Extract page path from referer header
+    // Fallback page path from Referer header
     const referer = request.headers.get('referer');
-    let pagePath: string | undefined;
+    let refererPath: string | undefined;
     if (referer) {
       try {
-        pagePath = new URL(referer).pathname;
+        refererPath = new URL(referer).pathname;
       } catch { /* ignore */ }
     }
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
           m.delta as number,
           m.rating as string,
           m.id as string,
-          pagePath,
+          (typeof m.pagePath === 'string' ? m.pagePath : refererPath),
           m.navigationType as string,
         )
       );

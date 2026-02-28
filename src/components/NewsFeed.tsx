@@ -465,17 +465,17 @@ export const NewsFeed = memo(function NewsFeed({
                   <div className="italic mt-0.5">
                     {(() => {
                       const a = activity[selectedTab];
-                      if (!a.vsNormal || a.vsNormal === 'normal') return 'Posting at a typical pace for this time of day';
+                      if (!a.vsNormal || a.vsNormal === 'normal') return 'Posting at a typical pace';
                       if (a.vsNormal === 'above') {
-                        if (a.multiplier && a.multiplier >= 2) return `${a.multiplier}× more posts than typical for this time of day`;
-                        if (a.percentChange && a.percentChange >= 50) return `${a.percentChange}% more posts than typical`;
+                        if (a.multiplier && a.multiplier >= 2) return `${a.multiplier}× more posts than baseline`;
+                        if (a.percentChange && a.percentChange >= 50) return `${a.percentChange}% more posts than baseline`;
                         return 'Slightly busier than typical';
                       }
                       if (a.vsNormal === 'below') {
-                        if (a.percentChange) return `${Math.abs(a.percentChange)}% fewer posts than typical`;
+                        if (a.percentChange) return `${Math.abs(a.percentChange)}% fewer posts than baseline`;
                         return 'Quieter than typical';
                       }
-                      return 'Posting at a typical pace for this time of day';
+                      return 'Posting at a typical pace';
                     })()}
                   </div>
                 )}

@@ -218,9 +218,11 @@ async function fetchNewsWithCache(region: WatchpointId): Promise<NewsItem[]> {
       // We want to see EVERYTHING in chronological order
       dedupedById.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
-      // Log activity for rolling averages (await to ensure it completes on Vercel)
+      // Only log for 'all' region — contains complete cross-region data for baselines
       const fetchEnd = Date.now();
-      await logActivitySnapshot(region, dedupedById, sources.length, fetchEnd - fetchStart);
+      if (region === 'all') {
+        await logActivitySnapshot('all', dedupedById, sources.length, fetchEnd - fetchStart);
+      }
 
       // Update L1 in-memory cache
       setCachedNews(cacheKey, dedupedById, true);

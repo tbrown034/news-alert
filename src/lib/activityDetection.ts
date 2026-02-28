@@ -22,6 +22,9 @@ const SCORING_EXCLUDED_REGIONS: WatchpointId[] = ['latam', 'asia', 'africa'];
 // Platforms that /api/news actually fetches — must match ENABLED_PLATFORMS in route.ts
 const FEED_PLATFORMS = new Set(['bluesky', 'telegram', 'mastodon']);
 
+// Minimum baseline per region — prevents zero baselines from causing false spikes
+const MIN_REGION_BASELINE = 30;
+
 // ---------- BASELINE CACHE ----------
 
 interface BaselineCache {
@@ -95,7 +98,7 @@ async function fetchBaselinesFromDb(): Promise<BaselineCache> {
     ];
     for (const region of allRegions) {
       if (!(region in baselines) || baselines[region] <= 0) {
-        baselines[region] = ppdFallback[region] || 30;
+        baselines[region] = ppdFallback[region] || MIN_REGION_BASELINE;
       }
     }
 
@@ -143,8 +146,10 @@ async function getBaselines(): Promise<Record<WatchpointId, number>> {
         baselineFetchInFlight = null;
         return result;
       }).catch(() => {
+        // On failure, bump fetchedAt to prevent immediate re-fetch (backoff)
+        baselineCache = { ...baselineCache!, fetchedAt: Date.now() };
         baselineFetchInFlight = null;
-        return baselineCache!;
+        return baselineCache;
       });
     }
   }
@@ -188,7 +193,7 @@ export async function calculateRegionActivity(
 
   for (const region of regions) {
     const count = counts[region] || 0;
-    const baseline = Math.max(1, baselines[region] || 30);
+    const baseline = Math.max(1, baselines[region] || MIN_REGION_BASELINE);
     const multiplier = baseline > 0 ? Math.round((count / baseline) * 10) / 10 : 0;
     const percentChange = baseline > 0 ? Math.round(((count - baseline) / baseline) * 100) : 0;
 

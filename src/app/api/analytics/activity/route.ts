@@ -42,9 +42,16 @@ export async function GET(request: Request) {
 
     if (view === 'trend' && region) {
       const trend = await getActivityTrend(region, days);
+      // Extract per-region counts from the 'all' rows' region_breakdown JSONB
+      const regionTrend = trend.map(row => ({
+        ...row,
+        post_count: region === 'all'
+          ? row.post_count
+          : (row.region_breakdown?.[region] ?? 0),
+      }));
       return NextResponse.json({
         region,
-        trend,
+        trend: regionTrend,
         meta: {
           generatedAt: new Date().toISOString(),
           days,
@@ -60,18 +67,29 @@ export async function GET(request: Request) {
         getRegionBaselineAverages(),
       ]);
 
+      // Known display regions — filter out 'all' and other non-display keys from region_breakdown
+      const DISPLAY_REGIONS = new Set(['us', 'latam', 'middle-east', 'europe-russia', 'asia', 'africa']);
+
       const dataPoints = trend
         .filter(r => r.region_breakdown)
-        .map(r => ({
-          timestamp: r.bucket_timestamp,
-          total: r.post_count,
-          regions: r.region_breakdown!,
-        }))
+        .map(r => {
+          const regions: Record<string, number> = {};
+          for (const [key, value] of Object.entries(r.region_breakdown!)) {
+            if (DISPLAY_REGIONS.has(key)) regions[key] = value;
+          }
+          return {
+            timestamp: r.bucket_timestamp,
+            total: r.post_count,
+            regions,
+          };
+        })
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
       const baselines: Record<string, number> = {};
       for (const avg of baselineAverages) {
-        baselines[avg.region] = Math.round(avg.avg_posts_6h);
+        if (DISPLAY_REGIONS.has(avg.region)) {
+          baselines[avg.region] = Math.round(avg.avg_posts_6h);
+        }
       }
 
       return NextResponse.json({

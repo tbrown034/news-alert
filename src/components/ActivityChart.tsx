@@ -43,16 +43,22 @@ export default function ActivityChart() {
     new Set(['us', 'middle-east', 'europe-russia'])
   );
 
+  const [fetchError, setFetchError] = useState(false);
+
   const fetchData = useCallback(async (days: number) => {
     setIsLoading(true);
+    setFetchError(false);
     try {
       const res = await fetch(`/api/analytics/activity?view=history&days=${days}`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
+      } else {
+        setFetchError(true);
       }
     } catch (err) {
       console.error('Failed to fetch activity history:', err);
+      setFetchError(true);
     } finally {
       setIsLoading(false);
     }
@@ -174,9 +180,13 @@ export default function ActivityChart() {
           <div className="flex items-center justify-center h-48">
             <ArrowPathIcon className="w-5 h-5 text-[var(--foreground-light)] animate-spin" />
           </div>
+        ) : fetchError ? (
+          <div className="flex items-center justify-center h-48">
+            <span className="text-caption text-red-400/70">Failed to load activity data</span>
+          </div>
         ) : chartData.length === 0 ? (
           <div className="flex items-center justify-center h-48">
-            <span className="text-caption">No activity data available</span>
+            <span className="text-caption">No activity data yet — check back after a few hours</span>
           </div>
         ) : (
           <div className="h-56 sm:h-64">

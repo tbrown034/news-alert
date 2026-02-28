@@ -9,6 +9,7 @@ const queue: Array<{
   rating: string;
   id: string;
   navigationType: string;
+  pagePath: string;
 }> = [];
 
 function flushQueue() {
@@ -16,7 +17,8 @@ function flushQueue() {
   const body = JSON.stringify(queue);
   const url = '/api/vitals';
   if (navigator.sendBeacon) {
-    navigator.sendBeacon(url, body);
+    const blob = new Blob([body], { type: 'application/json' });
+    navigator.sendBeacon(url, blob);
   } else {
     fetch(url, { body, method: 'POST', keepalive: true });
   }
@@ -24,10 +26,14 @@ function flushQueue() {
 }
 
 // Flush when user navigates away or switches tabs
-if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushQueue();
-  });
+// Guard ensures only one listener is registered even with HMR re-evaluation
+function onVisibilityChange() {
+  if (document.visibilityState === 'hidden') flushQueue();
+}
+
+if (typeof document !== 'undefined' && !(globalThis as any).__webVitalsListenerRegistered) {
+  document.addEventListener('visibilitychange', onVisibilityChange);
+  (globalThis as any).__webVitalsListenerRegistered = true;
 }
 
 // Stable reference — defined outside component to prevent duplicate reporting
@@ -39,6 +45,7 @@ function reportMetric(metric: { name: string; value: number; delta: number; rati
     rating: metric.rating,
     id: metric.id,
     navigationType: metric.navigationType,
+    pagePath: window.location.pathname,
   });
 
   // Also flush after a short delay for metrics that arrive early (TTFB, FCP)

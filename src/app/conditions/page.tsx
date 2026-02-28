@@ -190,6 +190,7 @@ const REGIONS: { id: string; name: string }[] = [
   { id: 'middle-east', name: 'Middle East' },
   { id: 'europe-russia', name: 'Europe & Russia' },
   { id: 'asia', name: 'Asia-Pacific' },
+  { id: 'africa', name: 'Africa' },
 ];
 
 const categoryConfig = {
@@ -537,8 +538,8 @@ function RegionCard({ name, data, activity, trends, wikiPages, formatTimeAgo }: 
 
   const activityText = activity
     ? activity.level === 'normal'
-      ? 'Typical pace for this time of day'
-      : `${activity.count} posts vs ${activity.baseline} expected`
+      ? 'Typical pace'
+      : `${activity.count} posts vs ${activity.baseline} baseline`
     : null;
 
   const activityBadgeText = activity

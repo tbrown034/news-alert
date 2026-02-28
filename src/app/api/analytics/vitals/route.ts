@@ -1,14 +1,34 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
+import { auth } from '@/lib/auth';
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 import { getRecentWebVitals, getWebVitalsSummary, getWebVitalsTimeline } from '@/lib/webVitalsLogging';
+import { ADMIN_EMAILS } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
+
+async function getAdminSession(): Promise<{ email: string } | null> {
+  try {
+    const headersList = await headers();
+    const session = await auth.api.getSession({ headers: headersList });
+    if (!session?.user?.email) return null;
+    if (!ADMIN_EMAILS.includes(session.user.email.toLowerCase())) return null;
+    return { email: session.user.email };
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(request: Request) {
   const clientIp = getClientIp(request);
   const rateCheck = checkRateLimit(`analytics-vitals:${clientIp}`, { maxRequests: 60 });
   if (!rateCheck.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  }
+
+  const admin = await getAdminSession();
+  if (!admin) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);

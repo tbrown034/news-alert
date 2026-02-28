@@ -1038,7 +1038,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                       Feed Activity: {hasCritical ? 'Surging Across Regions' : hasElevated ? 'Above Typical Levels' : 'Normal'}
                     </span>
                     {!hasElevated && (
-                      <span className="text-slate-500 dark:text-slate-500 text-xs">for this time of day</span>
+                      <span className="text-slate-500 dark:text-slate-500 text-xs">across all regions</span>
                     )}
                   </div>
 
@@ -1178,7 +1178,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                       <div
                         className="absolute top-0 bottom-0 w-px bg-slate-500 dark:bg-slate-400 z-10"
                         style={{ left: `${baselinePct}%` }}
-                        title={`Expected: ${baseline} posts for this time of day`}
+                        title={`Baseline: ${baseline} posts per 6h (14-day avg)`}
                       >
                         <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-slate-500 dark:bg-slate-400" />
                       </div>
@@ -1245,10 +1245,9 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             <div className="pt-2 border-t border-slate-200/50 dark:border-slate-700/30">
               <div className="text-2xs text-slate-400 dark:text-slate-500 leading-relaxed">
                 <span className="font-medium text-slate-500 dark:text-slate-400">How it works:</span>{' '}
-                We track how many posts each source typically publishes per day, then estimate how many
-                we&apos;d expect in the last {hoursWindow} hours given the current time of day (sources post more during
-                US/EU business hours). The <span className="inline-flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-slate-500 dark:bg-slate-400 inline-block" /></span> marker
-                shows that expected count. When actual posts reach 2.5× the expected count (and 25+ posts),
+                We compare the last {hoursWindow} hours of posts against a 14-day rolling average baseline.
+                The <span className="inline-flex items-center gap-0.5"><span className="w-1 h-1 rounded-full bg-slate-500 dark:bg-slate-400 inline-block" /></span> marker
+                shows the baseline. When actual posts reach 2.5× baseline (and 25+ posts),
                 activity is elevated. At 5× (and 50+ posts), it&apos;s critical.
               </div>
             </div>
