@@ -219,9 +219,14 @@ async function fetchNewsWithCache(region: WatchpointId): Promise<NewsItem[]> {
       dedupedById.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 
       // Only log for 'all' region — contains complete cross-region data for baselines
+      // IMPORTANT: Filter to 6h window before logging — baselines must match the
+      // 6h window used by calculateRegionActivity(). Without this, raw fetches
+      // include days of history per source, inflating baselines ~5-6x.
       const fetchEnd = Date.now();
       if (region === 'all') {
-        await logActivitySnapshot('all', dedupedById, sources.length, fetchEnd - fetchStart);
+        const sixHourCutoff = Date.now() - (6 * 60 * 60 * 1000);
+        const recentItems = dedupedById.filter(item => item.timestamp.getTime() > sixHourCutoff);
+        await logActivitySnapshot('all', recentItems, sources.length, fetchEnd - fetchStart);
       }
 
       // Update L1 in-memory cache

@@ -89,7 +89,7 @@ describe('calculateRegionActivity', () => {
 
   it('should not have a breaking field in the response', async () => {
     const activity = await calculateRegionActivity(makeItems('us', 5));
-    const usActivity = activity.us as Record<string, unknown>;
+    const usActivity = activity.us as unknown as Record<string, unknown>;
     assert.strictEqual('breaking' in usActivity, false, 'breaking field should not exist');
   });
 
