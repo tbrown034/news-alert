@@ -30,22 +30,22 @@ export const metadata: Metadata = {
     default: "News Pulse",
     template: "%s | News Pulse",
   },
-  description: "News before it's news. Real-time monitoring of breaking news, seismic activity, and geopolitical events from 380+ verified sources worldwide.",
+  description: "News before it's news. Real-time monitoring of breaking news, seismic activity, and geopolitical events from 600+ verified sources worldwide.",
   keywords: ["news", "OSINT", "intelligence", "geopolitical", "monitoring", "real-time", "global news", "breaking news", "earthquake", "pulse alert"],
   authors: [{ name: "News Pulse" }],
   creator: "News Pulse",
   publisher: "News Pulse",
-  metadataBase: new URL("https://news-alert.vercel.app"),
+  metadataBase: new URL("https://news-alert-eta.vercel.app"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://news-alert.vercel.app",
+    url: "https://news-alert-eta.vercel.app",
     siteName: "News Pulse",
     title: "News Pulse - News before it's news",
-    description: "Monitor breaking news, seismic activity, and geopolitical events from 380+ verified sources worldwide.",
+    description: "Monitor breaking news, seismic activity, and geopolitical events from 600+ verified sources worldwide.",
     images: [
       {
         url: "/og-image.png",
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "News Pulse - News before it's news",
-    description: "Monitor breaking news, seismic activity, and geopolitical events from 380+ verified sources worldwide.",
+    description: "Monitor breaking news, seismic activity, and geopolitical events from 600+ verified sources worldwide.",
     images: ["/og-image.png"],
     creator: "@pulsealert",
   },
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  maximumScale: 5,
   themeColor: "#000000",
 };
 

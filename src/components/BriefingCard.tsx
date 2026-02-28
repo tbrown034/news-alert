@@ -296,6 +296,10 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
     setLoadingElapsed(0);
     const startTime = performance.now();
 
+    // Clear any existing interval before starting a new one
+    if (loadingIntervalRef.current) {
+      clearInterval(loadingIntervalRef.current);
+    }
     loadingIntervalRef.current = setInterval(() => {
       setLoadingElapsed(Math.floor((performance.now() - startTime) / 1000));
     }, 1000);
@@ -358,7 +362,16 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
       }
     }, 1500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (loadingIntervalRef.current) {
+        clearInterval(loadingIntervalRef.current);
+        loadingIntervalRef.current = null;
+      }
+      if (controllerRef.current) {
+        controllerRef.current.abort();
+      }
+    };
   }, [region, fetchBriefing, autoGenerate]);
 
   const regionBadge = regionBadges[region] || regionBadges['all'];

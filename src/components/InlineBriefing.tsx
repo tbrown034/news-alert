@@ -286,7 +286,10 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
     setLoadingElapsed(0);
     const startTime = performance.now();
 
-    // Start elapsed time counter
+    // Clear any existing interval before starting a new one
+    if (loadingIntervalRef.current) {
+      clearInterval(loadingIntervalRef.current);
+    }
     loadingIntervalRef.current = setInterval(() => {
       setLoadingElapsed(Math.floor((performance.now() - startTime) / 1000));
     }, 1000);
@@ -350,7 +353,16 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
       }
     }, 1500);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (loadingIntervalRef.current) {
+        clearInterval(loadingIntervalRef.current);
+        loadingIntervalRef.current = null;
+      }
+      if (controllerRef.current) {
+        controllerRef.current.abort();
+      }
+    };
   }, [region, fetchBriefing]);
 
   // Loading state - shows which AI model is being used
