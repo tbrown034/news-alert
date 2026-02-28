@@ -403,11 +403,11 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
     }
   }, [earthquakes.length, fetchEarthquakes]);
 
-  // Fetch significant earthquakes (6.0+) for Main view on mount
+  // Fetch significant earthquakes (5.0+) for Main view on mount
   useEffect(() => {
     const fetchSignificantQuakes = async () => {
       try {
-        const response = await fetch('/api/seismic?period=day&minMag=6');
+        const response = await fetch('/api/seismic?period=day&minMag=5');
         if (!response.ok) return;
         const data = await response.json();
         if (data.earthquakes) {
@@ -818,6 +818,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   selected={selectedWatchpoint}
                   onSelect={setSelectedWatchpoint}
                   activity={activityData || undefined}
+                  significantQuakes={significantQuakes.filter(q => q.magnitude >= 6)}
                   hoursWindow={hoursWindow}
                   useUTC={useUTC}
                   initialFocus={initialMapFocus}
@@ -1039,6 +1040,15 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     </span>
                     {!hasElevated && (
                       <span className="text-slate-500 dark:text-slate-500 text-xs">across all regions</span>
+                    )}
+                    {significantQuakes.length > 0 && (
+                      <button
+                        onClick={() => handleHeroViewChange('seismic')}
+                        className="text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 text-xs ml-1 transition-colors"
+                        title="View seismic activity"
+                      >
+                        · {significantQuakes.length} quake{significantQuakes.length !== 1 ? 's' : ''} M5+
+                      </button>
                     )}
                   </div>
 
