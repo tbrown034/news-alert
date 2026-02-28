@@ -153,21 +153,19 @@ ${postsJson}
 
 Write a concise briefing in JSON:
 {
-  "overview": "1-2 sentences. What's the overall picture? Are tensions rising, stable, or easing? Give context.",
+  "overview": "ONE sentence. Big-picture assessment: what's the overall situation?",
   "developments": [
-    "Specific event + source (e.g., 'Ukraine reported 49 clashes since dawn - Ukrinform')",
-    "Another key development + source",
-    "Third if significant, otherwise omit"
+    "Short event + source name (e.g., 'Russia launched 420 drones at Ukraine overnight - WNBN')",
+    "Second development + source (omit if nothing significant)"
   ]
 }
 
 Rules:
-- Overview = big picture assessment, not a list of events
-- Developments = 2-3 specific items with sources, each one line
-- Reference time naturally (this morning, overnight, since dawn)
-- Multiple sources reporting the same event = high importance signal (prioritize these)
-- No jargon, no severity labels, no scores
-- NEVER use markdown formatting (no **bold**, no *italics*) - plain text only`;
+- Overview = one sentence, big picture, not a list of events
+- Developments = 2 items MAX, each UNDER 20 words, include source name
+- If multiple sources report the same event, prioritize it
+- Reference time naturally (this morning, overnight, today)
+- Plain text only, no markdown, no jargon, no severity labels`;
 }
 
 // =============================================================================

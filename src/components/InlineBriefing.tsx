@@ -474,14 +474,14 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
       </div>
 
       {/* Body */}
-      <div className="px-4 py-3 space-y-3">
+      <div className="px-4 py-3 space-y-2">
         <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
           {highlightLocations(briefing.summary)}
         </p>
 
         {briefing.keyDevelopments && briefing.keyDevelopments.length > 0 && (
-          <ul className="space-y-1.5">
-            {briefing.keyDevelopments.map((dev, i) => (
+          <ul className="space-y-1">
+            {briefing.keyDevelopments.slice(0, 2).map((dev, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-[var(--foreground-muted)]">
                 <span className="text-[var(--foreground-light)] mt-0.5">•</span>
                 <span className="leading-snug">{highlightLocations(dev.headline)}</span>

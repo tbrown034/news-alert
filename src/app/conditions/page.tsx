@@ -703,8 +703,8 @@ function CategorySection({ category, items, formatTimeAgo }: CategorySectionProp
 
       {/* Items */}
       <div className="space-y-1.5 ml-7">
-        {visible.map((item: any) => (
-          <ConditionItem key={item.id} item={item} category={category} formatTimeAgo={formatTimeAgo} />
+        {visible.map((item: any, i: number) => (
+          <ConditionItem key={`${item.id}-${i}`} item={item} category={category} formatTimeAgo={formatTimeAgo} />
         ))}
         {overflow > 0 && (
           <p className="text-caption">+{overflow} more</p>

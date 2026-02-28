@@ -548,8 +548,8 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
 
   // Main briefing card
   return (
-    <article className="relative px-3 py-3 sm:px-4 sm:py-4 bg-[var(--background-card)] rounded-xl border-2 border-slate-400 dark:border-slate-500 hover:border-slate-500 dark:hover:border-slate-400 transition-all duration-200">
-      <div className="flex flex-col gap-2">
+    <article className="relative px-3 py-2.5 sm:px-4 sm:py-3 bg-[var(--background-card)] rounded-xl border-2 border-slate-400 dark:border-slate-500 hover:border-slate-500 dark:hover:border-slate-400 transition-all duration-200">
+      <div className="flex flex-col gap-1.5">
         {/* Row 1: Avatar + Name + Meta | Region */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -568,27 +568,27 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
           </span>
         </div>
 
-        {/* Row 2: Summary text */}
-        <div className="text-body py-1">
+        {/* Summary + key developments as a unified block */}
+        <div className="text-body">
           <p className="text-[var(--foreground)] leading-relaxed">
             {highlightLocations(briefing.summary)}
           </p>
+
+          {/* Key developments — tightly coupled to summary */}
+          {briefing.keyDevelopments && briefing.keyDevelopments.length > 0 && (
+            <ul className="mt-1.5 space-y-0.5">
+              {briefing.keyDevelopments.slice(0, 2).map((dev, i) => (
+                <li key={i} className="flex items-start gap-2 text-[var(--foreground)]">
+                  <span className="text-cyan-500 mt-1">▸</span>
+                  <span className="leading-relaxed">{highlightLocations(dev.headline)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        {/* Key developments as bullet points */}
-        {briefing.keyDevelopments && briefing.keyDevelopments.length > 0 && (
-          <ul className="space-y-1.5 pl-1">
-            {briefing.keyDevelopments.map((dev, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-[var(--foreground-muted)]">
-                <span className="text-cyan-500 mt-0.5">•</span>
-                <span className="leading-snug">{highlightLocations(dev.headline)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-
         {/* Row 3: Metadata + Actions */}
-        <div className="flex items-center justify-between pt-2 border-t border-[var(--border-light)]">
+        <div className="flex items-center justify-between pt-1.5 border-t border-[var(--border-light)]">
           {/* Left: AI tag + Claude attribution with model selector */}
           <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-[var(--foreground-light)]">
             <span className="px-2 py-0.5 text-[10px] tracking-wide uppercase font-semibold rounded-sm bg-cyan-600 dark:bg-cyan-500 text-white dark:text-cyan-950">

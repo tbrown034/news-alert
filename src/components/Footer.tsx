@@ -19,7 +19,7 @@ export function Footer() {
           {/* Center: nav links */}
           <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             {[
-              { href: '/', label: 'Map' },
+              { href: '/', label: 'Home' },
               { href: '/news', label: 'News Wire' },
               { href: '/conditions', label: 'Conditions' },
               { href: '/about', label: 'About' },

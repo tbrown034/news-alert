@@ -4,6 +4,36 @@ A chronological record of development sessions and significant changes.
 
 ---
 
+## 2026-02-27 - Status Bar & Activity Panel UX Refinements
+
+**Session Summary:**
+- Raised earthquake threshold on Main map from M5+ to M6+ (less noise)
+- Softened elevated activity styling from orange/red to amber (less alarming)
+- Activity panel now opens by default on page load
+- Consolidated Info button into "About this dashboard" link inside activity panel
+
+**Key Decisions:**
+- M6+ threshold: M5+ earthquakes are too frequent to surface on the main overview — M6+ is more meaningful for a global dashboard
+- Amber over orange: elevated activity should feel informational, not alert-like. Reserved red for critical only
+- Shortened "Above Typical Levels" to just "Elevated" — cleaner, less dramatic
+- Removed top-bar "Info" button to avoid redundancy with the new "About this dashboard" link at the bottom of the activity panel
+
+**Notable Changes:**
+
+*src/app/HomeClient.tsx*
+- Changed `showPanel` default from `null` to `'activity'` (open on load)
+- Changed seismic fetch from `minMag=5` to `minMag=6`, status bar label from M5+ to M6+
+- Replaced `text-orange-600`/`bg-orange-500` with `text-amber-600`/`bg-amber-500` for elevated state (status bar, dots, region labels, activity bars, legend)
+- Removed standalone "Info" toggle button from panel header
+- Added "About this dashboard" link and "Close" button at bottom of activity panel
+
+**Technical Notes:**
+- Amber (`amber-500/600/400`) is visually warmer and less urgent than orange
+- Activity bar colors, legend dot, status bar text, and per-region labels all use amber consistently for elevated state
+- Info panel content preserved — accessible via "About this dashboard" link
+
+---
+
 ## 2026-01-29 - New Posts Divider Feature
 
 **Session Summary:**

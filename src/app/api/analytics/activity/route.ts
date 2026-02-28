@@ -4,8 +4,8 @@ import {
   getRecentActivityLogs,
   getRollingAverages,
   getActivityTrend,
-  getRegionBaselineAverages,
 } from '@/lib/activityLogging';
+import { REGION_BASELINES } from '@/lib/regionBaselines';
 import { WatchpointId } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -62,10 +62,7 @@ export async function GET(request: Request) {
     if (view === 'history') {
       const daysParam = Math.min(Math.max(1, days), 30);
 
-      const [trend, baselineAverages] = await Promise.all([
-        getActivityTrend('all' as WatchpointId, daysParam),
-        getRegionBaselineAverages(),
-      ]);
+      const trend = await getActivityTrend('all' as WatchpointId, daysParam);
 
       // Known display regions — filter out 'all' and other non-display keys from region_breakdown
       const DISPLAY_REGIONS = new Set(['us', 'latam', 'middle-east', 'europe-russia', 'asia', 'africa']);
@@ -85,11 +82,10 @@ export async function GET(request: Request) {
         })
         .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
+      // Use static measured baselines instead of DB-derived averages
       const baselines: Record<string, number> = {};
-      for (const avg of baselineAverages) {
-        if (DISPLAY_REGIONS.has(avg.region)) {
-          baselines[avg.region] = Math.round(avg.avg_posts_6h);
-        }
+      for (const region of DISPLAY_REGIONS) {
+        baselines[region] = REGION_BASELINES[region] || 20;
       }
 
       return NextResponse.json({
