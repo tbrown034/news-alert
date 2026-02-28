@@ -13,7 +13,6 @@ import { useSession } from '@/lib/auth-client';
 import { MapPinIcon } from '@heroicons/react/24/solid';
 import { RegionActivity } from '@/lib/activityDetection';
 import { formatTimeAgo } from '@/lib/formatUtils';
-import { tier1Sources, tier2Sources, tier3Sources } from '@/lib/sources-clean';
 import Link from 'next/link';
 
 interface ApiResponse {
@@ -41,8 +40,6 @@ const HERO_SECONDARY_TABS = [
   { id: 'fires', label: 'Fires', icon: FireIcon, color: 'orange' },
   { id: 'combined', label: 'Combined', icon: GlobeAltIcon, color: 'blue' },
 ] as const;
-
-const HERO_ALL_TABS = [...HERO_MAIN_TABS, ...HERO_SECONDARY_TABS];
 
 interface HomeClientProps {
   initialData: ApiResponse | null;
@@ -101,7 +98,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const [showPanel, setShowPanel] = useState<'activity' | 'details' | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [useUTC, setUseUTC] = useState(false);
+  const [useUTC] = useState(false);
   const currentTime = useClock();
 
   // Initialize theme from localStorage
@@ -175,9 +172,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
 
   // Ref for dropdown click-outside handling
   const moreDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Dynamic source count
-  const totalSources = tier1Sources.length + tier2Sources.length + tier3Sources.length;
 
   // Ref to prevent duplicate fetches
   const isFetchingRef = useRef(false);
@@ -368,7 +362,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
       // No SSR data (failed or timed out) - do a full fetch
       fetchNewsRef.current();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-refresh every 5 minutes using incremental updates
@@ -394,7 +387,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
 
       const data = await response.json();
       if (data.earthquakes) {
-        setEarthquakes(data.earthquakes.map((eq: any) => ({
+        setEarthquakes(data.earthquakes.map((eq: Earthquake & { time: string }) => ({
           ...eq,
           time: new Date(eq.time),
         })));
@@ -428,7 +421,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
         if (!response.ok) return;
         const data = await response.json();
         if (data.earthquakes) {
-          setSignificantQuakes(data.earthquakes.map((eq: any) => ({
+          setSignificantQuakes(data.earthquakes.map((eq: Earthquake & { time: string }) => ({
             ...eq,
             time: new Date(eq.time),
           })));
@@ -446,10 +439,10 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
         if (!response.ok) return;
         const data = await response.json();
         if (data.tfrs) {
-          setTfrs(data.tfrs.map((tfr: any) => ({
+          setTfrs(data.tfrs.map((tfr: TFRMarker) => ({
             id: tfr.id,
             title: tfr.title,
-            coordinates: tfr.coordinates as [number, number],
+            coordinates: tfr.coordinates,
             tfrType: tfr.tfrType,
             state: tfr.state,
             severity: tfr.severity,
@@ -468,12 +461,12 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
         if (!response.ok) return;
         const data = await response.json();
         if (data.fires) {
-          setFireMarkers(data.fires.map((fire: any) => ({
+          setFireMarkers(data.fires.map((fire: FireMarker) => ({
             id: fire.id,
             title: fire.title,
-            coordinates: fire.coordinates as [number, number],
+            coordinates: fire.coordinates,
             severity: fire.severity,
-            brightness: fire.brightness || 0,
+            brightness: fire.brightness,
             source: fire.source,
           })));
         }
@@ -515,7 +508,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white dark:bg-black border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl xl:max-w-7xl 2xl:max-w-400 mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 sm:h-16">
             <button
               onClick={() => {
@@ -682,7 +675,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
             <div className="relative z-10 px-3 sm:px-4 py-2 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-700/50 rounded-t-2xl">
               <div className="flex items-center justify-between gap-2">
                 {/* Dynamic Title */}
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   {heroView === 'main' && (
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
@@ -766,7 +759,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                         <ChevronDownIcon className={`hidden sm:block w-3 h-3 transition-transform ${showMoreTabs ? 'rotate-180' : ''}`} />
                       </button>
                       {showMoreTabs && (
-                        <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-50">
+                        <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 min-w-35 z-50">
                           {HERO_SECONDARY_TABS.map((tab) => (
                             <button
                               key={tab.id}
@@ -842,7 +835,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
           </div>
 
         {/* Status Bar + Panels container - flush against map bottom */}
-          <div className="bg-slate-100 dark:bg-slate-900 rounded-b-2xl border-x border-b border-slate-300 dark:border-slate-600 -mt-[1px] shadow-lg shadow-black/5 dark:shadow-black/30">
+          <div className="bg-slate-100 dark:bg-slate-900 rounded-b-2xl border-x border-b border-slate-300 dark:border-slate-600 -mt-px shadow-lg shadow-black/5 dark:shadow-black/30">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
             <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-x-3">
 
@@ -1136,7 +1129,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 const data = activityData[regionId as WatchpointId];
                 if (!data) return null;
 
-                const { count, baseline, multiplier, level } = data;
+                const { count, multiplier, level } = data;
                 // Bar width directly represents the multiplier on a 0-5× scale
                 const fillPct = Math.min((multiplier / MAX_SCALE) * 100, 100);
 
