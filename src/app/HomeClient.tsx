@@ -511,14 +511,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
 
   const uniqueSources = useMemo(() => new Set(newsItems.map(i => i.source.id)).size, [newsItems]);
 
-  const regionCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const item of newsItems) {
-      counts[item.region] = (counts[item.region] || 0) + 1;
-    }
-    return counts;
-  }, [newsItems]);
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
       {/* Header */}
@@ -816,7 +808,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   hoursWindow={hoursWindow}
                   useUTC={useUTC}
                   initialFocus={initialMapFocus}
-                  regionCounts={regionCounts}
                 />
               )}
               {heroView === 'seismic' && (
@@ -844,7 +835,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   fires={fireMarkers}
                   hoursWindow={hoursWindow}
                   useUTC={useUTC}
-                  regionCounts={regionCounts}
                 />
               )}
               </ErrorBoundary>

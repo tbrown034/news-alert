@@ -22,6 +22,8 @@ import {
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import ActivityChart from '@/components/ActivityChart';
+import { WorldMap } from '@/components/WorldMap';
+import type { Watchpoint, WatchpointId } from '@/types';
 
 // =============================================================================
 // TYPES
@@ -496,6 +498,36 @@ export default function ConditionsPage() {
               </div>
             </div>
 
+            {/* Map with post counts */}
+            {activityData && (
+              <div className="card overflow-hidden">
+                <div className="h-[200px] sm:h-[240px]">
+                  <WorldMap
+                    watchpoints={REGIONS.map((r, i) => ({
+                      id: r.id as WatchpointId,
+                      name: r.name,
+                      shortName: r.name,
+                      priority: i,
+                      activityLevel: (activityData[r.id]?.level || 'normal') as Watchpoint['activityLevel'],
+                      color: activityData[r.id]?.level === 'critical'
+                        ? '#ef4444'
+                        : activityData[r.id]?.level === 'elevated'
+                          ? '#f97316'
+                          : '#22c55e',
+                    }))}
+                    selected="all"
+                    onSelect={() => {}}
+                    activity={activityData}
+                    showTimes={false}
+                    showZoomControls={false}
+                    regionCounts={Object.fromEntries(
+                      REGIONS.map(r => [r.id, activityData[r.id]?.count ?? 0])
+                    )}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Section: Activity */}
             <div className="section-header">
               <span className="section-label">Activity</span>
@@ -642,8 +674,14 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
           >
             <RegionIcon className="w-4.5 h-4.5" style={{ color: regionColor.color }} />
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <h2 className="headline text-base sm:text-lg">{name}</h2>
+            {activity && (
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-micro font-semibold rounded-md ${activityBadge.bg} ${activityBadge.border} border ${activityBadge.text}`}>
+                <SignalIcon className="w-3 h-3" />
+                {activity.count} posts
+              </span>
+            )}
             {data.criticalCount > 0 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 text-micro font-semibold bg-red-500/15 text-red-400 rounded-md">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
