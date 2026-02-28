@@ -269,9 +269,11 @@ export default function AboutPage() {
             <div>
               <h3 className="font-medium text-[var(--foreground)] mb-1">Sources</h3>
               <p>
-                Every source in Pulse was hand-picked and individually vetted — wire services,
-                OSINT analysts, journalists, government accounts, and regional outlets. Sources
-                are not scraped or auto-discovered. If something is in the feed, I put it there.
+                Pulse pulls from 600+ sources — wire services, OSINT analysts, journalists,
+                government accounts, and regional outlets. Most were individually reviewed before
+                being added, though coverage varies by region and some sources were added in bulk
+                based on platform activity and relevance. The list is actively maintained and
+                curated over time.
               </p>
             </div>
 
