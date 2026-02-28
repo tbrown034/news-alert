@@ -1,11 +1,10 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { ArrowLeftIcon, BoltIcon } from '@heroicons/react/24/outline';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Web Vitals',
-  description: 'Learn how Core Web Vitals work and how Pulse tracks real-user performance metrics.',
-};
+import { useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useSession } from '@/lib/auth-client';
+import { ArrowLeftIcon, BoltIcon } from '@heroicons/react/24/outline';
 
 function MetricCard({
   name,
@@ -65,6 +64,25 @@ function SectionHeading({ id, children }: { id: string; children: React.ReactNod
 }
 
 export default function WebVitalsLearnPage() {
+  const { data: session, isPending } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isPending && !session?.user) {
+      router.push('/');
+    }
+  }, [session, isPending, router]);
+
+  if (isPending) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[var(--foreground-light)] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!session?.user) return null;
+
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
       {/* Header */}
