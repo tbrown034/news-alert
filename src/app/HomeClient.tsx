@@ -1185,30 +1185,33 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                     </div>
 
                     {/* Bar with threshold ticks */}
-                    <div className="flex-1 relative h-3 bg-slate-200/60 dark:bg-slate-800/80 rounded-full overflow-hidden">
-                      <div
-                        className={`absolute inset-y-0 left-0 rounded-full ${barColor} transition-all duration-700 ease-out`}
-                        style={{ width: `${fillPct}%` }}
-                      />
-                      {/* Overflow pulse — bar exceeds scale */}
-                      {isOverflow && (
-                        <div className="absolute inset-y-0 right-0 w-4 z-10 animate-pulse"
-                          style={{ background: `linear-gradient(to right, transparent, ${level === 'critical' ? 'rgba(239,68,68,0.5)' : 'rgba(245,158,11,0.5)'})` }}
+                    <div className="flex-1 relative h-3">
+                      {/* Bar background + fill */}
+                      <div className="absolute inset-0 bg-slate-200/60 dark:bg-slate-800/80 rounded-full overflow-hidden">
+                        <div
+                          className={`absolute inset-y-0 left-0 rounded-full ${barColor} transition-all duration-700 ease-out`}
+                          style={{ width: `${fillPct}%` }}
                         />
-                      )}
-                      {/* 1× baseline tick — solid */}
+                        {/* Overflow pulse — bar exceeds scale */}
+                        {isOverflow && (
+                          <div className="absolute inset-y-0 right-0 w-4 z-10 animate-pulse"
+                            style={{ background: `linear-gradient(to right, transparent, ${level === 'critical' ? 'rgba(239,68,68,0.5)' : 'rgba(245,158,11,0.5)'})` }}
+                          />
+                        )}
+                      </div>
+                      {/* 1× baseline marker — extends above/below bar so it's visible over fill */}
                       <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-slate-900/25 dark:bg-white/25 z-10"
-                        style={{ left: `${BASELINE_PCT}%` }}
+                        className="absolute w-[1.5px] bg-slate-700/50 dark:bg-slate-200/50 z-20 pointer-events-none rounded-full"
+                        style={{ left: `${BASELINE_PCT}%`, top: '-3px', bottom: '-3px' }}
                       />
-                      {/* 2.5× elevated tick — dashed */}
+                      {/* 2.5× elevated tick */}
                       <div
-                        className="absolute top-0 bottom-0 border-l border-dashed border-slate-400/30 dark:border-slate-500/30 z-10"
+                        className="absolute top-0 bottom-0 border-l border-dashed border-slate-400/20 dark:border-slate-500/20 z-10 pointer-events-none"
                         style={{ left: `${ELEVATED_PCT}%` }}
                       />
-                      {/* 5× critical tick — dashed */}
+                      {/* 5× critical tick */}
                       <div
-                        className="absolute top-0 bottom-0 border-l border-dashed border-slate-400/30 dark:border-slate-500/30 z-10"
+                        className="absolute top-0 bottom-0 border-l border-dashed border-slate-400/20 dark:border-slate-500/20 z-10 pointer-events-none"
                         style={{ left: `${CRITICAL_PCT}%` }}
                       />
                     </div>
