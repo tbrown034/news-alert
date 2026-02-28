@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { NewsFeed, Legend, WorldMap, SeismicMap, WeatherMap, OutagesMap, TravelMap, FiresMap, AuthButton } from '@/components';
+import { NewsFeed, WorldMap, SeismicMap, WeatherMap, OutagesMap, TravelMap, FiresMap, AuthButton } from '@/components';
 import type { TFRMarker, FireMarker } from '@/components/WorldMap';
 import { EditorialFAB } from '@/components/EditorialFAB';
 import { ErrorBoundary, FeedSkeleton, MapSkeleton } from '@/components/ErrorBoundary';
@@ -1133,11 +1133,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 { id: 'middle-east', label: 'MidEast' },
                 { id: 'europe-russia', label: 'Europe' },
               ] as const;
-              const excludedRegions = [
-                { id: 'asia', label: 'Asia' },
-                { id: 'latam', label: 'LatAm' },
-                { id: 'africa', label: 'Africa' },
-              ] as const;
+              // Asia, LatAm, Africa excluded — low source coverage, not assessed
 
               const renderBar = (regionId: string, label: string, excluded: boolean = false) => {
                 const data = activityData[regionId as WatchpointId];
@@ -1234,12 +1230,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               return (
                 <div className="space-y-1.5">
                   {scoredRegions.map(r => renderBar(r.id, r.label))}
-                  {/* Divider before excluded regions */}
-                  <div className="border-t border-dashed border-slate-200 dark:border-slate-700/50 my-1" />
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-2xs text-slate-400 dark:text-slate-500 italic">Low source coverage — activity levels not assessed</span>
-                  </div>
-                  {excludedRegions.map(r => renderBar(r.id, r.label, true))}
                 </div>
               );
             })()}
@@ -1443,7 +1433,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
         </ErrorBoundary>
       </main>
 
-      <Legend />
+      {/* Legend removed — info available via About page */}
 
       {/* Editorial FAB - only visible when admin is logged in */}
       {session && <EditorialFAB onPostCreated={fetchNews} />}
