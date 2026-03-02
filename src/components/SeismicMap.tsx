@@ -8,7 +8,7 @@ import {
   Marker,
   ZoomableGroup,
 } from 'react-simple-maps';
-import { ArrowPathIcon, PlusIcon, MinusIcon, ChevronDownIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, PlusIcon, MinusIcon, ChevronDownIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import type { Earthquake } from '@/types';
 import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
 
@@ -354,7 +354,7 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
                       rel="noopener noreferrer"
                       className="flex items-center gap-1 px-2 py-1 bg-white/90 dark:bg-slate-800/90 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
                     >
-                      <GlobeAltIcon className="w-3 h-3" />
+                      <ArrowTopRightOnSquareIcon className="w-3 h-3" />
                       USGS
                     </a>
                   </>

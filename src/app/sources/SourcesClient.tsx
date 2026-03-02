@@ -281,7 +281,7 @@ function SourceRow({ source }: { source: PublicSource }) {
 
       {/* Badges */}
       <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
-        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] rounded-md border ${typeStyle}`}>
+        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] rounded-md ${typeStyle}`}>
           {typeLabel}
         </span>
         <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-md ${regionBadge.color}`}>

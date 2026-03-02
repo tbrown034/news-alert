@@ -5,7 +5,7 @@ import { NewsItem, WatchpointId } from '@/types';
 import { NewsCard } from './NewsCard';
 import { EditorialCard, isEditorialItem } from './EditorialCard';
 import { BriefingCard } from './BriefingCard';
-import { ArrowPathIcon, ExclamationTriangleIcon, GlobeAltIcon, ChevronDownIcon, SignalIcon, FireIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ExclamationTriangleIcon, GlobeAltIcon, ListBulletIcon, ChevronDownIcon, SignalIcon, FireIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import { regionDisplayNames } from '@/lib/regionDetection';
 import Link from 'next/link';
 import { getTrendingKeywords } from '@/lib/trendingKeywords';
@@ -538,7 +538,7 @@ export const NewsFeed = memo(function NewsFeed({
                     >
                       <span className="relative z-10 flex items-center gap-2">
                         {tab.id === 'all' && (
-                          <GlobeAltIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`} />
+                          <ListBulletIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`} />
                         )}
                         <span>{tab.label}</span>
                         <span className={`

@@ -8,7 +8,7 @@ import {
   Marker,
   ZoomableGroup,
 } from 'react-simple-maps';
-import { PlusIcon, MinusIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, MinusIcon, ArrowsPointingOutIcon } from '@heroicons/react/24/outline';
 import { Watchpoint, WatchpointId, Earthquake } from '@/types';
 import { RegionActivity } from '@/lib/activityDetection';
 import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
@@ -635,7 +635,7 @@ function WorldMapComponent({ watchpoints, selected, onSelect, activity = {}, sig
               }`}
               title="Show all regions"
             >
-              <GlobeAltIcon className="w-4 h-4" />
+              <ArrowsPointingOutIcon className="w-4 h-4" />
             </button>
             <div className="h-px bg-white/20 my-0.5" />
             <button

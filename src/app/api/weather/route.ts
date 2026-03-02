@@ -150,6 +150,9 @@ let cachedResponse: { events: WeatherEvent[]; stats: object; fetchedAt: string }
 let cacheTimestamp = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// Track in-flight fetches to prevent duplicate requests
+let inFlightFetch: Promise<{ events: WeatherEvent[]; stats: object; fetchedAt: string }> | null = null;
+
 export async function GET(request: Request) {
   const clientIp = getClientIp(request);
   const rateCheck = checkRateLimit(`weather:${clientIp}`, { maxRequests: 60 });
@@ -169,6 +172,34 @@ export async function GET(request: Request) {
     });
   }
 
+  // Deduplicate concurrent requests — share one in-flight promise
+  if (inFlightFetch) {
+    const result = await inFlightFetch;
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'X-Cache': 'HIT-INFLIGHT',
+      },
+    });
+  }
+
+  const fetchPromise = fetchWeatherData();
+  inFlightFetch = fetchPromise;
+
+  try {
+    const result = await fetchPromise;
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'X-Cache': 'MISS',
+      },
+    });
+  } finally {
+    inFlightFetch = null;
+  }
+}
+
+async function fetchWeatherData(): Promise<{ events: WeatherEvent[]; stats: object; fetchedAt: string }> {
   const events: WeatherEvent[] = [];
 
   // Fetch from NWS (US alerts)
@@ -387,20 +418,15 @@ export async function GET(request: Request) {
     severe: events.filter(e => e.severity === 'severe').length,
   };
 
-  const response = {
+  const result = {
     events: deduped,
     stats,
     fetchedAt: new Date().toISOString(),
   };
 
   // Update cache
-  cachedResponse = response;
+  cachedResponse = result;
   cacheTimestamp = Date.now();
 
-  return NextResponse.json(response, {
-    headers: {
-      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-      'X-Cache': 'MISS',
-    },
-  });
+  return result;
 }

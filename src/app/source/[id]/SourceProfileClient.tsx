@@ -159,7 +159,7 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
               {platformName}
             </span>
             {/* Source type */}
-            <span className={`inline-flex items-center px-2.5 py-1 text-xs rounded-lg border ${sourceTypeStyle}`}>
+            <span className={`inline-flex items-center px-2.5 py-1 text-xs rounded-lg ${sourceTypeStyle}`}>
               {sourceTypeLabel}
             </span>
             {/* Region */}

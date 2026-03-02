@@ -8,7 +8,7 @@ import { ErrorBoundary, FeedSkeleton, MapSkeleton } from '@/components/ErrorBoun
 import { watchpoints as defaultWatchpoints } from '@/lib/mockData';
 import { NewsItem, WatchpointId, Watchpoint, Earthquake } from '@/types';
 import { useClock } from '@/hooks/useClock';
-import { GlobeAltIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon, EllipsisHorizontalIcon, Bars3Icon, XMarkIcon, ChevronDownIcon, SunIcon, MoonIcon, ChartBarIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { NewspaperIcon, Squares2X2Icon, RadioIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon, EllipsisHorizontalIcon, Bars3Icon, XMarkIcon, ChevronDownIcon, SunIcon, MoonIcon, ChartBarIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useSession } from '@/lib/auth-client';
 import { MapPinIcon } from '@heroicons/react/24/solid';
 import { RegionActivity } from '@/lib/activityDetection';
@@ -29,16 +29,16 @@ interface ApiResponse {
 type HeroView = 'main' | 'seismic' | 'weather' | 'outages' | 'travel' | 'fires' | 'combined';
 
 const HERO_MAIN_TABS = [
-  { id: 'main', label: 'Main', icon: GlobeAltIcon, color: 'blue' },
-  { id: 'seismic', label: 'Seismic', icon: MapPinIcon, color: 'amber' },
+  { id: 'main', label: 'Main', icon: NewspaperIcon, color: 'blue' },
+  { id: 'seismic', label: 'Seismic', icon: MapPinIcon, color: 'blue' },
 ] as const;
 
 const HERO_SECONDARY_TABS = [
-  { id: 'weather', label: 'Weather', icon: CloudIcon, color: 'cyan' },
-  { id: 'outages', label: 'Outages', icon: SignalIcon, color: 'purple' },
-  { id: 'travel', label: 'Travel', icon: ExclamationTriangleIcon, color: 'rose' },
-  { id: 'fires', label: 'Fires', icon: FireIcon, color: 'orange' },
-  { id: 'combined', label: 'Combined', icon: GlobeAltIcon, color: 'blue' },
+  { id: 'weather', label: 'Weather', icon: CloudIcon, color: 'blue' },
+  { id: 'outages', label: 'Outages', icon: SignalIcon, color: 'blue' },
+  { id: 'travel', label: 'Travel', icon: ExclamationTriangleIcon, color: 'blue' },
+  { id: 'fires', label: 'Fires', icon: FireIcon, color: 'blue' },
+  { id: 'combined', label: 'Combined', icon: Squares2X2Icon, color: 'blue' },
 ] as const;
 
 interface HomeClientProps {
@@ -95,7 +95,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const [seismicLoading, setSeismicLoading] = useState(false);
   const [seismicLastFetched, setSeismicLastFetched] = useState<Date | null>(null);
   const [showMoreTabs, setShowMoreTabs] = useState(false);
-  const [showPanel, setShowPanel] = useState<'activity' | 'details' | null>('activity');
+  const [showPanel, setShowPanel] = useState<'activity' | 'details' | null>(null);
   const [activityHistory, setActivityHistory] = useState<{ timestamp: string; total: number; regions: Record<string, number> }[] | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
@@ -541,7 +541,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                 <h1 className="text-xl sm:text-2xl font-bold headline text-slate-900 dark:text-white">
                   News Pulse
                 </h1>
-                <p className="text-2xs sm:text-xs font-medium tracking-wide hidden xs:block text-cyan-600 dark:text-cyan-400">
+                <p className="text-2xs sm:text-xs font-medium tracking-wide hidden xs:block text-slate-500 dark:text-slate-500">
                   News before it&apos;s news
                 </p>
               </div>
@@ -549,31 +549,31 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-4">
-              <a
+              <Link
                 href="/news"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
               >
                 News
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/conditions"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
               >
                 Conditions
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/about"
                 className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
               >
                 About
-              </a>
+              </Link>
               {session && (
-                <a
+                <Link
                   href="/admin"
                   className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
                 >
                   Admin
-                </a>
+                </Link>
               )}
               {/* Theme Toggle */}
               <button
@@ -618,35 +618,35 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               <div className="absolute top-full right-4 mt-2 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 md:hidden overflow-hidden">
                 {/* Navigation */}
                 <div className="py-1">
-                  <a
+                  <Link
                     href="/news"
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     News
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/conditions"
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     Conditions
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/about"
                     onClick={() => setMobileMenuOpen(false)}
                     className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     About
-                  </a>
+                  </Link>
                   {session && (
-                    <a
+                    <Link
                       href="/admin"
                       onClick={() => setMobileMenuOpen(false)}
                       className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
                     >
                       Admin
-                    </a>
+                    </Link>
                   )}
                 </div>
 
@@ -688,7 +688,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   {heroView === 'main' && (
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
-                        <GlobeAltIcon className="w-4 h-4 text-blue-500" />
+                        <RadioIcon className="w-4 h-4 text-blue-500" />
                         <h2 className="text-subhead">Global Monitor</h2>
                       </div>
                       <span className="text-xs font-mono text-slate-500 dark:text-slate-400 ml-6">{formatHeaderTime()}</span>
@@ -726,7 +726,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   )}
                   {heroView === 'combined' && (
                     <>
-                      <GlobeAltIcon className="w-4 h-4 text-blue-500" />
+                      <Squares2X2Icon className="w-4 h-4 text-blue-500" />
                       <h2 className="text-subhead">Combined Monitor</h2>
                     </>
                   )}
@@ -1275,13 +1275,6 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
               </div>
             )}
 
-            {/* Explanation */}
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pt-1">
-              Every region has a measured baseline — how many posts typically come in over a 6-hour window.
-              When posts spike above that baseline, the bar grows and changes color.
-              Nobody decides what&apos;s &quot;breaking.&quot; The volume does.{' '}
-              <Link href="/about" className="text-blue-500 dark:text-blue-400 hover:underline">Learn more</Link>
-            </p>
           </div>
         )}
 

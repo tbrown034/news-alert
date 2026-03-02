@@ -3,14 +3,14 @@ import { WatchpointId } from '@/types';
 // Source type colors - distinct, editorial styling
 // Each type has a subtle but intentional color identity
 export const sourceTypeColors: Record<string, string> = {
-  official: 'bg-slate-800 dark:bg-slate-200 text-slate-100 dark:text-slate-900 border-transparent font-semibold',
-  'news-org': 'bg-zinc-700 dark:bg-zinc-300 text-zinc-100 dark:text-zinc-900 border-transparent',
-  osint: 'bg-amber-600 dark:bg-amber-500 text-white dark:text-amber-950 border-transparent font-semibold',
-  reporter: 'bg-stone-500 dark:bg-stone-400 text-white dark:text-stone-950 border-transparent',
-  analyst: 'bg-slate-600 dark:bg-slate-400 text-white dark:text-slate-950 border-transparent',
-  aggregator: 'bg-neutral-500 dark:bg-neutral-500 text-white dark:text-neutral-100 border-transparent',
-  ground: 'bg-emerald-700 dark:bg-emerald-600 text-white dark:text-emerald-50 border-transparent font-semibold',
-  bot: 'bg-gray-400 dark:bg-gray-600 text-gray-700 dark:text-gray-300 border-transparent italic',
+  official: 'text-[10px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-300',
+  'news-org': 'text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400',
+  osint: 'text-[10px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-300',
+  reporter: 'text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400',
+  analyst: 'text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400',
+  aggregator: 'text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400',
+  ground: 'text-[10px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-300',
+  bot: 'text-[10px] uppercase tracking-wider font-medium italic text-slate-400 dark:text-slate-500',
 };
 
 // Platform display names

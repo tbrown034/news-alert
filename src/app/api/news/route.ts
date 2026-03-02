@@ -222,11 +222,12 @@ export async function GET(request: Request) {
       ? newsItems
       : newsItems.filter((item) => item.region === region);
 
-    // Apply time window filter
-    filtered = filterByTimeWindow(filtered, hours);
+    // Always use 6h window for activity calculation, regardless of user's hours param
+    const sixHourAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    const fullWindowItems = filtered.filter(item => new Date(item.timestamp) >= sixHourAgo);
 
-    // Snapshot the full 6h window for activity calculation BEFORE since-filtering
-    const fullWindowItems = filtered;
+    // Apply user's time window filter for response items
+    filtered = filterByTimeWindow(filtered, hours);
 
     // If 'since' param provided, only return items newer than that timestamp
     // This enables incremental updates - client fetches only new items
