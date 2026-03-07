@@ -281,10 +281,14 @@ export async function generateSummary(
       const openai = new OpenAI({ apiKey: openaiKey });
       usedModel = 'gpt-4o';
 
+      // Adapt prompt for OpenAI: replace XML tags with markdown delimiters
+      const openaiPrompt = prompt.replace('<posts>', '---POSTS---').replace('</posts>', '---END POSTS---');
+
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o',
         max_tokens: 1024,
-        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+        messages: [{ role: 'user', content: openaiPrompt }],
       });
 
       fullText = completion.choices[0]?.message?.content || '';

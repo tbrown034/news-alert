@@ -382,6 +382,8 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
 
   const regionBadge = regionBadges[region] || regionBadges['all'];
   const tierInfo = TIER_INFO[briefing?.tier || currentTier];
+  const isOpenAiFallback = briefing?.usage?.model?.startsWith('gpt');
+  const displayModelName = isOpenAiFallback ? 'GPT-4o' : tierInfo.model;
   const generatedAt = briefing?.generatedAt ? new Date(briefing.generatedAt) : null;
 
   // Handle share
@@ -604,12 +606,12 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
             {/* Model selector dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button
-                onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
+                onClick={() => !isOpenAiFallback && setModelDropdownOpen(!modelDropdownOpen)}
                 disabled={loading}
                 className="flex items-center gap-0.5 font-medium text-orange-600 dark:text-orange-400 hover:text-orange-500 dark:hover:text-orange-300 transition-colors disabled:opacity-50"
               >
-                {tierInfo.model}
-                <ChevronDownIcon className={`w-3 h-3 transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
+                {displayModelName}
+                {!isOpenAiFallback && <ChevronDownIcon className={`w-3 h-3 transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />}
               </button>
               {modelDropdownOpen && (
                 <div className="absolute left-0 top-full mt-1 w-48 bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg z-50 overflow-hidden">
