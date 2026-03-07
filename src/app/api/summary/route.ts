@@ -228,10 +228,26 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Summary generation error:', error);
 
+    const msg = error instanceof Error ? error.message : '';
+    const isTransient = /overloaded|529|503|500|server_error|rate_limit|unavailable/i.test(msg);
+
+    if (isTransient) {
+      return NextResponse.json(
+        {
+          error: 'AI service is temporarily busy. Retrying automatically...',
+          retryable: true,
+        },
+        {
+          status: 503,
+          headers: { 'Retry-After': '5' },
+        }
+      );
+    }
+
     return NextResponse.json(
       {
         error: 'Failed to generate summary',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: msg || 'Unknown error',
       },
       { status: 500 }
     );

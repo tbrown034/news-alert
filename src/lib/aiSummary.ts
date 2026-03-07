@@ -8,6 +8,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { WatchpointId, NewsItem } from '@/types';
 import { regionDisplayNames } from './regionDetection';
 
@@ -48,6 +49,7 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   'claude-opus-4-5-20250131': { input: 15.0, output: 75.0 },
   'claude-sonnet-4-20250514': { input: 3.0, output: 15.0 },
   'claude-haiku-4-5-20251001': { input: 1.0, output: 5.0 },
+  'gpt-4o': { input: 2.5, output: 10.0 },
 };
 
 // =============================================================================
@@ -219,39 +221,86 @@ export async function generateSummary(
   // Build enhanced prompt
   const prompt = buildEnhancedPrompt(structuredPosts, region, timeWindowHours);
 
-  // Call Claude API with streaming to avoid Vercel timeout
+  // Try Anthropic first, fall back to OpenAI if all retries fail
+  let fullText = '';
+  let usedModel = model;
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let anthropicFailed = false;
+
+  // --- Anthropic (primary) ---
+  const MAX_RETRIES = 2;
   const client = new Anthropic();
 
-  // Use streaming to keep connection alive (avoids 10s Vercel Hobby timeout)
-  const stream = client.messages.stream({
-    model,
-    max_tokens: 1024,
-    messages: [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ],
-  });
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const stream = client.messages.stream({
+        model,
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+      });
 
-  // Collect streamed text
-  let fullText = '';
-  for await (const event of stream) {
-    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-      fullText += event.delta.text;
+      fullText = '';
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+          fullText += event.delta.text;
+        }
+      }
+
+      const finalMessage = await stream.finalMessage();
+      inputTokens = finalMessage.usage?.input_tokens || 0;
+      outputTokens = finalMessage.usage?.output_tokens || 0;
+      break; // Success
+    } catch (err) {
+      const isRetryable = err instanceof Error &&
+        /overloaded|529|503|500|server_error|rate_limit/i.test(err.message);
+
+      if (isRetryable && attempt < MAX_RETRIES) {
+        const delayMs = 1000 * (attempt + 1);
+        console.warn(`[aiSummary] Retryable error (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${delayMs}ms:`,
+          err instanceof Error ? err.message.slice(0, 100) : 'Unknown');
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        continue;
+      }
+      // All retries exhausted — mark for fallback
+      console.warn('[aiSummary] Anthropic failed after retries, falling back to OpenAI:',
+        err instanceof Error ? err.message.slice(0, 100) : 'Unknown');
+      anthropicFailed = true;
+      break;
     }
   }
 
-  // Get final message for usage stats
-  const finalMessage = await stream.finalMessage();
+  // --- OpenAI fallback ---
+  if (anthropicFailed) {
+    const openaiKey = process.env.OPENAI_API_KEY;
+    if (!openaiKey) {
+      throw new Error('AI service temporarily unavailable');
+    }
+
+    try {
+      const openai = new OpenAI({ apiKey: openaiKey });
+      usedModel = 'gpt-4o';
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        max_tokens: 1024,
+        messages: [{ role: 'user', content: prompt }],
+      });
+
+      fullText = completion.choices[0]?.message?.content || '';
+      inputTokens = completion.usage?.prompt_tokens || 0;
+      outputTokens = completion.usage?.completion_tokens || 0;
+      console.log('[aiSummary] OpenAI fallback succeeded');
+    } catch (openaiErr) {
+      console.error('[aiSummary] OpenAI fallback also failed:', openaiErr);
+      throw new Error('AI service temporarily unavailable');
+    }
+  }
+
   const latencyMs = Date.now() - startTime;
 
-  // Extract usage
-  const inputTokens = finalMessage.usage?.input_tokens || 0;
-  const outputTokens = finalMessage.usage?.output_tokens || 0;
-
   // Calculate cost
-  const pricing = MODEL_PRICING[model] || { input: 3.0, output: 15.0 };
+  const pricing = MODEL_PRICING[usedModel] || { input: 3.0, output: 15.0 };
   const costUsd = (inputTokens * pricing.input / 1_000_000) +
                   (outputTokens * pricing.output / 1_000_000);
 
@@ -291,7 +340,7 @@ export async function generateSummary(
     sourcesAnalyzed: structuredPosts.length,
     topSources,
     usage: {
-      model,
+      model: usedModel,
       inputTokens,
       outputTokens,
       latencyMs,

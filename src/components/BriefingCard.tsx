@@ -311,6 +311,12 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        // Auto-retry transient errors (503 = AI overloaded)
+        if (errorData.retryable && !skipCache) {
+          console.warn('[BriefingCard] AI temporarily busy, auto-retrying in 5s...');
+          setTimeout(() => fetchBriefing(tier, true), 5000);
+          return;
+        }
         throw new Error(errorData.error || `API error: ${response.status}`);
       }
 
@@ -454,11 +460,11 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
             </span>
           </div>
           <div className="py-2">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <p className="text-sm text-[var(--foreground-muted)]">AI briefing temporarily unavailable</p>
           </div>
           <div className="flex items-center gap-3 pt-1">
             <button
-              onClick={() => fetchBriefing('quick', true)}
+              onClick={() => { setError(null); fetchBriefing('quick', true); }}
               className="text-caption font-medium text-cyan-600 dark:text-cyan-400 hover:underline"
             >
               Retry

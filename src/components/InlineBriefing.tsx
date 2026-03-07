@@ -301,6 +301,12 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        // Auto-retry transient errors (503 = AI overloaded)
+        if (errorData.retryable && !skipCache) {
+          console.warn('[InlineBriefing] AI temporarily busy, auto-retrying in 5s...');
+          setTimeout(() => fetchBriefing(tier, true), 5000);
+          return;
+        }
         throw new Error(errorData.error || `API error: ${response.status}`);
       }
 
@@ -400,10 +406,10 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
     return (
       <div className="bg-[var(--color-elevated-muted)] border-b border-[var(--color-elevated)]">
         <div className="px-4 py-3 flex items-center justify-between">
-          <span className="text-label text-[var(--color-elevated)]">{error}</span>
+          <span className="text-label text-[var(--foreground-muted)]">AI briefing temporarily unavailable</span>
           <button
-            onClick={() => fetchBriefing('quick', true)}
-            className="text-caption text-[var(--color-elevated)] hover:underline"
+            onClick={() => { setError(null); fetchBriefing('quick', true); }}
+            className="text-caption font-medium text-cyan-600 dark:text-cyan-400 hover:underline"
           >
             Retry
           </button>
