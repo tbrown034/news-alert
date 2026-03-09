@@ -52,7 +52,7 @@ interface NewsFeedProps {
 function NewsCardSkeleton({ index = 0 }: { index?: number }) {
   return (
     <div
-      className="px-4 py-4 border-b border-slate-100 dark:border-slate-800"
+      className="px-4 py-4 border-b border-border-light"
       style={{ animationDelay: `${index * 100}ms` }}
     >
       <div className="flex flex-col gap-3">
@@ -351,7 +351,7 @@ export const NewsFeed = memo(function NewsFeed({
   return (
     <div className="flex flex-col w-full max-w-4xl mx-auto">
       {/* Header - matches Global Monitor pattern */}
-      <div className="relative z-10 px-3 sm:px-4 py-2.5 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-700/50 rounded-t-2xl">
+      <div className="relative z-10 px-3 sm:px-4 py-2.5 bg-background-card/80 backdrop-blur-sm border-b border-border-light rounded-t-xl">
           {/* Row 1: Title + Refresh */}
           <div className="flex items-center justify-between mb-2">
             {/* Title */}
@@ -367,14 +367,14 @@ export const NewsFeed = memo(function NewsFeed({
                   onClick={onRefresh}
                   disabled={isLoading}
                   aria-label={isLoading ? 'Refreshing feed' : 'Refresh feed'}
-                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-foreground-muted hover:text-foreground bg-background-secondary hover:bg-background-secondary/80 border border-border-light transition-colors disabled:opacity-50"
                 >
                   <ArrowPathIcon className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                   <span>{isLoading ? 'Refreshing...' : 'Refresh Feed'}</span>
                 </button>
                 {lastUpdated && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-2xs text-slate-500 dark:text-slate-400" suppressHydrationWarning>
+                    <span className="text-2xs text-foreground-muted" suppressHydrationWarning>
                       Last updated {formatActualTime(lastUpdated)}
                     </span>
                     <button
@@ -382,7 +382,7 @@ export const NewsFeed = memo(function NewsFeed({
                       className={`p-0.5 rounded transition-colors ${
                         showFeedStats
                           ? 'text-blue-500 dark:text-blue-400'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                          : 'text-foreground-muted hover:text-foreground'
                       }`}
                       aria-label="Toggle feed stats"
                       aria-expanded={showFeedStats}
@@ -397,16 +397,16 @@ export const NewsFeed = memo(function NewsFeed({
 
           {/* Collapsible Feed Stats Panel */}
           {showFeedStats && (
-            <div className="mb-2 p-2.5 bg-white/60 dark:bg-slate-800/60 rounded-lg border border-slate-200/50 dark:border-slate-700/50 space-y-2">
+            <div className="mb-2 p-2.5 bg-background-secondary rounded-lg border border-border-light space-y-2">
               {/* Platform breakdown */}
               <div>
-                <div className="text-2xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">By Platform</div>
+                <div className="text-2xs font-medium text-foreground-muted uppercase tracking-wide mb-1.5">By Platform</div>
                 <div className="grid grid-cols-1 xs:grid-cols-3 gap-1.5">
                   {feedStats.platforms.map(({ name, posts, sources }) => (
-                    <div key={name} className="flex items-center justify-between px-2 py-1 bg-slate-50 dark:bg-slate-900/50 rounded text-xs">
-                      <span className="font-medium text-slate-700 dark:text-slate-300 capitalize">{name}</span>
-                      <span className="text-slate-500 dark:text-slate-400">
-                        {posts} <span className="text-slate-500 dark:text-slate-400">/ {sources} src</span>
+                    <div key={name} className="flex items-center justify-between px-2 py-1 bg-background-secondary rounded text-xs">
+                      <span className="font-medium text-foreground capitalize">{name}</span>
+                      <span className="text-foreground-muted">
+                        {posts} <span className="text-foreground-muted">/ {sources} src</span>
                       </span>
                     </div>
                   ))}
@@ -414,27 +414,27 @@ export const NewsFeed = memo(function NewsFeed({
               </div>
               {/* Source type breakdown */}
               <div>
-                <div className="text-2xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1.5">By Source Type</div>
+                <div className="text-2xs font-medium text-foreground-muted uppercase tracking-wide mb-1.5">By Source Type</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
                   {feedStats.types.map(({ name, count }) => (
-                    <span key={name} className="text-slate-600 dark:text-slate-400">
+                    <span key={name} className="text-foreground-muted">
                       <span className="capitalize">{name}</span>{' '}
-                      <span className="font-mono text-slate-500 dark:text-slate-400">{count}</span>
+                      <span className="font-mono text-foreground-muted">{count}</span>
                     </span>
                   ))}
                 </div>
               </div>
               {/* Load time */}
               {loadTimeMs && (
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  Fetch time: <span className="font-mono text-slate-700 dark:text-slate-300">{(loadTimeMs / 1000).toFixed(1)}s</span>
+                <div className="text-xs text-foreground-muted">
+                  Fetch time: <span className="font-mono text-foreground">{(loadTimeMs / 1000).toFixed(1)}s</span>
                 </div>
               )}
             </div>
           )}
 
           {/* Row 2: Stats - with loading skeleton */}
-          <div className="text-xs text-slate-500 dark:text-slate-400 mb-2.5">
+          <div className="text-xs text-foreground-muted mb-2.5">
             {isLoading && displayPosts === 0 ? (
               // Skeleton loading state
               <div className="flex flex-col gap-1">
@@ -451,56 +451,35 @@ export const NewsFeed = memo(function NewsFeed({
               </div>
             ) : (
               <>
-                <div>
-                  {isFiltered ? 'Showing ' : 'Fetched '}
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{displayPosts.toLocaleString()} posts</span>
-                  {' from '}
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">{displaySources.toLocaleString()} sources</span>
-                  {isFiltered
-                    ? ' (filtered)'
-                    : <> in last <span className="font-semibold text-slate-700 dark:text-slate-300">six hours</span> {selectedTab === 'all' ? 'globally' : `in ${regionDisplayNames[selectedTab] || selectedTab}`}</>
-                  }
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span>
+                    <span className="font-semibold text-foreground">{displayPosts.toLocaleString()} posts</span>
+                    {' · '}
+                    <span className="font-semibold text-foreground">{displaySources.toLocaleString()} sources</span>
+                    {isFiltered
+                      ? ' (filtered)'
+                      : <> · {hoursWindow}h</>
+                    }
+                  </span>
+                  <Link href="/sources" className="hidden sm:inline text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:no-underline">Sources</Link>
                 </div>
-                <p className="hidden sm:block text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-                  Sources are hand-picked from Bluesky, Telegram, Mastodon, and RSS — all through free, open APIs.
-                  This is a work in progress.{' '}
-                  <Link href="/about" className="text-blue-500 dark:text-blue-400 hover:underline">About sources</Link>
-                </p>
-                {/* Activity indicator - show for both global and regional views */}
-                {!isFiltered && activity && activity[selectedTab] && (
-                  <div className="italic mt-0.5">
-                    {(() => {
-                      const a = activity[selectedTab];
-                      if (!a.vsNormal || a.vsNormal === 'normal') return 'Posting at a typical pace';
-                      if (a.vsNormal === 'above') {
-                        if (a.multiplier && a.multiplier >= 2) return `${a.multiplier}× more posts than baseline`;
-                        if (a.percentChange && a.percentChange >= 50) return `${a.percentChange}% more posts than baseline`;
-                        return 'Slightly busier than typical';
-                      }
-                      if (a.vsNormal === 'below') {
-                        if (a.percentChange) return `${Math.abs(a.percentChange)}% fewer posts than baseline`;
-                        return 'Quieter than typical';
-                      }
-                      return 'Posting at a typical pace';
-                    })()}
-                  </div>
-                )}
                 {/* Trending keywords - only for All view */}
                 {trendingKeywords.length > 0 && (
-                  <div className="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-slate-700/30">
+                  <div className="mt-2.5 pt-2 border-t border-border-light">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      <div className="flex items-center gap-1.5 text-xs font-medium text-foreground-muted uppercase tracking-wide">
                         <FireIcon className="w-3 h-3 text-amber-500" />
                         <span>Trending</span>
                       </div>
-                      <span className="text-sm text-slate-500 dark:text-slate-400">
-                        {trendingKeywords.map((kw, i) => (
-                          <span key={kw.keyword}>
-                            {i > 0 && '  ·  '}
-                            {kw.keyword} <span className="text-slate-500 dark:text-slate-400">({kw.count})</span>
-                          </span>
-                        ))}
-                      </span>
+                      {trendingKeywords.map((kw) => (
+                        <span
+                          key={kw.keyword}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-background-secondary text-foreground border border-border-light"
+                        >
+                          {kw.keyword}
+                          <span className="text-foreground-light">{kw.count}</span>
+                        </span>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -508,13 +487,11 @@ export const NewsFeed = memo(function NewsFeed({
             )}
           </div>
 
-          {/* Region Selector */}
-          <div className="pb-2">
+          {/* Region Selector - horizontally scrollable on mobile */}
+          <div className="pb-2 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
             <div className={`
-              inline-flex flex-wrap items-center gap-0.5 p-1 rounded-xl
-              bg-gradient-to-b from-slate-100 to-slate-50 dark:from-slate-800/80 dark:to-slate-900/60
-              border border-slate-200/80 dark:border-slate-700/60
-              shadow-sm dark:shadow-lg dark:shadow-black/20
+              inline-flex items-center gap-0.5 p-1 rounded-lg min-w-max
+              bg-background-secondary
               ${isPending ? 'opacity-70' : ''}
               transition-all duration-200
             `}>
@@ -528,24 +505,24 @@ export const NewsFeed = memo(function NewsFeed({
                     <button
                       onClick={() => handleTabSelect(tab.id)}
                       className={`
-                        group relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap
+                        group relative px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap
                         transition-all duration-200 ease-out
                         ${isSelected
-                          ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-md dark:shadow-lg dark:shadow-black/30 ring-1 ring-slate-200 dark:ring-slate-600/50 scale-[1.02]'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-700/40'
+                          ? 'bg-background-card text-foreground shadow-sm'
+                          : 'text-foreground-muted hover:text-foreground'
                         }
                       `}
                     >
                       <span className="relative z-10 flex items-center gap-2">
                         {tab.id === 'all' && (
-                          <ListBulletIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`} />
+                          <ListBulletIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-foreground' : 'text-foreground-muted'}`} />
                         )}
                         <span>{tab.label}</span>
                         <span className={`
-                          hidden sm:inline-flex text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
+                          inline-flex text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
                           ${isSelected
-                            ? 'bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300'
-                            : 'bg-transparent text-slate-500 dark:text-slate-400 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50'
+                            ? 'bg-background-secondary text-foreground'
+                            : 'text-foreground-muted'
                           }
                         `}>
                           {count}
@@ -553,7 +530,7 @@ export const NewsFeed = memo(function NewsFeed({
                       </span>
                     </button>
                     {!isLast && (
-                      <div className="w-px h-5 bg-slate-200/60 dark:bg-slate-600/40 mx-0.5" />
+                      <div className="w-px h-5 bg-border mx-0.5" />
                     )}
                   </div>
                 );
@@ -566,26 +543,26 @@ export const NewsFeed = memo(function NewsFeed({
                 return (
                   <div key={tab.id} className="flex items-center">
                     {index === 0 && (
-                      <div className="w-px h-5 bg-slate-200/60 dark:bg-slate-600/40 mx-0.5" />
+                      <div className="w-px h-5 bg-border mx-0.5" />
                     )}
                     <button
                       onClick={() => handleTabSelect(tab.id)}
                       className={`
-                        group relative px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap
+                        group relative px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap
                         transition-all duration-200 ease-out
                         ${isSelected
-                          ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-md dark:shadow-lg dark:shadow-black/30 ring-1 ring-slate-200 dark:ring-slate-600/50 scale-[1.02]'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-700/40'
+                          ? 'bg-background-card text-foreground shadow-sm'
+                          : 'text-foreground-muted hover:text-foreground'
                         }
                       `}
                     >
                       <span className="relative z-10 flex items-center gap-2">
                         <span>{tab.label}</span>
                         <span className={`
-                          hidden sm:inline-flex text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
+                          inline-flex text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
                           ${isSelected
-                            ? 'bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300'
-                            : 'bg-transparent text-slate-500 dark:text-slate-400 group-hover:bg-slate-100 dark:group-hover:bg-slate-700/50'
+                            ? 'bg-background-secondary text-foreground'
+                            : 'text-foreground-muted'
                           }
                         `}>
                           {count}
@@ -593,19 +570,19 @@ export const NewsFeed = memo(function NewsFeed({
                       </span>
                     </button>
                     {index < secondaryTabs.length - 1 && (
-                      <div className="w-px h-5 bg-slate-200/60 dark:bg-slate-600/40 mx-0.5" />
+                      <div className="w-px h-5 bg-border mx-0.5" />
                     )}
                   </div>
                 );
               })}
 
               {/* Divider before More/Less */}
-              <div className="w-px h-6 bg-slate-200 dark:bg-slate-700/60 mx-1" />
+              <div className="w-px h-6 bg-border mx-1" />
 
               {/* More/Less toggle */}
               <button
                 onClick={() => setRegionalExpanded(!regionalExpanded)}
-                className="px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-700/40 transition-all duration-200 ease-out flex items-center gap-1.5"
+                className="px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap text-foreground-muted hover:text-foreground transition-all duration-200 ease-out flex items-center gap-1.5"
               >
                 <span>{regionalExpanded ? 'Less' : 'More'}</span>
                 <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${regionalExpanded ? 'rotate-180' : ''}`} />
@@ -614,8 +591,8 @@ export const NewsFeed = memo(function NewsFeed({
 
             {/* Loading indicator */}
             {isPending && (
-              <span className="ml-3 inline-flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                <span className="w-3 h-3 border-2 border-slate-300 dark:border-slate-600 border-t-blue-500 dark:border-t-blue-400 rounded-full animate-spin" />
+              <span className="ml-3 inline-flex items-center gap-2 text-xs text-foreground-muted">
+                <span className="w-3 h-3 border-2 border-border border-t-foreground-muted rounded-full animate-spin" />
                 <span>Filtering...</span>
               </span>
             )}
@@ -638,11 +615,11 @@ export const NewsFeed = memo(function NewsFeed({
 
         {!isLoading && !error && sortedItems.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4">
-            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
-              <GlobeAltIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />
+            <div className="w-12 h-12 rounded-full bg-background-secondary flex items-center justify-center mb-3">
+              <GlobeAltIcon className="w-6 h-6 text-foreground-muted" />
             </div>
-            <span className="text-slate-800 dark:text-slate-100 text-base sm:text-lg font-medium mb-1">No updates yet</span>
-            <span className="text-slate-500 dark:text-slate-400 text-sm text-center max-w-xs">
+            <span className="text-foreground text-base sm:text-lg font-medium mb-1">No updates yet</span>
+            <span className="text-foreground-muted text-sm text-center max-w-xs">
               {selectedTab === 'all'
                 ? 'News will appear here as it breaks'
                 : `No news for ${regionDisplayNames[selectedTab] || 'this region'} yet`}

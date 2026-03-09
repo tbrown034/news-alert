@@ -1,19 +1,31 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { NewsFeed, WorldMap, SeismicMap, WeatherMap, OutagesMap, TravelMap, FiresMap } from '@/components';
-import type { TFRMarker, FireMarker } from '@/components/WorldMap';
-import { EditorialFAB } from '@/components/EditorialFAB';
-import { ErrorBoundary, FeedSkeleton, MapSkeleton } from '@/components/ErrorBoundary';
-import { watchpoints as defaultWatchpoints } from '@/lib/mockData';
-import { NewsItem, WatchpointId, Watchpoint, Earthquake } from '@/types';
-import { useClock } from '@/hooks/useClock';
-import { NewspaperIcon, Squares2X2Icon, RadioIcon, CloudIcon, SignalIcon, ExclamationTriangleIcon, FireIcon, EllipsisHorizontalIcon, Bars3Icon, XMarkIcon, ChevronDownIcon, SunIcon, MoonIcon, ChartBarIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { useSession } from '@/lib/auth-client';
-import { MapPinIcon } from '@heroicons/react/24/solid';
-import { RegionActivity } from '@/lib/activityDetection';
-import { formatTimeAgo } from '@/lib/formatUtils';
-import Link from 'next/link';
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import {
+  NewsFeed,
+  WorldMap,
+  SeismicMap,
+} from "@/components";
+import { EditorialFAB } from "@/components/EditorialFAB";
+import {
+  ErrorBoundary,
+  FeedSkeleton,
+  MapSkeleton,
+} from "@/components/ErrorBoundary";
+import { watchpoints as defaultWatchpoints } from "@/lib/mockData";
+import { NewsItem, WatchpointId, Watchpoint, Earthquake } from "@/types";
+import { useClock } from "@/hooks/useClock";
+import {
+  GlobeAltIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ArrowTopRightOnSquareIcon,
+} from "@heroicons/react/24/outline";
+import { useSession } from "@/lib/auth-client";
+import { MapPinIcon } from "@heroicons/react/24/solid";
+import { RegionActivity } from "@/lib/activityDetection";
+import { formatTimeAgo } from "@/lib/formatUtils";
 
 interface ApiResponse {
   items: NewsItem[];
@@ -26,19 +38,11 @@ interface ApiResponse {
   isIncremental?: boolean;
 }
 
-type HeroView = 'main' | 'seismic' | 'weather' | 'outages' | 'travel' | 'fires' | 'combined';
+type HeroView = "main" | "seismic";
 
-const HERO_MAIN_TABS = [
-  { id: 'main', label: 'Main', icon: NewspaperIcon, color: 'blue' },
-  { id: 'seismic', label: 'Seismic', icon: MapPinIcon, color: 'blue' },
-] as const;
-
-const HERO_SECONDARY_TABS = [
-  { id: 'weather', label: 'Weather', icon: CloudIcon, color: 'blue' },
-  { id: 'outages', label: 'Outages', icon: SignalIcon, color: 'blue' },
-  { id: 'travel', label: 'Travel', icon: ExclamationTriangleIcon, color: 'blue' },
-  { id: 'fires', label: 'Fires', icon: FireIcon, color: 'blue' },
-  { id: 'combined', label: 'Combined', icon: Squares2X2Icon, color: 'blue' },
+const HERO_TABS = [
+  { id: "main", label: "Main", icon: GlobeAltIcon, color: "blue" },
+  { id: "seismic", label: "Seismic", icon: MapPinIcon, color: "amber" },
 ] as const;
 
 interface HomeClientProps {
@@ -47,9 +51,14 @@ interface HomeClientProps {
   initialMapFocus?: WatchpointId; // Focus map here without filtering feed
 }
 
-export default function HomeClient({ initialData, initialRegion, initialMapFocus }: HomeClientProps) {
+export default function HomeClient({
+  initialData,
+  initialRegion,
+  initialMapFocus,
+}: HomeClientProps) {
   const { data: session } = useSession();
-  const [selectedWatchpoint, setSelectedWatchpointState] = useState<WatchpointId>(initialRegion);
+  const [selectedWatchpoint, setSelectedWatchpointState] =
+    useState<WatchpointId>(initialRegion);
 
   // Simple region setter (no persistence - always starts at "All")
   const setSelectedWatchpoint = useCallback((region: WatchpointId) => {
@@ -58,27 +67,35 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [newsItems, setNewsItems] = useState<NewsItem[]>(() => {
     if (!initialData?.items) return [];
-    return initialData.items.map(item => ({
+    return initialData.items.map((item) => ({
       ...item,
       timestamp: new Date(item.timestamp),
     }));
   });
   const [watchpoints, setWatchpoints] = useState<Watchpoint[]>(() => {
     if (!initialData?.activity) return defaultWatchpoints;
-    return defaultWatchpoints.map(wp => {
+    return defaultWatchpoints.map((wp) => {
       const activity = initialData.activity[wp.id];
       if (activity) {
-        return { ...wp, activityLevel: activity.level as Watchpoint['activityLevel'] };
+        return {
+          ...wp,
+          activityLevel: activity.level as Watchpoint["activityLevel"],
+        };
       }
       return wp;
     });
   });
-  const [lastFetched, setLastFetched] = useState<string | null>(initialData?.fetchedAt || null);
-  const [activityData, setActivityData] = useState<ApiResponse['activity'] | null>(initialData?.activity || null);
-  const [activityConfirmed, setActivityConfirmed] = useState(false); // True after client-side fetch confirms fresh data
+  const [lastFetched, setLastFetched] = useState<string | null>(
+    initialData?.fetchedAt || null,
+  );
+  const [activityData, setActivityData] = useState<
+    ApiResponse["activity"] | null
+  >(initialData?.activity || null);
   const [newsError, setNewsError] = useState<string | null>(null);
   const [newsLoadTimeMs, setNewsLoadTimeMs] = useState<number | null>(null);
-  const [hoursWindow, setHoursWindow] = useState<number>(initialData?.hoursWindow || 6);
+  const [hoursWindow, setHoursWindow] = useState<number>(
+    initialData?.hoursWindow || 6,
+  );
 
   // Live update settings
   const [pendingItems, setPendingItems] = useState<NewsItem[]>([]); // Buffer for new items
@@ -86,104 +103,105 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const [displayLimit, setDisplayLimit] = useState<number>(50); // Pagination: how many to show
 
   // Hero view mode
-  const [heroView, setHeroView] = useState<HeroView>('main');
+  const [heroView, setHeroView] = useState<HeroView>("main");
   const [earthquakes, setEarthquakes] = useState<Earthquake[]>([]);
   const [significantQuakes, setSignificantQuakes] = useState<Earthquake[]>([]); // 6.0+ for Main view
-  const [tfrs, setTfrs] = useState<TFRMarker[]>([]); // Active TFRs for map
-  const [fireMarkers, setFireMarkers] = useState<FireMarker[]>([]); // Active fires for map
   const [selectedQuake, setSelectedQuake] = useState<Earthquake | null>(null);
+  const [quakePage, setQuakePage] = useState(0);
   const [seismicLoading, setSeismicLoading] = useState(false);
-  const [seismicLastFetched, setSeismicLastFetched] = useState<Date | null>(null);
-  const [showMoreTabs, setShowMoreTabs] = useState(false);
-  const [showPanel, setShowPanel] = useState<'activity' | 'details' | null>(null);
-  const [activityHistory, setActivityHistory] = useState<{ timestamp: string; total: number; regions: Record<string, number> }[] | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [seismicLastFetched, setSeismicLastFetched] = useState<Date | null>(
+    null,
+  );
+  const [showPanel, setShowPanel] = useState<"activity" | null>(
+    "activity",
+  );
   const [useUTC] = useState(false);
   const currentTime = useClock();
-
-  // Initialize theme from localStorage
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light' | null;
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-  }, []);
 
   // Format time for header display
   const formatHeaderTime = () => {
     // Return placeholder during SSR/hydration to avoid mismatch
-    if (!currentTime) return '—';
+    if (!currentTime) return "—";
 
     // AP style: Friday, Feb. 27, 2026, 9:16 p.m. EST
-    const AP_MONTHS = ['Jan.', 'Feb.', 'March', 'April', 'May', 'June', 'July', 'Aug.', 'Sept.', 'Oct.', 'Nov.', 'Dec.'];
+    const AP_MONTHS = [
+      "Jan.",
+      "Feb.",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "Aug.",
+      "Sept.",
+      "Oct.",
+      "Nov.",
+      "Dec.",
+    ];
 
     const formatAP = (d: Date, tz?: string) => {
       // Use Intl to get parts in the target timezone
-      const parts = new Intl.DateTimeFormat('en-US', {
+      const parts = new Intl.DateTimeFormat("en-US", {
         ...(tz ? { timeZone: tz } : {}),
-        weekday: 'long', month: 'numeric', day: 'numeric', year: 'numeric',
-        hour: 'numeric', minute: '2-digit', hour12: true,
+        weekday: "long",
+        month: "numeric",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
       }).formatToParts(d);
 
-      const get = (type: string) => parts.find(p => p.type === type)?.value ?? '';
-      const month = AP_MONTHS[parseInt(get('month')) - 1];
-      const day = get('day');
-      const year = get('year');
-      const dayOfWeek = get('weekday');
-      const hour = get('hour');
-      const minute = get('minute');
-      const period = get('dayPeriod').toLowerCase().replace('am', 'a.m.').replace('pm', 'p.m.');
+      const get = (type: string) =>
+        parts.find((p) => p.type === type)?.value ?? "";
+      const month = AP_MONTHS[parseInt(get("month")) - 1];
+      const day = get("day");
+      const year = get("year");
+      const dayOfWeek = get("weekday");
+      const hour = get("hour");
+      const minute = get("minute");
+      const period = get("dayPeriod")
+        .toLowerCase()
+        .replace("am", "a.m.")
+        .replace("pm", "p.m.");
 
       return `${dayOfWeek}, ${month} ${day}, ${year}, ${hour}:${minute} ${period}`;
     };
 
     if (useUTC) {
-      return formatAP(currentTime, 'UTC') + ' UTC';
+      return formatAP(currentTime, "UTC") + " UTC";
     }
 
     // Get local timezone abbreviation
-    const tzAbbr = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' })
-      .formatToParts(currentTime)
-      .find(p => p.type === 'timeZoneName')?.value ?? '';
+    const tzAbbr =
+      new Intl.DateTimeFormat("en-US", { timeZoneName: "short" })
+        .formatToParts(currentTime)
+        .find((p) => p.type === "timeZoneName")?.value ?? "";
 
-    return formatAP(currentTime) + ' ' + tzAbbr;
+    return formatAP(currentTime) + " " + tzAbbr;
   };
 
   // Initialize autoUpdate preference from localStorage (after hydration)
   useEffect(() => {
-    const saved = localStorage.getItem('news-auto-update');
+    const saved = localStorage.getItem("news-auto-update");
     if (saved !== null) {
-      setAutoUpdate(saved === 'true');
+      setAutoUpdate(saved === "true");
     }
   }, []);
 
-
   // Toggle theme and persist to localStorage
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
-
   // Ref for dropdown click-outside handling
-  const moreDropdownRef = useRef<HTMLDivElement>(null);
 
   // Ref to prevent duplicate fetches
   const isFetchingRef = useRef(false);
   // Check if we have ACTUAL data, not just an empty response
-  const hasInitialData = useRef(!!(initialData?.items?.length));
+  const hasInitialData = useRef(!!initialData?.items?.length);
 
   // Toggle auto-update preference (saves to localStorage in handler, not useEffect)
   const toggleAutoUpdate = useCallback(() => {
-    setAutoUpdate(prev => {
+    setAutoUpdate((prev) => {
       const newValue = !prev;
-      localStorage.setItem('news-auto-update', String(newValue));
+      localStorage.setItem("news-auto-update", String(newValue));
       return newValue;
     });
   }, []);
@@ -192,15 +210,15 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   const showPendingItems = useCallback(() => {
     if (pendingItems.length === 0) return;
 
-    setNewsItems(prev => {
-      const existingIds = new Set(prev.map(i => i.id));
-      const unique = pendingItems.filter(i => !existingIds.has(i.id));
+    setNewsItems((prev) => {
+      const existingIds = new Set(prev.map((i) => i.id));
+      const unique = pendingItems.filter((i) => !existingIds.has(i.id));
 
       if (unique.length === 0) return prev;
 
       // Sort new items by timestamp (newest first among new items)
       const sortedNew = unique.sort(
-        (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+        (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
       );
 
       // PREPEND only - never insert in middle of existing feed
@@ -220,7 +238,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
       // Always fetch ALL regions for incremental - filtering is client-side
       const since = encodeURIComponent(lastFetched);
       const response = await fetch(
-        `/api/news?region=all&hours=6&limit=100&since=${since}`
+        `/api/news?region=all&hours=6&limit=100&since=${since}`,
       );
 
       if (!response.ok) return;
@@ -236,20 +254,24 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
         // Use functional updates to avoid depending on newsItems/pendingItems state
         if (autoUpdate) {
           // Auto-update ON: Prepend new items directly to feed
-          setNewsItems(prev => {
-            const existingIds = new Set(prev.map(i => i.id));
-            const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
+          setNewsItems((prev) => {
+            const existingIds = new Set(prev.map((i) => i.id));
+            const uniqueNewItems = newItems.filter(
+              (item) => !existingIds.has(item.id),
+            );
             if (uniqueNewItems.length === 0) return prev;
             const sortedNew = uniqueNewItems.sort(
-              (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
+              (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
             );
             return [...sortedNew, ...prev];
           });
         } else {
           // Auto-update OFF: Add to pending buffer
-          setPendingItems(prev => {
-            const existingIds = new Set(prev.map(i => i.id));
-            const uniqueNewItems = newItems.filter(item => !existingIds.has(item.id));
+          setPendingItems((prev) => {
+            const existingIds = new Set(prev.map((i) => i.id));
+            const uniqueNewItems = newItems.filter(
+              (item) => !existingIds.has(item.id),
+            );
             if (uniqueNewItems.length === 0) return prev;
             return [...prev, ...uniqueNewItems];
           });
@@ -262,15 +284,17 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
       // Update activity data if provided
       if (data.activity) {
         setActivityData(data.activity);
-        setActivityConfirmed(true); // Mark as confirmed from client fetch
         setWatchpoints((prev) =>
           prev.map((wp) => {
             const activity = data.activity[wp.id];
             if (activity) {
-              return { ...wp, activityLevel: activity.level as Watchpoint['activityLevel'] };
+              return {
+                ...wp,
+                activityLevel: activity.level as Watchpoint["activityLevel"],
+              };
             }
             return wp;
-          })
+          }),
         );
       }
     } catch {
@@ -321,24 +345,27 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
 
       if (data.activity) {
         setActivityData(data.activity);
-        setActivityConfirmed(true); // Mark as confirmed from client fetch
         setWatchpoints((prev) =>
           prev.map((wp) => {
             const activity = data.activity[wp.id];
             if (activity) {
-              return { ...wp, activityLevel: activity.level as Watchpoint['activityLevel'] };
+              return {
+                ...wp,
+                activityLevel: activity.level as Watchpoint["activityLevel"],
+              };
             }
             return wp;
-          })
+          }),
         );
       }
-
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error instanceof Error && error.name === 'AbortError') {
-        setNewsError('Request timed out. Try again in a moment.');
+      if (error instanceof Error && error.name === "AbortError") {
+        setNewsError("Request timed out. Try again in a moment.");
       } else {
-        setNewsError(error instanceof Error ? error.message : 'Failed to load news feed');
+        setNewsError(
+          error instanceof Error ? error.message : "Failed to load news feed",
+        );
       }
     } finally {
       setIsRefreshing(false);
@@ -349,8 +376,12 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   // Store latest callbacks in refs to avoid useEffect dependency issues
   const fetchNewsRef = useRef(fetchNews);
   const fetchIncrementalRef = useRef(fetchIncremental);
-  useEffect(() => { fetchNewsRef.current = fetchNews; }, [fetchNews]);
-  useEffect(() => { fetchIncrementalRef.current = fetchIncremental; }, [fetchIncremental]);
+  useEffect(() => {
+    fetchNewsRef.current = fetchNews;
+  }, [fetchNews]);
+  useEffect(() => {
+    fetchIncrementalRef.current = fetchIncremental;
+  }, [fetchIncremental]);
 
   // Initial data fetch (once on mount)
   // Region changes are handled client-side via filtering - no refetch needed
@@ -365,17 +396,13 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
     }
   }, []);
 
-  // Fetch activity history for sparklines (24h trend)
-  useEffect(() => {
-    fetch('/api/analytics/activity?view=history&days=1')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data?.dataPoints) setActivityHistory(data.dataPoints); })
-      .catch(() => {}); // Sparklines are optional — fail silently
-  }, []);
 
   // Auto-refresh every 5 minutes using incremental updates
   useEffect(() => {
-    const interval = setInterval(() => fetchIncrementalRef.current(), 5 * 60 * 1000);
+    const interval = setInterval(
+      () => fetchIncrementalRef.current(),
+      5 * 60 * 1000,
+    );
     return () => clearInterval(interval);
   }, []);
 
@@ -386,7 +413,7 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
     setSeismicLoading(true);
 
     try {
-      const response = await fetch('/api/seismic?period=day&minMag=4.5', {
+      const response = await fetch("/api/seismic?period=day&minMag=5", {
         signal: controller.signal,
       });
 
@@ -396,10 +423,12 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
 
       const data = await response.json();
       if (data.earthquakes) {
-        setEarthquakes(data.earthquakes.map((eq: Earthquake & { time: string }) => ({
-          ...eq,
-          time: new Date(eq.time),
-        })));
+        setEarthquakes(
+          data.earthquakes.map((eq: Earthquake & { time: string }) => ({
+            ...eq,
+            time: new Date(eq.time),
+          })),
+        );
         setSeismicLastFetched(new Date());
       }
     } catch {
@@ -410,30 +439,33 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
   }, []);
 
   // Handler for changing hero view - fetches data when needed (not in useEffect)
-  const handleHeroViewChange = useCallback((view: HeroView) => {
-    setHeroView(view);
-    // Close details panel when switching to main (no details content for main view)
-    if (view === 'main' && showPanel === 'details') {
-      setShowPanel(null);
-    }
-    // Fetch earthquake data when seismic tab is opened (if not already loaded)
-    if ((view === 'seismic' || view === 'combined') && earthquakes.length === 0) {
-      fetchEarthquakes();
-    }
-  }, [earthquakes.length, fetchEarthquakes, showPanel]);
+  const handleHeroViewChange = useCallback(
+    (view: HeroView) => {
+      setHeroView(view);
+      // Close any open panel when switching views
+      if (showPanel) setShowPanel(null);
+      // Fetch earthquake data when seismic tab is opened (if not already loaded)
+      if (view === "seismic" && earthquakes.length === 0) {
+        fetchEarthquakes();
+      }
+    },
+    [earthquakes.length, fetchEarthquakes, showPanel],
+  );
 
   // Fetch significant earthquakes (6.0+) for Main view on mount
   useEffect(() => {
     const fetchSignificantQuakes = async () => {
       try {
-        const response = await fetch('/api/seismic?period=day&minMag=6');
+        const response = await fetch("/api/seismic?period=day&minMag=6");
         if (!response.ok) return;
         const data = await response.json();
         if (data.earthquakes) {
-          setSignificantQuakes(data.earthquakes.map((eq: Earthquake & { time: string }) => ({
-            ...eq,
-            time: new Date(eq.time),
-          })));
+          setSignificantQuakes(
+            data.earthquakes.map((eq: Earthquake & { time: string }) => ({
+              ...eq,
+              time: new Date(eq.time),
+            })),
+          );
         }
       } catch {
         // Silent fail for Main view - earthquakes are supplementary
@@ -441,378 +473,87 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
     };
     fetchSignificantQuakes();
 
-    // Fetch active TFRs for map markers
-    const fetchTFRs = async () => {
-      try {
-        const response = await fetch('/api/tfr');
-        if (!response.ok) return;
-        const data = await response.json();
-        if (data.tfrs) {
-          setTfrs(data.tfrs.map((tfr: TFRMarker) => ({
-            id: tfr.id,
-            title: tfr.title,
-            coordinates: tfr.coordinates,
-            tfrType: tfr.tfrType,
-            state: tfr.state,
-            severity: tfr.severity,
-          })));
-        }
-      } catch {
-        // Silent fail — TFRs are supplementary
-      }
-    };
-    fetchTFRs();
-
-    // Fetch active fires for map markers
-    const fetchFires = async () => {
-      try {
-        const response = await fetch('/api/fires');
-        if (!response.ok) return;
-        const data = await response.json();
-        if (data.fires) {
-          setFireMarkers(data.fires.map((fire: FireMarker) => ({
-            id: fire.id,
-            title: fire.title,
-            coordinates: fire.coordinates,
-            severity: fire.severity,
-            brightness: fire.brightness,
-            source: fire.source,
-          })));
-        }
-      } catch {
-        // Silent fail — fires are supplementary
-      }
-    };
-    fetchFires();
   }, []);
 
-  // Click outside handler for dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      if (!moreDropdownRef.current?.contains(target)) {
-        setShowMoreTabs(false);
-      }
-    };
-    if (showMoreTabs) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showMoreTabs]);
-
-  // Close mobile menu on resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setMobileMenuOpen(false);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const uniqueSources = useMemo(() => new Set(newsItems.map(i => i.source.id)).size, [newsItems]);
+  const uniqueSources = useMemo(
+    () => new Set(newsItems.map((i) => i.source.id)).size,
+    [newsItems],
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-black border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-6xl xl:max-w-7xl 2xl:max-w-400 mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <button
-              onClick={() => {
-                setSelectedWatchpoint('all');
-                setMobileMenuOpen(false);
-                fetchNews();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="keycap-press flex items-center gap-2 sm:gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-lg"
-              aria-label="News Pulse home - reset to all regions"
-            >
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-black rounded-xl flex items-center justify-center shadow-md shadow-black/30 border border-slate-700">
-                <svg viewBox="0 0 32 32" className="w-6 h-6 sm:w-7 sm:h-7">
-                  {/* Bold P */}
-                  <text x="8" y="22" fontFamily="system-ui, -apple-system, sans-serif" fontSize="20" fontWeight="700" fill="#ffffff">P</text>
-                  {/* Pulse line */}
-                  <path d="M4 26 L10 26 L12 23 L14 29 L16 24 L18 26 L28 26" fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
-              <div className="text-left">
-                <h1 className="text-xl sm:text-2xl font-bold headline text-slate-900 dark:text-white">
-                  News Pulse
-                </h1>
-                <p className="text-2xs sm:text-xs font-medium tracking-wide hidden xs:block text-slate-500 dark:text-slate-500">
-                  News before it&apos;s news
-                </p>
-              </div>
-            </button>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-4">
-              <Link
-                href="/news"
-                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
-              >
-                News
-              </Link>
-              <Link
-                href="/conditions"
-                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
-              >
-                Conditions
-              </Link>
-              <Link
-                href="/about"
-                className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
-              >
-                About
-              </Link>
-              {session && (
-                <Link
-                  href="/admin"
-                  className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
-                >
-                  Admin
-                </Link>
-              )}
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                {theme === 'dark' ? (
-                  <SunIcon className="w-5 h-5" />
-                ) : (
-                  <MoonIcon className="w-5 h-5" />
-                )}
-              </button>
-            </nav>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileMenuOpen}
-            >
-              {mobileMenuOpen ? (
-                <XMarkIcon className="w-6 h-6" />
-              ) : (
-                <Bars3Icon className="w-6 h-6" />
-              )}
-            </button>
-          </div>
-
-{/* Mobile Menu - Compact Dropdown */}
-          {mobileMenuOpen && (
-            <>
-              {/* Backdrop - invisible but catches clicks */}
-              <div
-                className="fixed inset-0 z-40 md:hidden"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-hidden="true"
-              />
-
-              {/* Dropdown */}
-              <div className="absolute top-full right-4 mt-2 w-48 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50 md:hidden overflow-hidden">
-                {/* Navigation */}
-                <div className="py-1">
-                  <Link
-                    href="/news"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    News
-                  </Link>
-                  <Link
-                    href="/conditions"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    Conditions
-                  </Link>
-                  <Link
-                    href="/about"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  >
-                    About
-                  </Link>
-                  {session && (
-                    <Link
-                      href="/admin"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    >
-                      Admin
-                    </Link>
-                  )}
-                </div>
-
-                {/* Divider */}
-                <div className="border-t border-slate-200 dark:border-slate-700" />
-
-                {/* Theme Toggle */}
-                <button
-                  onClick={() => {
-                    toggleTheme();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                  <span>{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-                  {theme === 'dark' ? (
-                    <SunIcon className="w-4 h-4 text-slate-400" />
-                  ) : (
-                    <MoonIcon className="w-4 h-4 text-slate-400" />
-                  )}
-                </button>
-
-                {/* Divider */}
-                <div className="border-t border-slate-200 dark:border-slate-700" />
-              </div>
-            </>
-          )}
-        </div>
-      </header>
-
+    <>
       {/* Hero Map Section */}
-      <section id="map" className="max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-4 pt-4">
-          <div className="relative bg-slate-100 dark:bg-slate-900 rounded-t-2xl border border-slate-300 dark:border-slate-600 border-b-0 shadow-lg shadow-black/5 dark:shadow-black/30">
-            {/* Map Header with integrated tabs - outside overflow-hidden so dropdowns work */}
-            <div className="relative z-10 px-3 sm:px-4 py-2 bg-slate-100/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200/50 dark:border-slate-700/50 rounded-t-2xl">
-              <div className="flex items-center justify-between gap-2">
-                {/* Dynamic Title */}
-                <div className="flex items-center gap-2 shrink-0">
-                  {heroView === 'main' && (
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <RadioIcon className="w-4 h-4 text-blue-500" />
-                        <h2 className="text-subhead">Global Monitor</h2>
-                      </div>
-                      <span className="text-xs font-mono text-slate-500 dark:text-slate-400 ml-6">{formatHeaderTime()}</span>
+      <section
+        id="map"
+        className="max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-4 pt-4"
+      >
+        <div className="relative bg-background-card rounded-t-xl border border-border-card border-b-0 shadow-card">
+          {/* Map Header with integrated tabs - outside overflow-hidden so dropdowns work */}
+          <div className="relative z-10 px-3 sm:px-4 py-2 bg-background-card/80 backdrop-blur-sm border-b border-border-light rounded-t-xl">
+            <div className="flex items-center justify-between gap-2">
+              {/* Dynamic Title */}
+              <div className="flex items-center gap-2 shrink-0">
+                {heroView === "main" && (
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-2">
+                      <GlobeAltIcon className="w-4 h-4 text-blue-500" />
+                      <h2 className="text-subhead">Global Monitor</h2>
                     </div>
-                  )}
-                  {heroView === 'seismic' && (
-                    <>
-                      <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse" />
-                      <h2 className="text-subhead">Seismic Activity</h2>
-                    </>
-                  )}
-                  {heroView === 'weather' && (
-                    <>
-                      <CloudIcon className="w-4 h-4 text-sky-500" />
-                      <h2 className="text-subhead">Weather Alerts</h2>
-                    </>
-                  )}
-                  {heroView === 'outages' && (
-                    <>
-                      <SignalIcon className="w-4 h-4 text-purple-500" />
-                      <h2 className="text-subhead">Internet Outages</h2>
-                    </>
-                  )}
-                  {heroView === 'travel' && (
-                    <>
-                      <ExclamationTriangleIcon className="w-4 h-4 text-amber-500" />
-                      <h2 className="text-subhead">Travel Advisories</h2>
-                    </>
-                  )}
-                  {heroView === 'fires' && (
-                    <>
-                      <FireIcon className="w-4 h-4 text-orange-500" />
-                      <h2 className="text-subhead">Wildfire Tracker</h2>
-                    </>
-                  )}
-                  {heroView === 'combined' && (
-                    <>
-                      <Squares2X2Icon className="w-4 h-4 text-blue-500" />
-                      <h2 className="text-subhead">Combined Monitor</h2>
-                    </>
-                  )}
-                </div>
-
-                {/* Tabs - right side: Main + Seismic visible, rest in More dropdown */}
-                <div className="flex items-center gap-1">
-                  <div className="flex items-center gap-1">
-                    {HERO_MAIN_TABS.map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => handleHeroViewChange(tab.id)}
-                        className={`
-                          flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors
-                          ${heroView === tab.id
-                            ? 'bg-blue-600 text-white'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
-                          }
-                        `}
-                      >
-                        <tab.icon className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">{tab.label}</span>
-                      </button>
-                    ))}
-                    {/* More dropdown for secondary tabs */}
-                    <div className="relative" ref={moreDropdownRef}>
-                      <button
-                        onClick={() => setShowMoreTabs(!showMoreTabs)}
-                        className={`
-                          flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors
-                          ${HERO_SECONDARY_TABS.some(t => t.id === heroView)
-                            ? 'bg-blue-600 text-white'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
-                          }
-                        `}
-                      >
-                        <EllipsisHorizontalIcon className="w-3.5 h-3.5 sm:hidden" />
-                        <span className="hidden sm:inline">More</span>
-                        <ChevronDownIcon className={`hidden sm:block w-3 h-3 transition-transform ${showMoreTabs ? 'rotate-180' : ''}`} />
-                      </button>
-                      {showMoreTabs && (
-                        <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 py-1 min-w-35 z-50">
-                          {HERO_SECONDARY_TABS.map((tab) => (
-                            <button
-                              key={tab.id}
-                              onClick={() => {
-                                handleHeroViewChange(tab.id);
-                                setShowMoreTabs(false);
-                              }}
-                              className={`
-                                w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-left transition-colors
-                                ${heroView === tab.id
-                                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white'
-                                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                }
-                              `}
-                            >
-                              <tab.icon className="w-4 h-4" />
-                              {tab.label}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <span className="text-xs font-mono text-foreground-muted ml-6">
+                      {formatHeaderTime()}
+                    </span>
                   </div>
+                )}
+                {heroView === "seismic" && (
+                  <>
+                    <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse" />
+                    <h2 className="text-subhead">Seismic Activity</h2>
+                  </>
+                )}
+              </div>
 
-                </div>
+              {/* Tabs */}
+              <div className="flex items-center gap-1">
+                {HERO_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleHeroViewChange(tab.id)}
+                    className={`
+                        flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors
+                        ${
+                          heroView === tab.id
+                            ? "bg-blue-600 text-white"
+                            : "text-foreground-muted hover:text-foreground hover:bg-background-secondary"
+                        }
+                      `}
+                  >
+                    <tab.icon className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
+          </div>
 
-            {/* Map content area - overflow-hidden to clip maps while allowing header dropdowns */}
-            <div className="overflow-hidden">
-              <ErrorBoundary section="Map" fallback={<MapSkeleton />}>
-              {heroView === 'main' && (
+          {/* Map content area - overflow-hidden to clip maps while allowing header dropdowns */}
+          <div className="overflow-hidden">
+            <ErrorBoundary section="Map" fallback={<MapSkeleton />}>
+              {heroView === "main" && (
                 <WorldMap
                   watchpoints={watchpoints}
                   selected={selectedWatchpoint}
                   onSelect={setSelectedWatchpoint}
                   activity={activityData || undefined}
-                  significantQuakes={significantQuakes.filter(q => q.magnitude >= 6)}
+                  significantQuakes={significantQuakes.filter(
+                    (q) => q.magnitude >= 6,
+                  )}
                   hoursWindow={hoursWindow}
                   useUTC={useUTC}
                   initialFocus={initialMapFocus}
+                  locked
                 />
               )}
-              {heroView === 'seismic' && (
+              {heroView === "seismic" && (
                 <SeismicMap
                   earthquakes={earthquakes}
                   selected={selectedQuake}
@@ -820,726 +561,328 @@ export default function HomeClient({ initialData, initialRegion, initialMapFocus
                   isLoading={seismicLoading}
                   lastFetched={seismicLastFetched}
                   onRefresh={fetchEarthquakes}
+                  locked
                 />
               )}
-              {heroView === 'weather' && <WeatherMap />}
-              {heroView === 'outages' && <OutagesMap />}
-              {heroView === 'travel' && <TravelMap />}
-              {heroView === 'fires' && <FiresMap />}
-              {heroView === 'combined' && (
-                <WorldMap
-                  watchpoints={watchpoints}
-                  selected={selectedWatchpoint}
-                  onSelect={setSelectedWatchpoint}
-                  activity={activityData || undefined}
-                  significantQuakes={significantQuakes}
-                  tfrs={tfrs}
-                  fires={fireMarkers}
-                  hoursWindow={hoursWindow}
-                  useUTC={useUTC}
-                />
-              )}
-              </ErrorBoundary>
-            </div>
-          </div>
-
-        {/* Status Bar + Panels container - flush against map bottom */}
-          <div className="bg-slate-100 dark:bg-slate-900 rounded-b-2xl border-x border-b border-slate-300 dark:border-slate-600 -mt-px shadow-lg shadow-black/5 dark:shadow-black/30">
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
-            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-x-3">
-
-            {/* Seismic Legend */}
-            {heroView === 'seismic' && (
-              <div className="flex items-center gap-3">
-                <span className="text-slate-700 dark:text-slate-300 font-medium">Magnitude:</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                  <span>7+</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                  <span>6+</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                  <span>5+</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                  <span>4+</span>
-                </div>
-              </div>
-            )}
-
-            {/* Weather Legend */}
-            {heroView === 'weather' && (
-              <div className="flex items-center gap-3">
-                <span className="text-slate-700 dark:text-slate-300 font-medium">Severity:</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                  <span>Extreme</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                  <span>Severe</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  <span>Moderate</span>
-                </div>
-              </div>
-            )}
-
-            {/* Combined Legend */}
-            {heroView === 'combined' && (
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                  <span>Normal</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                  <span>Elevated</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                  <span>Critical</span>
-                </div>
-                <span className="text-slate-300 dark:text-slate-600">|</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                  <span>Quake</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-orange-400" />
-                  <span>Fire</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" />
-                  <span>TFR</span>
-                </div>
-              </div>
-            )}
-
-            {/* Fires Legend */}
-            {heroView === 'fires' && (
-              <div className="flex items-center gap-3">
-                <span className="text-slate-700 dark:text-slate-300 font-medium">Severity:</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                  <span>Critical</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                  <span>Severe</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                  <span>Moderate</span>
-                </div>
-              </div>
-            )}
-
-            {/* Outages Legend */}
-            {heroView === 'outages' && (
-              <div className="flex items-center gap-3">
-                <span className="text-slate-700 dark:text-slate-300 font-medium">Severity:</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                  <span>Critical</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                  <span>Severe</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  <span>Moderate</span>
-                </div>
-              </div>
-            )}
-
-            {/* Travel Legend */}
-            {heroView === 'travel' && (
-              <div className="flex items-center gap-3">
-                <span className="text-slate-700 dark:text-slate-300 font-medium">Advisory:</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                  <span>Do Not Travel</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                  <span>Reconsider</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                  <span>Caution</span>
-                </div>
-              </div>
-            )}
-
-            {/* Main View - Activity Indicators */}
-            {heroView === 'main' && (() => {
-              const regionNames: Record<string, string> = {
-                'us': 'US',
-                'middle-east': 'MidEast',
-                'europe-russia': 'Europe',
-                'asia': 'Asia',
-                'latam': 'LatAm',
-                'africa': 'Africa',
-              };
-
-              // Show loading state until activity is confirmed from client fetch
-              // This prevents stale cached data from showing false elevated/critical
-              if (!activityConfirmed) {
-                return (
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" />
-                    <span className="font-medium text-slate-500 dark:text-slate-400">
-                      Checking feed activity...
-                    </span>
-                  </div>
-                );
-              }
-
-              // Get specific regions with elevated or critical activity (exclude 'all' — it has its own thermometer bar)
-              const elevatedRegions = activityData
-                ? Object.entries(activityData)
-                    .filter(([id, data]) => id !== 'all' && (data.level === 'elevated' || data.level === 'critical'))
-                    .sort((a, b) => (b[1].multiplier || 0) - (a[1].multiplier || 0)) // Sort by multiplier desc
-                : [];
-
-              const hasElevated = elevatedRegions.length > 0;
-              const hasCritical = elevatedRegions.some(([, data]) => data.level === 'critical');
-
-              return (
-                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-1 sm:gap-x-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                      hasCritical ? 'bg-red-500 animate-pulse' : hasElevated ? 'bg-amber-400/70' : 'bg-emerald-400/70'
-                    }`} />
-                    <span className={`font-medium ${
-                      hasCritical
-                        ? 'text-red-600 dark:text-red-400'
-                        : 'text-slate-600 dark:text-slate-300'
-                    }`}>
-                      Feed Activity: {hasCritical ? 'Surging Across Regions' : hasElevated ? 'Elevated' : 'Normal'}
-                    </span>
-                    {!hasElevated && (
-                      <span className="text-slate-500 dark:text-slate-400 text-xs">across all regions</span>
-                    )}
-                    {significantQuakes.length > 0 && (
-                      <button
-                        onClick={() => handleHeroViewChange('seismic')}
-                        className="text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 text-xs ml-1 transition-colors"
-                        title="View seismic activity"
-                      >
-                        · {significantQuakes.length} quake{significantQuakes.length !== 1 ? 's' : ''} M6+
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Show elevated regions - clickable to filter */}
-                  {elevatedRegions.slice(0, 3).map(([regionId, data]) => {
-                    const isCritical = data.level === 'critical';
-                    const color = isCritical ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400';
-                    const hoverColor = isCritical ? 'hover:text-red-500 dark:hover:text-red-300' : 'hover:text-slate-700 dark:hover:text-slate-200';
-                    const dotColor = isCritical ? 'bg-red-500' : 'bg-amber-400/70';
-                    const pctText = data.percentChange ? `+${data.percentChange}%` : '';
-                    return (
-                      <button
-                        key={regionId}
-                        onClick={() => setSelectedWatchpoint(regionId as WatchpointId)}
-                        className={`flex items-center gap-1 ${hoverColor} transition-colors`}
-                        title={`Filter to ${regionNames[regionId] || regionId}`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isCritical ? 'animate-pulse' : ''}`} />
-                        <span className={`text-xs ${color} font-medium`}>
-                          {regionNames[regionId] || regionId} {pctText} Vs Typical
-                        </span>
-                      </button>
-                    );
-                  })}
-                  {elevatedRegions.length > 3 && (
-                    <span className="text-2xs text-slate-500 dark:text-slate-400">+{elevatedRegions.length - 3}</span>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-          {/* Panel toggle buttons */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setShowPanel(showPanel === 'activity' ? null : 'activity')}
-              className={`flex items-center gap-1 px-2 py-1 text-2xs font-medium rounded transition-colors ${
-                showPanel === 'activity'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
-              }`}
-              aria-expanded={showPanel === 'activity'}
-            >
-              <ChartBarIcon className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Activity</span>
-            </button>
-            {heroView !== 'main' && (
-              <button
-                onClick={() => setShowPanel(showPanel === 'details' ? null : 'details')}
-                className={`flex items-center gap-1 px-2 py-1 text-2xs font-medium rounded transition-colors ${
-                  showPanel === 'details'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50'
-                }`}
-                aria-expanded={showPanel === 'details'}
-              >
-                <InformationCircleIcon className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Details</span>
-              </button>
-            )}
+            </ErrorBoundary>
           </div>
         </div>
 
-        {/* Activity Panel */}
-        {showPanel === 'activity' && (
-          <div className="px-3 py-3 border-t border-slate-200 dark:border-slate-700 space-y-2.5" role="region" aria-label="Feed activity">
-            {/* Header: title + subtitle + close button */}
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">Feed Activity</div>
-                <div className="text-2xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Posts in the last {hoursWindow}h vs measured baseline
+        {/* Status Bar + Panels container - flush against map bottom */}
+        <div className="bg-background-card rounded-b-xl border-x border-b border-border-card -mt-px shadow-card">
+          {/* Seismic summary — seismic view only */}
+          {heroView === "seismic" && (() => {
+            const filtered = earthquakes.filter(eq => eq.magnitude >= 5.0);
+            const largest = filtered.length > 0 ? Math.max(...filtered.map(eq => eq.magnitude)) : 0;
+            const majorCount = filtered.filter(eq => eq.magnitude >= 6).length;
+            const tsunamiCount = filtered.filter(eq => eq.tsunami).length;
+
+            const magColor = (mag: number) =>
+              mag >= 7 ? "text-red-400" : mag >= 6 ? "text-orange-400" : "text-yellow-400";
+            const magDot = (mag: number) =>
+              mag >= 7 ? "bg-red-500" : mag >= 6 ? "bg-orange-500" : "bg-yellow-500";
+
+            return (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 text-xs text-foreground-muted">
+                {filtered.length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${magDot(largest)} ${largest >= 6 ? "animate-pulse" : ""}`} />
+                      <span className={`font-bold tabular-nums ${magColor(largest)}`}>
+                        M{largest.toFixed(1)}
+                      </span>
+                      <span>largest</span>
+                    </div>
+                    <span className="tabular-nums">
+                      <span className="font-semibold text-foreground">{filtered.length}</span> quakes M5+
+                    </span>
+                    {majorCount > 0 && (
+                      <span className="tabular-nums">
+                        <span className="font-semibold text-red-400">{majorCount}</span> major (6+)
+                      </span>
+                    )}
+                    {tsunamiCount > 0 && (
+                      <span className="font-semibold text-blue-400">
+                        {tsunamiCount} tsunami
+                      </span>
+                    )}
+                    <span className="text-foreground-muted/50">24h</span>
+                  </>
+                ) : (
+                  <span>No significant quakes in last 24h</span>
+                )}
+
+                {/* Magnitude legend */}
+                <div className="flex items-center gap-2 ml-auto">
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="text-2xs">7+</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-orange-500" />
+                    <span className="text-2xs">6+</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                    <span className="text-2xs">5+</span>
+                  </div>
                 </div>
               </div>
-              <button
-                onClick={() => setShowPanel(null)}
-                className="p-1.5 min-w-9 min-h-9 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                aria-label="Close activity panel"
-              >
-                <XMarkIcon className="w-4 h-4" />
-              </button>
+            );
+          })()}
+
+          {/* Activity — main view, always visible */}
+          {heroView === "main" && activityData && (() => {
+            const globalData = activityData["all" as WatchpointId];
+            const regions = [
+              { id: "us", label: "US" },
+              { id: "middle-east", label: "Mid East" },
+              { id: "europe-russia", label: "Europe" },
+            ] as const;
+
+            const maxScale = 6;
+            const baselinePct = (1 / maxScale) * 100;
+
+            const barBg = (level: string) =>
+              level === "critical" ? "bg-red-500/80" : level === "elevated" ? "bg-white/20" : "bg-white/10";
+
+            const describeLevel = (mult: number) =>
+              mult >= 5 ? "surging" : mult >= 2.5 ? "elevated" : "";
+
+            return (
+              <div className="px-3 py-2.5" role="region" aria-label="Feed activity">
+                {globalData && (
+                  <>
+                    <p className="text-sm text-foreground">
+                      Global source activity is{' '}
+                      <span className="font-bold tabular-nums">{globalData.multiplier.toFixed(1)}×</span>
+                      {' '}the typical pace across{' '}
+                      <span className="font-bold tabular-nums">{globalData.count}</span>
+                      {' '}posts in the last <span className="font-bold">6</span> hours.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-foreground-muted mt-1">
+                      {regions.map((r) => {
+                        const data = activityData[r.id as WatchpointId];
+                        if (!data) return null;
+                        const level = describeLevel(data.multiplier);
+                        return (
+                          <span key={r.id} className="whitespace-nowrap">
+                            {r.label}{' '}
+                            {level && (
+                              <span className={`font-semibold ${
+                                data.multiplier >= 5 ? "text-red-400" : "text-amber-400"
+                              }`}>
+                                {level}{' '}
+                              </span>
+                            )}
+                            <span className={`tabular-nums ${
+                              data.multiplier >= 5 ? "text-red-400 font-semibold" :
+                              data.multiplier >= 2.5 ? "text-amber-400 font-semibold" :
+                              ""
+                            }`}>
+                              {data.multiplier.toFixed(1)}×
+                            </span>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
+
+        </div>
+        {/* end Status Bar + Panels container */}
+      </section>
+
+      {/* Main Content */}
+      <main
+        id="feed"
+        className="max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-4 pb-20 pt-4"
+      >
+        {heroView === "seismic" ? (
+          /* Earthquake Table — replaces feed when seismic view is active */
+          <div className="rounded-xl border border-border-card bg-background-card shadow-card">
+            <div className="px-4 py-3 border-b border-border-light">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <h2 className="text-sm font-semibold text-foreground">
+                    Earthquakes
+                  </h2>
+                  {earthquakes.length > 0 && (
+                    <span className="text-xs text-foreground-muted">
+                      ({earthquakes.length})
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-xs text-foreground-muted">
+                  <span>M5+ · Last 24h</span>
+                  <button
+                    onClick={fetchEarthquakes}
+                    className="hover:text-foreground transition-colors"
+                  >
+                    {seismicLoading ? "Loading..." : "Refresh"}
+                  </button>
+                </div>
+              </div>
             </div>
+            {seismicLoading && earthquakes.length === 0 ? (
+              <div className="px-4 py-12 text-center text-sm text-foreground-muted">
+                Loading earthquake data...
+              </div>
+            ) : earthquakes.length === 0 ? (
+              <div className="px-4 py-12 text-center text-sm text-foreground-muted">
+                No significant earthquakes in the last 24 hours.
+              </div>
+            ) : (
+              (() => {
+                const sorted = [...earthquakes].sort((a, b) => b.magnitude - a.magnitude);
+                const pageSize = 5;
+                const totalPages = Math.ceil(sorted.length / pageSize);
+                const page = Math.min(quakePage, totalPages - 1);
+                const pageItems = sorted.slice(page * pageSize, (page + 1) * pageSize);
 
-            {/* Activity bars — linear 0-6× scale, threshold ticks at 1×, 2.5×, 5× */}
-            {activityData && (() => {
-              const scoredRegions = [
-                { id: 'all', label: 'All' },
-                { id: 'us', label: 'US' },
-                { id: 'middle-east', label: 'MidEast' },
-                { id: 'europe-russia', label: 'Europe' },
-              ] as const;
-
-              const MAX_SCALE = 6; // 6× = full bar width
-              const BASELINE_PCT = (1 / MAX_SCALE) * 100;       // 1× at ~16.7%
-              const ELEVATED_PCT = (2.5 / MAX_SCALE) * 100;     // 2.5× at ~41.7%
-              const CRITICAL_PCT = (5 / MAX_SCALE) * 100;       // 5× at ~83.3%
-
-              // Build sparkline SVG path from activity history
-              const getSparklinePath = (regionId: string): string | null => {
-                if (!activityHistory || activityHistory.length < 3) return null;
-                const points = activityHistory.map(dp =>
-                  regionId === 'all' ? dp.total : (dp.regions[regionId] ?? 0)
-                );
-                const max = Math.max(...points, 1);
-                const w = 52, h = 18, pad = 2;
-                const stepX = (w - pad * 2) / (points.length - 1);
-                return points
-                  .map((v, i) => `${pad + i * stepX},${pad + (h - pad * 2) * (1 - v / max)}`)
-                  .join(' ');
-              };
-
-              const getSparklineStroke = (level: string, multiplier: number): string => {
-                if (level === 'critical') return '#ef4444';
-                if (level === 'elevated') return '#f59e0b';
-                if (multiplier < 0.5) return '#60a5fa';
-                return '#10b981';
-              };
-
-              const renderBar = (regionId: string, label: string) => {
-                const data = activityData[regionId as WatchpointId];
-                if (!data) return null;
-
-                const { count, multiplier, level } = data;
-                const fillPct = Math.min((multiplier / MAX_SCALE) * 100, 100);
-                const isOverflow = multiplier > MAX_SCALE;
-
-                const barColor = level === 'critical'
-                  ? 'bg-red-500'
-                  : level === 'elevated'
-                    ? 'bg-amber-500'
-                    : multiplier < 0.5
-                      ? 'bg-blue-400 dark:bg-blue-500'
-                      : 'bg-emerald-500';
-
-                const countColor = level === 'critical'
-                  ? 'text-red-500'
-                  : level === 'elevated'
-                    ? 'text-amber-600 dark:text-amber-400'
-                    : 'text-slate-600 dark:text-slate-300';
-
-                const sparkline = getSparklinePath(regionId);
-                const strokeColor = getSparklineStroke(level, multiplier);
+                const getMagColor = (mag: number) =>
+                  mag >= 7 ? "bg-red-500" : mag >= 6 ? "bg-orange-500" : "bg-yellow-500";
+                const getAlertColor = (alert: string | null) =>
+                  alert === "red" ? "text-red-500" : alert === "orange" ? "text-orange-500" : "text-amber-500";
 
                 return (
-                  <div key={regionId} className="flex items-center gap-2" role="group" aria-label={`${label}: ${count} posts, ${multiplier.toFixed(1)} times typical, ${level} activity`}>
-                    <div className="w-14 text-right text-2xs font-medium text-slate-500 dark:text-slate-400 shrink-0">
-                      {label}
-                    </div>
-
-                    {/* Bar with threshold ticks */}
-                    <div className="flex-1 relative h-3">
-                      {/* Bar background + fill */}
-                      <div className="absolute inset-0 bg-slate-200/60 dark:bg-slate-800/80 rounded-full overflow-hidden">
-                        <div
-                          className={`absolute inset-y-0 left-0 rounded-full ${barColor} transition-all duration-700 ease-out`}
-                          style={{ width: `${fillPct}%` }}
-                        />
-                        {/* Overflow pulse — bar exceeds scale */}
-                        {isOverflow && (
-                          <div className="absolute inset-y-0 right-0 w-4 z-10 animate-pulse"
-                            style={{ background: `linear-gradient(to right, transparent, ${level === 'critical' ? 'rgba(239,68,68,0.5)' : 'rgba(245,158,11,0.5)'})` }}
-                          />
-                        )}
-                      </div>
-                      {/* 1× baseline marker — extends above/below bar so it's visible over fill */}
-                      <div
-                        className="absolute w-[1.5px] bg-slate-700/50 dark:bg-slate-200/50 z-20 pointer-events-none rounded-full"
-                        style={{ left: `${BASELINE_PCT}%`, top: '-3px', bottom: '-3px' }}
-                      />
-                      {/* 2.5× elevated tick */}
-                      <div
-                        className="absolute top-0 bottom-0 border-l border-dashed border-slate-400/20 dark:border-slate-500/20 z-10 pointer-events-none"
-                        style={{ left: `${ELEVATED_PCT}%` }}
-                      />
-                      {/* 5× critical tick */}
-                      <div
-                        className="absolute top-0 bottom-0 border-l border-dashed border-slate-400/20 dark:border-slate-500/20 z-10 pointer-events-none"
-                        style={{ left: `${CRITICAL_PCT}%` }}
-                      />
-                    </div>
-
-                    {/* Sparkline (24h trend) */}
-                    {sparkline ? (
-                      <svg width={52} height={18} className="shrink-0 hidden sm:block" viewBox="0 0 52 18" fill="none" role="img" aria-label={`${label} 24-hour trend`}>
-                        <polyline
-                          points={sparkline}
-                          stroke={strokeColor}
-                          strokeWidth={1.5}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          fill="none"
-                          opacity={0.8}
-                        />
-                      </svg>
-                    ) : (
-                      <div className="w-13 shrink-0 hidden sm:block" />
-                    )}
-
-                    {/* Stats — stacked: count on top, multiplier below */}
-                    <div className="w-28 sm:w-32 shrink-0 text-right">
-                      <div className={`text-sm font-semibold tabular-nums leading-tight ${countColor}`}>
-                        {count} <span className="text-2xs font-normal text-slate-500 dark:text-slate-400">posts</span>
-                      </div>
-                      <div className={`text-2xs tabular-nums leading-tight ${isOverflow ? countColor + ' font-medium' : 'text-slate-500 dark:text-slate-400'}`}>
-                        {multiplier.toFixed(1)}× typical
-                      </div>
-                    </div>
-                  </div>
-                );
-              };
-
-              return (
-                <div className="space-y-2">
-                  {scoredRegions.map(r => renderBar(r.id, r.label))}
-                  {/* Threshold labels + legend below bars — single row */}
-                  <div className="flex items-center gap-2 -mt-0.5">
-                    <div className="w-14 shrink-0" />
-                    <div className="flex-1 relative flex text-[10px] text-slate-500 dark:text-slate-400 leading-none">
-                      <span style={{ paddingLeft: `calc(${BASELINE_PCT}% - 6px)` }}>1×</span>
-                      <span className="hidden sm:inline" style={{ position: 'absolute', left: `calc(${ELEVATED_PCT}% - 9px)` }}>2.5×</span>
-                      <span style={{ position: 'absolute', left: `calc(${CRITICAL_PCT}% - 7px)` }}>5×</span>
-                    </div>
-                    <div className="w-13 shrink-0 hidden sm:block" />
-                    <div className="w-28 sm:w-32 shrink-0 flex items-center justify-end gap-2 text-[10px] text-slate-500 dark:text-slate-400">
-                      <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Normal</span>
-                      <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Elevated</span>
-                      <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />Critical</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {!activityConfirmed && (
-              <div className="text-2xs text-slate-500 dark:text-slate-400 italic flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-pulse" />
-                Waiting for fresh data...
-              </div>
-            )}
-
-          </div>
-        )}
-
-        {/* Details Panel - view-specific content */}
-        {showPanel === 'details' && (
-          <div className="px-3 py-3 border-t border-slate-200 dark:border-slate-700 space-y-2">
-
-            {/* Seismic view: Earthquake list */}
-            {heroView === 'seismic' && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                    Recent Earthquakes
-                    {earthquakes.length > 0 && <span className="ml-1 font-normal text-slate-400">({earthquakes.length})</span>}
-                  </div>
-                  <span className="text-2xs text-slate-500 dark:text-slate-400">M4.5+ · Last 24h</span>
-                </div>
-                {earthquakes.length === 0 ? (
-                  <div className="text-2xs text-slate-500 dark:text-slate-400 py-2">
-                    {seismicLoading ? 'Loading...' : 'No significant earthquakes in the last 24 hours.'}
-                  </div>
-                ) : (
-                  <div className="max-h-48 overflow-y-auto space-y-0.5 -mx-1 px-1">
-                    {[...earthquakes]
-                      .sort((a, b) => b.time.getTime() - a.time.getTime())
-                      .slice(0, 20)
-                      .map((eq) => {
+                  <>
+                    <div className="divide-y divide-border-light">
+                      {pageItems.map((eq) => {
                         const isSelected = selectedQuake?.id === eq.id;
-                        const magColor = eq.magnitude >= 7 ? 'bg-red-500' : eq.magnitude >= 6 ? 'bg-orange-500' : eq.magnitude >= 5 ? 'bg-amber-500' : 'bg-yellow-500';
                         return (
                           <button
                             key={eq.id}
                             onClick={() => setSelectedQuake(isSelected ? null : eq)}
-                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${
+                            className={`w-full flex items-center gap-4 px-4 py-2.5 text-left transition-colors ${
                               isSelected
-                                ? 'bg-blue-500/10 dark:bg-blue-500/20 ring-1 ring-blue-500/30'
-                                : 'hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                                ? "bg-blue-500/5 dark:bg-blue-500/10"
+                                : "hover:bg-background-secondary"
                             }`}
                           >
-                            <span className={`w-8 text-center text-2xs font-bold text-white rounded px-1 py-0.5 shrink-0 ${magColor}`}>
+                            <span
+                              className={`w-10 text-center text-xs font-bold text-white rounded-md py-0.5 shrink-0 ${getMagColor(eq.magnitude)}`}
+                            >
                               {eq.magnitude.toFixed(1)}
                             </span>
-                            <span className="text-2xs text-slate-700 dark:text-slate-200 truncate flex-1">
-                              {eq.place}
-                            </span>
-                            <span className="text-2xs text-slate-500 dark:text-slate-400 shrink-0 tabular-nums">
-                              {eq.depth.toFixed(0)}km
-                            </span>
-                            <span className="text-2xs text-slate-500 dark:text-slate-400 shrink-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm text-foreground truncate">
+                                {eq.place}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5 text-xs text-foreground-muted">
+                                <span className="tabular-nums">{eq.depth.toFixed(0)}km deep</span>
+                                {eq.tsunami && <span className="text-blue-500 font-medium">Tsunami</span>}
+                                {eq.alert && (eq.alert === "red" || eq.alert === "orange") && (
+                                  <span className={`font-medium ${getAlertColor(eq.alert)}`}>
+                                    {eq.alert.toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-xs text-foreground-muted tabular-nums shrink-0" suppressHydrationWarning>
                               {formatTimeAgo(eq.time)}
                             </span>
+                            <a
+                              href={eq.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-foreground-light hover:text-foreground transition-colors shrink-0"
+                              title="View on USGS"
+                            >
+                              <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+                            </a>
                           </button>
                         );
                       })}
-                  </div>
-                )}
-              </div>
+                    </div>
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between px-4 py-2.5 border-t border-border">
+                        <button
+                          onClick={() => setQuakePage(p => Math.max(0, p - 1))}
+                          disabled={page === 0}
+                          className="p-1 text-foreground-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        >
+                          <ChevronLeftIcon className="w-4 h-4" />
+                        </button>
+                        <span className="text-xs text-foreground-muted tabular-nums">
+                          {page + 1} / {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setQuakePage(p => Math.min(totalPages - 1, p + 1))}
+                          disabled={page === totalPages - 1}
+                          className="p-1 text-foreground-muted hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        >
+                          <ChevronRightIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+                  </>
+                );
+              })()
             )}
-
-            {/* Weather view: Severity legend + sources */}
-            {heroView === 'weather' && (
-              <div>
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Severity Levels</div>
-                <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 text-2xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Extreme</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Severe</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Moderate</span>
-                  </div>
-                </div>
-                <div className="mt-2 text-2xs text-slate-500 dark:text-slate-400">
-                  Sources: NWS (US alerts), GDACS (global disasters), EONET (natural events)
-                </div>
-              </div>
-            )}
-
-            {/* Outages view: Severity legend + sources */}
-            {heroView === 'outages' && (
-              <div>
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Severity Levels</div>
-                <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 text-2xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Critical</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Severe</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Moderate</span>
-                  </div>
-                </div>
-                <div className="mt-2 text-2xs text-slate-500 dark:text-slate-400">
-                  Sources: IODA (Internet Outage Detection & Analysis), Cloudflare Radar
-                </div>
-              </div>
-            )}
-
-            {/* Travel view: Advisory levels */}
-            {heroView === 'travel' && (
-              <div>
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Advisory Levels</div>
-                <div className="space-y-1.5 text-2xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 text-center font-bold text-red-500">4</span>
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Do Not Travel</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 text-center font-bold text-orange-500">3</span>
-                    <span className="w-2 h-2 rounded-full bg-orange-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Reconsider Travel</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 text-center font-bold text-amber-500">2</span>
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Exercise Increased Caution</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 text-center font-bold text-blue-500">1</span>
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Exercise Normal Precautions</span>
-                  </div>
-                </div>
-                <div className="mt-2 text-2xs text-slate-500 dark:text-slate-400">
-                  Source: U.S. Department of State
-                </div>
-              </div>
-            )}
-
-            {/* Fires view: Severity legend + source */}
-            {heroView === 'fires' && (
-              <div>
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Severity Levels</div>
-                <div className="grid grid-cols-3 gap-x-4 gap-y-1.5 text-2xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Critical</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-orange-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Severe</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Moderate</span>
-                  </div>
-                </div>
-                <div className="mt-2 text-2xs text-slate-500 dark:text-slate-400">
-                  Source: NASA FIRMS (Fire Information for Resource Management System)
-                </div>
-              </div>
-            )}
-
-            {/* Combined view: Combined legend */}
-            {heroView === 'combined' && (
-              <div>
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-200 mb-2">Combined Legend</div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 text-2xs">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Normal activity</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Elevated activity</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Critical activity</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-yellow-500" />
-                    <span className="text-slate-600 dark:text-slate-300">Earthquake</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-orange-400" />
-                    <span className="text-slate-600 dark:text-slate-300">Wildfire</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                    <span className="text-slate-600 dark:text-slate-300">TFR (flight restriction)</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Close */}
-            <div className="pt-1 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-end">
-              <button
-                onClick={() => setShowPanel(null)}
-                className="text-2xs text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-              >
-                Close
-              </button>
-            </div>
           </div>
+        ) : (
+          <ErrorBoundary
+            section="News Feed"
+            fallback={<FeedSkeleton count={5} />}
+          >
+            <div className="rounded-xl border border-border-card bg-background-card shadow-card">
+              <NewsFeed
+                items={newsItems.slice(0, displayLimit)}
+                selectedWatchpoint={selectedWatchpoint}
+                onSelectWatchpoint={setSelectedWatchpoint}
+                isLoading={isRefreshing}
+                onRefresh={fetchNews}
+                activity={activityData || undefined}
+                lastUpdated={lastFetched}
+                error={newsError}
+                onRetry={fetchNews}
+                loadTimeMs={newsLoadTimeMs}
+                pendingCount={pendingItems.length}
+                onShowPending={showPendingItems}
+                autoUpdate={autoUpdate}
+                onToggleAutoUpdate={toggleAutoUpdate}
+                totalPosts={activityData?.["all" as WatchpointId]?.count ?? newsItems.length}
+                uniqueSources={uniqueSources}
+                hoursWindow={hoursWindow}
+                allItemsForTrending={newsItems}
+                allItems={newsItems}
+              />
+              {/* Load more button */}
+              {(() => {
+                const filteredTotal =
+                  selectedWatchpoint === "all"
+                    ? newsItems.length
+                    : newsItems.filter((i) => i.region === selectedWatchpoint)
+                        .length;
+                const remaining = filteredTotal - displayLimit;
+                if (remaining <= 0) return null;
+                return (
+                  <div className="px-3 sm:px-4 py-4">
+                    <button
+                      onClick={() => setDisplayLimit((prev) => prev + 50)}
+                      className="w-full py-3 px-4 text-sm font-medium text-foreground-muted hover:text-foreground border border-border-card hover:bg-background-secondary rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <ChevronDownIcon className="w-4 h-4" />
+                      Show {remaining} more posts
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+          </ErrorBoundary>
         )}
-
-          </div>{/* end Status Bar + Panels container */}
-
-      </section>
-
-      {/* Main Content */}
-      <main id="feed" className="max-w-3xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto px-3 sm:px-4 pb-20 pt-4">
-        <ErrorBoundary section="News Feed" fallback={<FeedSkeleton count={5} />}>
-        <div className="rounded-2xl border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-900 shadow-lg shadow-black/5 dark:shadow-black/30">
-          <NewsFeed
-            items={newsItems.slice(0, displayLimit)}
-            selectedWatchpoint={selectedWatchpoint}
-            onSelectWatchpoint={setSelectedWatchpoint}
-            isLoading={isRefreshing}
-            onRefresh={fetchNews}
-            activity={activityData || undefined}
-            lastUpdated={lastFetched}
-            error={newsError}
-            onRetry={fetchNews}
-            loadTimeMs={newsLoadTimeMs}
-            pendingCount={pendingItems.length}
-            onShowPending={showPendingItems}
-            autoUpdate={autoUpdate}
-            onToggleAutoUpdate={toggleAutoUpdate}
-            totalPosts={newsItems.length}
-            uniqueSources={uniqueSources}
-            hoursWindow={hoursWindow}
-            allItemsForTrending={newsItems}
-            allItems={newsItems}
-          />
-
-          {/* Load more button - shows when there are more items beyond displayLimit */}
-          {(() => {
-            const filteredTotal = selectedWatchpoint === 'all'
-              ? newsItems.length
-              : newsItems.filter(i => i.region === selectedWatchpoint).length;
-            const remaining = filteredTotal - displayLimit;
-            if (remaining <= 0) return null;
-            return (
-              <div className="px-4 py-4 border-t border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/30">
-                <button
-                  onClick={() => setDisplayLimit(prev => prev + 50)}
-                  className="w-full py-3 px-4 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <ChevronDownIcon className="w-4 h-4" />
-                  Load more ({remaining} remaining)
-                </button>
-              </div>
-            );
-          })()}
-        </div>
-        </ErrorBoundary>
       </main>
 
       {/* Legend removed — info available via About page */}
 
       {/* Editorial FAB - only visible when admin is logged in */}
       {session && <EditorialFAB onPostCreated={fetchNews} />}
-    </div>
+    </>
   );
 }

@@ -8,7 +8,7 @@ import {
   Marker,
   ZoomableGroup,
 } from 'react-simple-maps';
-import { ArrowPathIcon, PlusIcon, MinusIcon, ChevronDownIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
 import type { Earthquake } from '@/types';
 import { useMapTheme, mapDimensions } from '@/lib/mapTheme';
 
@@ -26,6 +26,7 @@ interface SeismicMapProps {
   focusOnId?: string; // If provided, center on this specific earthquake
   lastFetched?: Date | null;
   onRefresh?: () => void;
+  locked?: boolean; // Disable scroll-zoom and drag-pan
 }
 
 // Get circle radius based on magnitude (exponential scaling)
@@ -38,21 +39,9 @@ function getMagnitudeRadius(mag: number): number {
 function getMagnitudeColor(mag: number): string {
   if (mag >= 7) return '#dc2626'; // Red - major
   if (mag >= 6) return '#ea580c'; // Orange - strong
-  if (mag >= 5) return '#f59e0b'; // Amber - moderate
-  if (mag >= 4) return '#eab308'; // Yellow - light
-  return '#22c55e'; // Green - minor
+  return '#eab308'; // Yellow - moderate (5+)
 }
 
-// Get alert color
-function getAlertColor(alert: Earthquake['alert']): string {
-  switch (alert) {
-    case 'red': return '#dc2626';
-    case 'orange': return '#ea580c';
-    case 'yellow': return '#eab308';
-    case 'green': return '#22c55e';
-    default: return '#6b7280';
-  }
-}
 
 function formatTimeAgo(date: Date): string {
   const now = new Date();
@@ -64,54 +53,44 @@ function formatTimeAgo(date: Date): string {
   return `${Math.floor(seconds / 86400)}d ago`;
 }
 
-type FilterMode = 'all' | 'major';
-
-function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focusOnId, lastFetched, onRefresh }: SeismicMapProps) {
+function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focusOnId, lastFetched, onRefresh, locked = false }: SeismicMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [position, setPosition] = useState({ coordinates: DEFAULT_CENTER, zoom: DEFAULT_ZOOM });
-  const [filterMode, setFilterMode] = useState<FilterMode>('major'); // Default to major only
   const [hasAutoFocused, setHasAutoFocused] = useState(false);
-  const [showStats, setShowStats] = useState(false); // Collapsed by default
+  // Stats overlay removed — summary now lives in bottom panel
   const { theme } = useMapTheme();
 
   // Auto-focus on largest earthquake (or specific one if focusOnId provided) when data loads
+  // Skip when locked — keep the full global view
   useEffect(() => {
-    if (hasAutoFocused || earthquakes.length === 0) return;
+    if (locked || hasAutoFocused || earthquakes.length === 0) return;
 
     let targetQuake: Earthquake | undefined;
 
     if (focusOnId) {
-      // Focus on specific earthquake
       targetQuake = earthquakes.find(eq => eq.id === focusOnId);
     } else {
-      // Focus on largest magnitude earthquake
       targetQuake = [...earthquakes].sort((a, b) => b.magnitude - a.magnitude)[0];
     }
 
     if (targetQuake) {
-      // Center on the earthquake with gentle zoom to maintain global context
-      // Lower zoom keeps more of the world visible (1.0 = full view, 2.0 = 2x zoom)
       const zoom = targetQuake.magnitude >= 6 ? 1.3 : 1.15;
       setPosition({
         coordinates: [targetQuake.coordinates[0], targetQuake.coordinates[1]],
         zoom,
       });
-      // Auto-select it to show the info panel
       onSelect(targetQuake);
       setHasAutoFocused(true);
     }
-  }, [earthquakes, focusOnId, hasAutoFocused, onSelect]);
+  }, [earthquakes, focusOnId, hasAutoFocused, onSelect, locked]);
 
   // Reset auto-focus when focusOnId changes (allows re-focusing on new target)
   useEffect(() => {
     setHasAutoFocused(false);
   }, [focusOnId]);
 
-  // Filter earthquakes based on mode
-  // Filter: 'major' = M5+, 'all' = M4+ (USGS data is typically M4+ anyway)
-  const filteredEarthquakes = filterMode === 'major'
-    ? earthquakes.filter(eq => eq.magnitude >= 5.0)
-    : earthquakes.filter(eq => eq.magnitude >= 4.0);
+  // Filter: M5+ only
+  const filteredEarthquakes = earthquakes.filter(eq => eq.magnitude >= 5.0);
 
   const handleZoomIn = () => {
     if (position.zoom >= 4) return;
@@ -162,9 +141,10 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
           <ZoomableGroup
             zoom={position.zoom}
             center={position.coordinates}
-            onMoveEnd={handleMoveEnd}
-            minZoom={0.5}
-            maxZoom={4}
+            onMoveEnd={locked ? undefined : handleMoveEnd}
+            minZoom={locked ? position.zoom : 0.5}
+            maxZoom={locked ? position.zoom : 4}
+            filterZoomEvent={locked ? () => false : undefined}
           >
           <Geographies geography={geoUrl}>
             {({ geographies }) =>
@@ -238,29 +218,31 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
         </ComposableMap>
 
         {/* Zoom Controls */}
-        <div className="absolute top-14 left-3 flex flex-col gap-1 z-10">
-          <button
-            onClick={handleZoomIn}
-            className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
-            title="Zoom in"
-          >
-            <PlusIcon className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleZoomOut}
-            className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
-            title="Zoom out"
-          >
-            <MinusIcon className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleReset}
-            className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
-            title="Reset view"
-          >
-            <ArrowPathIcon className="w-4 h-4" />
-          </button>
-        </div>
+        {!locked && (
+          <div className="absolute top-14 left-3 flex flex-col gap-1 z-10">
+            <button
+              onClick={handleZoomIn}
+              className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
+              title="Zoom in"
+            >
+              <PlusIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleZoomOut}
+              className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
+              title="Zoom out"
+            >
+              <MinusIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleReset}
+              className="p-2 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
+              title="Reset view"
+            >
+              <ArrowPathIcon className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Loading overlay */}
         {isLoading && (
@@ -269,100 +251,6 @@ function SeismicMapComponent({ earthquakes, selected, onSelect, isLoading, focus
           </div>
         )}
 
-        {/* Stats badge with filter toggle */}
-        <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="text-sm text-slate-700 dark:text-slate-200 bg-white/90 dark:bg-slate-800/90 px-3 py-1.5 rounded-lg font-medium shadow-sm border border-slate-200 dark:border-slate-700">
-              {filteredEarthquakes.length} quakes {filterMode === 'major' ? 'M5+' : 'M4+'} <span className="text-slate-500 dark:text-slate-400">(24h)</span>
-            </div>
-            <div className="flex bg-white/90 dark:bg-slate-800/90 rounded-lg overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700">
-              <button
-                onClick={() => setFilterMode('major')}
-                className={`px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                  filterMode === 'major'
-                    ? 'bg-amber-500 text-white'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                M5+
-              </button>
-              <button
-                onClick={() => setFilterMode('all')}
-                className={`px-2.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
-                  filterMode === 'all'
-                    ? 'bg-amber-500 text-white'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                M4+
-              </button>
-            </div>
-            {/* Refresh with last updated time */}
-            {onRefresh && (
-              <button
-                onClick={onRefresh}
-                disabled={isLoading}
-                className="flex items-center gap-1.5 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                title="Refresh earthquake data"
-              >
-                <ArrowPathIcon className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-                {lastFetched && !isLoading && (
-                  <span>{formatTimeAgo(lastFetched)}</span>
-                )}
-              </button>
-            )}
-            {/* Stats toggle */}
-            <button
-              onClick={() => setShowStats(!showStats)}
-              className="flex items-center gap-1 bg-white/90 dark:bg-slate-800/90 hover:bg-white dark:hover:bg-slate-700 px-2 py-1.5 rounded-lg text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer"
-              title="Toggle stats"
-            >
-              Stats
-              <ChevronDownIcon className={`w-3 h-3 transition-transform ${showStats ? 'rotate-180' : ''}`} />
-            </button>
-          </div>
-          {/* Expandable stats row */}
-          {showStats && filteredEarthquakes.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5 text-2xs">
-              {(() => {
-                const largest = Math.max(...filteredEarthquakes.map(eq => eq.magnitude));
-                const majorCount = filteredEarthquakes.filter(eq => eq.magnitude >= 6).length;
-                const tsunamiCount = filteredEarthquakes.filter(eq => eq.tsunami).length;
-                const depths = filteredEarthquakes.map(eq => eq.depth);
-                const avgDepth = Math.round(depths.reduce((a, b) => a + b, 0) / depths.length);
-                return (
-                  <>
-                    <span className="px-2 py-1 bg-white/90 dark:bg-slate-800/90 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
-                      Max <span className="font-semibold text-amber-600 dark:text-amber-400">M{largest.toFixed(1)}</span>
-                    </span>
-                    {majorCount > 0 && (
-                      <span className="px-2 py-1 bg-white/90 dark:bg-slate-800/90 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
-                        <span className="font-semibold text-red-500">{majorCount}</span> major
-                      </span>
-                    )}
-                    {tsunamiCount > 0 && (
-                      <span className="px-2 py-1 bg-blue-50/90 dark:bg-blue-900/30 rounded border border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-300">
-                        <span className="font-semibold">{tsunamiCount}</span> tsunami
-                      </span>
-                    )}
-                    <span className="px-2 py-1 bg-white/90 dark:bg-slate-800/90 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
-                      ~{avgDepth}km deep
-                    </span>
-                    <a
-                      href="https://earthquake.usgs.gov/earthquakes/map/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 px-2 py-1 bg-white/90 dark:bg-slate-800/90 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
-                    >
-                      <ArrowTopRightOnSquareIcon className="w-3 h-3" />
-                      USGS
-                    </a>
-                  </>
-                );
-              })()}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Selected earthquake details */}
