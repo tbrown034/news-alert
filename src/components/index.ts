@@ -11,4 +11,5 @@ export { FiresMap } from './FiresMap';
 export { AuthButton } from './AuthButton';
 export { InlineBriefing } from './InlineBriefing';
 export { BriefingCard, useBriefingPinned } from './BriefingCard';
+export { Header } from './Header';
 export { Footer } from './Footer';

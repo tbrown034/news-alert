@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeftIcon, ArrowTopRightOnSquareIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
+import { ArrowTopRightOnSquareIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
 import { TieredSource } from '@/lib/sources-clean';
 import { getEffectivePPD } from '@/lib/baselineUtils';
 import { PlatformIcon, platformColors, platformBadgeStyles } from '@/components/PlatformIcon';
@@ -114,29 +113,9 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
   }, [source.id]);
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-[var(--background)]/90 backdrop-blur-md border-b border-[var(--border-light)]">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-[var(--foreground-light)] hover:text-[var(--foreground)] transition-colors"
-            >
-              <ArrowLeftIcon className="w-4 h-4" />
-              <span className="text-sm font-medium hidden sm:inline">Pulse</span>
-            </Link>
-            <h1 className="text-base font-serif font-semibold text-[var(--foreground)] tracking-tight truncate max-w-[60%]">
-              {source.name}
-            </h1>
-            <div className="w-12" />
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-4">
+    <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-4">
         {/* Identity Card */}
-        <section className="bg-[var(--background-card)] rounded-xl border border-[var(--border-card)] p-5 sm:p-6">
+        <section className="bg-background-card rounded-xl border border-border-card p-5 sm:p-6">
           <div className="flex items-start gap-4">
             <SourceAvatar
               avatarUrl={source.avatarUrl}
@@ -144,9 +123,9 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
               name={source.name}
             />
             <div className="min-w-0 flex-1">
-              <h2 className="text-xl font-bold text-[var(--foreground)] truncate">{source.name}</h2>
+              <h2 className="text-xl font-bold text-foreground truncate">{source.name}</h2>
               {source.handle && (
-                <p className="text-sm text-[var(--foreground-light)] truncate">{source.handle}</p>
+                <p className="text-sm text-foreground-light truncate">{source.handle}</p>
               )}
             </div>
           </div>
@@ -167,14 +146,14 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
               {regionBadge.label}
             </span>
             {/* Tier */}
-            <span className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]">
+            <span className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-lg bg-background-secondary text-foreground-muted border border-border-light">
               Tier {source.fetchTier.replace('T', '')}
             </span>
           </div>
 
           {/* State-sponsored warning */}
           {source.isStateSponsored && (
-            <div className="flex items-center gap-2 mt-4 px-3 py-2 rounded-lg bg-[var(--color-elevated-muted)] text-[var(--color-elevated)]">
+            <div className="flex items-center gap-2 mt-4 px-3 py-2 rounded-lg bg-elevated-muted text-elevated">
               <BuildingLibraryIcon className="w-4 h-4 flex-shrink-0" />
               <span className="text-sm font-medium">State-sponsored media</span>
             </div>
@@ -186,7 +165,7 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
               href={source.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 mt-4 text-sm text-[var(--foreground-light)] hover:text-[var(--foreground)] transition-colors"
+              className="inline-flex items-center gap-1.5 mt-4 text-sm text-foreground-light hover:text-foreground transition-colors"
             >
               <ArrowTopRightOnSquareIcon className="w-4 h-4" />
               View on {platformName}
@@ -195,15 +174,15 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
         </section>
 
         {/* Activity Stats */}
-        <section className="bg-[var(--background-card)] rounded-xl border border-[var(--border-card)] p-5 sm:p-6">
-          <h3 className="text-sm font-semibold text-[var(--foreground)] mb-4">Activity</h3>
+        <section className="bg-background-card rounded-xl border border-border-card p-5 sm:p-6">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Activity</h3>
           <div className="grid grid-cols-2 gap-4">
             {/* Posts per day */}
             <div>
-              <p className="text-2xl font-bold text-[var(--foreground)]">
+              <p className="text-2xl font-bold text-foreground">
                 {effectivePPD < 1 ? effectivePPD.toFixed(1) : Math.round(effectivePPD)}
               </p>
-              <p className="text-xs text-[var(--foreground-light)]">
+              <p className="text-xs text-foreground-light">
                 posts/day {measured ? '(measured)' : source.estimatedPPD ? '(estimated)' : '(default)'}
               </p>
             </div>
@@ -211,13 +190,13 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
             {/* Recent posts */}
             <div>
               {loading ? (
-                <div className="h-8 w-16 bg-[var(--background-secondary)] rounded animate-pulse" />
+                <div className="h-8 w-16 bg-background-secondary rounded animate-pulse" />
               ) : (
-                <p className="text-2xl font-bold text-[var(--foreground)]">
+                <p className="text-2xl font-bold text-foreground">
                   {liveActivity?.recentCount ?? posts.length}
                 </p>
               )}
-              <p className="text-xs text-[var(--foreground-light)]">
+              <p className="text-xs text-foreground-light">
                 posts in last {liveActivity ? '6h' : '24h'}
               </p>
             </div>
@@ -225,10 +204,10 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
             {/* Activity ratio */}
             {liveActivity && (
               <div>
-                <p className={`text-2xl font-bold ${liveActivity.isAnomalous ? 'text-amber-500' : 'text-[var(--foreground)]'}`}>
+                <p className={`text-2xl font-bold ${liveActivity.isAnomalous ? 'text-amber-500' : 'text-foreground'}`}>
                   {liveActivity.anomalyRatio.toFixed(1)}x
                 </p>
-                <p className="text-xs text-[var(--foreground-light)]">
+                <p className="text-xs text-foreground-light">
                   {liveActivity.isAnomalous ? 'above normal' : 'vs baseline'}
                 </p>
               </div>
@@ -236,13 +215,13 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
 
             {/* Fetch tier */}
             <div>
-              <p className="text-2xl font-bold text-[var(--foreground)]">{source.fetchTier}</p>
-              <p className="text-xs text-[var(--foreground-light)]">fetch priority</p>
+              <p className="text-2xl font-bold text-foreground">{source.fetchTier}</p>
+              <p className="text-xs text-foreground-light">fetch priority</p>
             </div>
           </div>
 
           {(source.baselineMeasuredAt || source.estimatedAt) && (
-            <p className="text-xs text-[var(--foreground-light)] mt-4 pt-3 border-t border-[var(--border-card)]">
+            <p className="text-xs text-foreground-light mt-4 pt-3 border-t border-border-card">
               {source.baselineMeasuredAt
                 ? `Baseline measured ${source.baselineMeasuredAt}`
                 : `Estimated ${source.estimatedAt}`}
@@ -252,16 +231,16 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
 
         {/* Recent Posts */}
         <section>
-          <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">
+          <h3 className="text-sm font-semibold text-foreground mb-3">
             Recent Posts
             {!loading && ` (${posts.length})`}
           </h3>
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map(i => (
-                <div key={i} className="bg-[var(--background-card)] rounded-xl border border-[var(--border-card)] p-4 animate-pulse">
-                  <div className="h-4 bg-[var(--background-secondary)] rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-[var(--background-secondary)] rounded w-1/2" />
+                <div key={i} className="bg-background-card rounded-xl border border-border-card p-4 animate-pulse">
+                  <div className="h-4 bg-background-secondary rounded w-3/4 mb-2" />
+                  <div className="h-3 bg-background-secondary rounded w-1/2" />
                 </div>
               ))}
             </div>
@@ -272,12 +251,11 @@ export default function SourceProfileClient({ source }: SourceProfileClientProps
               ))}
             </div>
           ) : (
-            <div className="bg-[var(--background-card)] rounded-xl border border-[var(--border-card)] p-6 text-center">
-              <p className="text-sm text-[var(--foreground-light)]">No posts in the last 24 hours</p>
+            <div className="bg-background-card rounded-xl border border-border-card p-6 text-center">
+              <p className="text-sm text-foreground-light">No posts in the last 24 hours</p>
             </div>
           )}
         </section>
-      </main>
-    </div>
+    </main>
   );
 }

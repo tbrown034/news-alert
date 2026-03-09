@@ -285,7 +285,7 @@ test.describe('Mainstream API - /api/mainstream', () => {
       expect(group).toHaveProperty('sourceId');
       expect(group).toHaveProperty('sourceName');
       expect(group).toHaveProperty('articles');
-      expect(group).toHaveProperty('articleCount24h');
+      expect(group).toHaveProperty('articleCountInWindow');
       expect(Array.isArray(group.articles)).toBe(true);
     }
 

@@ -175,7 +175,7 @@ const TIER_INFO: Record<ModelTier, {
     model: 'Claude Haiku',
     modelShort: 'Haiku',
     icon: BoltIcon,
-    color: 'text-emerald-500',
+    color: 'text-emerald-600 dark:text-emerald-500',
     description: 'Fast AI summary',
   },
   advanced: {
@@ -183,7 +183,7 @@ const TIER_INFO: Record<ModelTier, {
     model: 'Claude Sonnet',
     modelShort: 'Sonnet',
     icon: SparklesIcon,
-    color: 'text-blue-500',
+    color: 'text-blue-600 dark:text-blue-500',
     description: 'Deeper AI analysis',
   },
   pro: {
@@ -191,7 +191,7 @@ const TIER_INFO: Record<ModelTier, {
     model: 'Claude Opus',
     modelShort: 'Opus',
     icon: RocketLaunchIcon,
-    color: 'text-purple-500',
+    color: 'text-purple-600 dark:text-purple-500',
     description: 'Expert AI analysis',
   },
 };
@@ -375,15 +375,15 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
   if (loading) {
     const TierIcon = TIER_INFO[currentTier].icon;
     return (
-      <div className="bg-[var(--background-secondary)] border-b border-[var(--border-light)]">
+      <div className="bg-background-secondary border-b border-border-light">
         <div className="px-4 py-3 flex items-center gap-3">
           <TierIcon className={`w-4 h-4 ${TIER_INFO[currentTier].color} animate-pulse`} />
           <div className="flex-1">
-            <span className="text-label text-[var(--foreground-muted)]">
+            <span className="text-label text-foreground-muted">
               {getLoadingMessage(loadingElapsed, currentTier)}
             </span>
             {loadingElapsed > 0 && (
-              <span className="text-caption text-[var(--foreground-light)] ml-2 tabular-nums">
+              <span className="text-caption text-foreground-light ml-2 tabular-nums">
                 {loadingElapsed}s
               </span>
             )}
@@ -392,7 +392,7 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
             href={ANTHROPIC_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-caption text-[var(--foreground-light)] hover:text-[var(--foreground-muted)]"
+            className="text-caption text-foreground-light hover:text-foreground-muted"
           >
             {TIER_INFO[currentTier].model}
           </a>
@@ -404,9 +404,9 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
   // Error state
   if (error) {
     return (
-      <div className="bg-[var(--color-elevated-muted)] border-b border-[var(--color-elevated)]">
+      <div className="bg-elevated-muted border-b border-elevated">
         <div className="px-4 py-3 flex items-center justify-between">
-          <span className="text-label text-[var(--foreground-muted)]">AI briefing temporarily unavailable</span>
+          <span className="text-label text-foreground-muted">AI briefing temporarily unavailable</span>
           <button
             onClick={() => { setError(null); fetchBriefing('quick', true); }}
             className="text-caption font-medium text-cyan-600 dark:text-cyan-400 hover:underline"
@@ -421,10 +421,10 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
   // No briefing yet - show loading placeholder
   if (!briefing) {
     return (
-      <div className="bg-[var(--background-secondary)] border-b border-[var(--border-light)]">
+      <div className="bg-background-secondary border-b border-border-light">
         <div className="px-4 py-3 flex items-center gap-3">
-          <div className="w-4 h-4 border-2 border-[var(--foreground-light)] border-t-transparent rounded-full animate-spin" />
-          <span className="text-label text-[var(--foreground-muted)]">Preparing summary...</span>
+          <div className="w-4 h-4 border-2 border-foreground-light border-t-transparent rounded-full animate-spin" />
+          <span className="text-label text-foreground-muted">Preparing summary...</span>
         </div>
       </div>
     );
@@ -436,25 +436,25 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
   // Collapsed view - minimal clickable bar
   if (isCollapsed) {
     return (
-      <div className="border-b border-[var(--border-light)] bg-[var(--background-secondary)] mb-4">
+      <div className="border-b border-border-light bg-background-secondary mb-4">
         <div className="px-4 py-2 flex items-center justify-between">
           {/* Main clickable area - whole left side expands */}
           <button
             onClick={toggleCollapsed}
-            className="flex-1 flex items-center gap-2 text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors group"
+            className="flex-1 flex items-center gap-2 text-foreground-muted hover:text-foreground transition-colors group"
           >
             <span className="text-xs font-medium uppercase tracking-wide">AI-Powered News Briefing</span>
-            <span className="text-xs text-[var(--foreground-light)] opacity-60 group-hover:opacity-100 ml-1">
+            <span className="text-xs text-foreground-light opacity-60 group-hover:opacity-100 ml-1">
               — Tap to show
             </span>
           </button>
           {/* Expand toggle */}
           <button
             onClick={toggleCollapsed}
-            className="p-1.5 rounded hover:bg-[var(--background)] transition-colors"
+            className="p-1.5 rounded hover:bg-background transition-colors"
             title="Show AI summary"
           >
-            <ChevronDownIcon className="w-3.5 h-3.5 text-[var(--foreground-light)]" />
+            <ChevronDownIcon className="w-3.5 h-3.5 text-foreground-light" />
           </button>
         </div>
       </div>
@@ -466,14 +466,14 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
   const displayModelName = isOpenAiFallback ? 'GPT-4o' : tierInfo.model;
 
   return (
-    <div className="border-b border-[var(--border-light)] bg-[var(--background-secondary)] mb-4">
+    <div className="border-b border-border-light bg-background-secondary mb-4">
       {/* Header row with controls */}
-      <div className="px-4 py-2 flex items-center justify-between border-b border-[var(--border-light)]">
-        <span className="text-xs font-medium text-[var(--foreground-muted)] uppercase tracking-wide">AI-Powered News Briefing</span>
+      <div className="px-4 py-2 flex items-center justify-between border-b border-border-light">
+        <span className="text-xs font-medium text-foreground-muted uppercase tracking-wide">AI-Powered News Briefing</span>
         {/* Hide AI button - clear option for users who don't want AI */}
         <button
           onClick={toggleCollapsed}
-          className="flex items-center gap-1 px-2 py-1 rounded text-xs text-[var(--foreground-light)] hover:text-[var(--foreground-muted)] hover:bg-[var(--background)] transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded text-xs text-foreground-light hover:text-foreground-muted hover:bg-background transition-colors"
           title="Hide AI summary"
         >
           <XMarkIcon className="w-3.5 h-3.5" />
@@ -483,15 +483,15 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
 
       {/* Body */}
       <div className="px-4 py-3 space-y-2">
-        <p className="text-sm text-[var(--foreground-muted)] leading-relaxed">
+        <p className="text-sm text-foreground-muted leading-relaxed">
           {highlightLocations(briefing.summary)}
         </p>
 
         {briefing.keyDevelopments && briefing.keyDevelopments.length > 0 && (
           <ul className="space-y-1">
             {briefing.keyDevelopments.slice(0, 2).map((dev, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-[var(--foreground-muted)]">
-                <span className="text-[var(--foreground-light)] mt-0.5">•</span>
+              <li key={i} className="flex items-start gap-2 text-sm text-foreground-muted">
+                <span className="text-foreground-light mt-0.5">•</span>
                 <span className="leading-snug">{highlightLocations(dev.headline)}</span>
               </li>
             ))}
@@ -499,8 +499,8 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
         )}
 
         {/* Footer with model info */}
-        <div className="pt-2 border-t border-[var(--border-light)]">
-          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-[var(--foreground-light)]">
+        <div className="pt-2 border-t border-border-light">
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-foreground-light">
             <span>Generated with</span>
             {/* Model selector dropdown */}
             <div className="relative" ref={dropdownRef}>
@@ -513,30 +513,30 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
                 {!isOpenAiFallback && <ChevronDownIcon className={`w-3 h-3 transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />}
               </button>
               {modelDropdownOpen && (
-                <div className="absolute left-0 top-full mt-1 w-48 bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg z-50 overflow-hidden">
+                <div className="absolute left-0 top-full mt-1 w-48 bg-background border border-border rounded-lg shadow-lg z-50 overflow-hidden">
                   <button
                     onClick={() => {
                       fetchBriefing('quick', true);
                       setModelDropdownOpen(false);
                     }}
-                    className={`w-full px-3 py-2 text-left hover:bg-[var(--background-secondary)] transition-colors ${
-                      briefing.tier === 'quick' ? 'bg-[var(--background-secondary)]' : ''
+                    className={`w-full px-3 py-2 text-left hover:bg-background-secondary transition-colors ${
+                      briefing.tier === 'quick' ? 'bg-background-secondary' : ''
                     }`}
                   >
-                    <div className="font-medium text-[var(--foreground)]">Claude Haiku</div>
-                    <div className="text-[10px] text-[var(--foreground-light)]">Faster · economical</div>
+                    <div className="font-medium text-foreground">Claude Haiku</div>
+                    <div className="text-[10px] text-foreground-light">Faster · economical</div>
                   </button>
                   <button
                     onClick={() => {
                       fetchBriefing('advanced', true);
                       setModelDropdownOpen(false);
                     }}
-                    className={`w-full px-3 py-2 text-left hover:bg-[var(--background-secondary)] transition-colors border-t border-[var(--border-light)] ${
-                      briefing.tier === 'advanced' ? 'bg-[var(--background-secondary)]' : ''
+                    className={`w-full px-3 py-2 text-left hover:bg-background-secondary transition-colors border-t border-border-light ${
+                      briefing.tier === 'advanced' ? 'bg-background-secondary' : ''
                     }`}
                   >
-                    <div className="font-medium text-[var(--foreground)]">Claude Sonnet</div>
-                    <div className="text-[10px] text-[var(--foreground-light)]">Balanced · recommended</div>
+                    <div className="font-medium text-foreground">Claude Sonnet</div>
+                    <div className="text-[10px] text-foreground-light">Balanced · recommended</div>
                   </button>
                   {isAdmin && (
                     <button
@@ -544,12 +544,12 @@ export function InlineBriefing({ region }: InlineBriefingProps) {
                         fetchBriefing('pro', true);
                         setModelDropdownOpen(false);
                       }}
-                      className={`w-full px-3 py-2 text-left hover:bg-[var(--background-secondary)] transition-colors border-t border-[var(--border-light)] ${
-                        briefing.tier === 'pro' ? 'bg-[var(--background-secondary)]' : ''
+                      className={`w-full px-3 py-2 text-left hover:bg-background-secondary transition-colors border-t border-border-light ${
+                        briefing.tier === 'pro' ? 'bg-background-secondary' : ''
                       }`}
                     >
-                      <div className="font-medium text-[var(--foreground)]">Claude Opus</div>
-                      <div className="text-[10px] text-[var(--foreground-light)]">Smarter · deeper analysis</div>
+                      <div className="font-medium text-foreground">Claude Opus</div>
+                      <div className="text-[10px] text-foreground-light">Smarter · deeper analysis</div>
                     </button>
                   )}
                 </div>

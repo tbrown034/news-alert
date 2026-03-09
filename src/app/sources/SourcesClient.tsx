@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { ArrowLeftIcon, MagnifyingGlassIcon, XMarkIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, XMarkIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
 import { PlatformIcon, platformBadgeStyles } from '@/components/PlatformIcon';
 import { regionBadges, sourceTypeColors, sourceTypeLabels, platformNames } from '@/lib/formatUtils';
 import type { PublicSource } from './page';
@@ -53,8 +53,8 @@ function Chip({
       onClick={onClick}
       className={`px-3 py-1.5 text-xs font-medium rounded-lg border whitespace-nowrap transition-colors ${
         active
-          ? 'bg-[var(--foreground)] text-[var(--background)] border-transparent'
-          : 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border-[var(--border-light)] hover:text-[var(--foreground)]'
+          ? 'bg-foreground text-background border-transparent'
+          : 'bg-background-secondary text-foreground-muted border-border-light hover:text-foreground'
       }`}
     >
       {label}
@@ -119,44 +119,21 @@ export default function SourcesClient({ sources }: { sources: PublicSource[] }) 
   }, [filtered, category]);
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-[var(--background)]/90 backdrop-blur-md border-b border-[var(--border-light)]">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-[var(--foreground-light)] hover:text-[var(--foreground)] transition-colors"
-            >
-              <ArrowLeftIcon className="w-4 h-4" />
-              <span className="text-sm font-medium hidden sm:inline">Pulse</span>
-            </Link>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-base font-serif font-semibold text-[var(--foreground)] tracking-tight">Sources</h1>
-              <span className="text-xs font-medium text-[var(--foreground-muted)] bg-[var(--background-secondary)] px-2 py-0.5 rounded-full border border-[var(--border-light)]">
-                {sources.length}
-              </span>
-            </div>
-            <div className="w-12" />
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+    <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-5">
         {/* Search */}
         <div className="relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--foreground-light)]" />
+          <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-light" />
           <input
             type="text"
             placeholder="Search sources..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-9 py-2.5 text-sm bg-[var(--background-card)] border border-[var(--border-card)] rounded-xl text-[var(--foreground)] placeholder:text-[var(--foreground-light)] focus:outline-none focus:ring-1 focus:ring-[var(--foreground-muted)]"
+            className="w-full pl-9 pr-9 py-2.5 text-sm bg-background-card border border-border-card rounded-xl text-foreground placeholder:text-foreground-light focus:outline-none focus:ring-1 focus:ring-foreground-muted"
           />
           {search && (
             <button
               onClick={() => setSearch('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--foreground-light)] hover:text-[var(--foreground)]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-light hover:text-foreground"
             >
               <XMarkIcon className="w-4 h-4" />
             </button>
@@ -186,28 +163,28 @@ export default function SourcesClient({ sources }: { sources: PublicSource[] }) 
         </div>
 
         {/* Summary stats */}
-        <div className="text-sm text-[var(--foreground-muted)]">
+        <div className="text-sm text-foreground-muted">
           <p>
             {filtered.length} source{filtered.length !== 1 ? 's' : ''} across{' '}
             {Object.keys(platformCounts).length} platform{Object.keys(platformCounts).length !== 1 ? 's' : ''}
           </p>
-          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-[var(--foreground-light)]">
+          <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs text-foreground-light">
             <span>{categoryCounts.news} News</span>
-            <span className="text-[var(--border-light)]">&middot;</span>
+            <span className="text-border-light">&middot;</span>
             <span>{categoryCounts.intelligence} Intelligence</span>
-            <span className="text-[var(--border-light)]">&middot;</span>
+            <span className="text-border-light">&middot;</span>
             <span>{categoryCounts.community} Community</span>
           </div>
         </div>
 
         {/* Source list */}
         {filtered.length === 0 ? (
-          <div className="bg-[var(--background-card)] rounded-xl border border-[var(--border-card)] p-8 text-center">
-            <p className="text-sm text-[var(--foreground-light)] mb-3">No sources match your search</p>
+          <div className="bg-background-card rounded-xl border border-border-card p-8 text-center">
+            <p className="text-sm text-foreground-light mb-3">No sources match your search</p>
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
-                className="text-sm font-medium text-[var(--color-elevated)] hover:underline"
+                className="text-sm font-medium text-elevated hover:underline"
               >
                 Clear all filters
               </button>
@@ -221,9 +198,9 @@ export default function SourcesClient({ sources }: { sources: PublicSource[] }) 
               if (items.length === 0) return null;
               return (
                 <section key={cat}>
-                  <h2 className="text-xs font-semibold text-[var(--foreground-light)] uppercase tracking-wider mb-3">
+                  <h2 className="text-xs font-semibold text-foreground-light uppercase tracking-wider mb-3">
                     {CATEGORY_LABELS[cat]}
-                    <span className="ml-2 text-[var(--foreground-light)] font-normal">{items.length}</span>
+                    <span className="ml-2 text-foreground-light font-normal">{items.length}</span>
                   </h2>
                   <div className="space-y-2">
                     {items.map((s) => (
@@ -242,8 +219,7 @@ export default function SourcesClient({ sources }: { sources: PublicSource[] }) 
             ))}
           </div>
         )}
-      </main>
-    </div>
+    </main>
   );
 }
 
@@ -257,25 +233,25 @@ function SourceRow({ source }: { source: PublicSource }) {
   return (
     <Link
       href={`/source/${source.id}`}
-      className="flex items-center gap-3 p-3 bg-[var(--background-card)] border border-[var(--border-card)] rounded-xl hover:bg-[var(--background-secondary)] transition-colors group"
+      className="flex items-center gap-3 p-3 bg-background-card border border-border-card rounded-xl hover:bg-background-secondary transition-colors group"
     >
       {/* Platform icon */}
-      <span className={`flex-shrink-0 ${platformBadge.split(' ').find((c: string) => c.startsWith('text-')) || 'text-[var(--foreground-muted)]'}`}>
+      <span className={`flex-shrink-0 ${platformBadge.split(' ').find((c: string) => c.startsWith('text-')) || 'text-foreground-muted'}`}>
         <PlatformIcon platform={source.platform} className="w-5 h-5" />
       </span>
 
       {/* Name + handle */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-[var(--foreground)] truncate group-hover:text-[var(--foreground)]">
+          <span className="text-sm font-medium text-foreground truncate group-hover:text-foreground">
             {source.name}
           </span>
           {source.isStateSponsored && (
-            <BuildingLibraryIcon className="w-3.5 h-3.5 text-[var(--color-elevated)] flex-shrink-0" title="State-sponsored media" />
+            <BuildingLibraryIcon className="w-3.5 h-3.5 text-elevated flex-shrink-0" title="State-sponsored media" />
           )}
         </div>
         {source.handle && (
-          <p className="text-xs text-[var(--foreground-light)] truncate">{source.handle}</p>
+          <p className="text-xs text-foreground-light truncate">{source.handle}</p>
         )}
       </div>
 
@@ -290,7 +266,7 @@ function SourceRow({ source }: { source: PublicSource }) {
       </div>
 
       {/* Mobile: just platform name */}
-      <span className="sm:hidden text-[10px] text-[var(--foreground-light)] flex-shrink-0">
+      <span className="sm:hidden text-[10px] text-foreground-light flex-shrink-0">
         {platformName}
       </span>
     </Link>

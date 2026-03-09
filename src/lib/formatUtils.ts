@@ -1,16 +1,15 @@
 import { WatchpointId } from '@/types';
 
-// Source type colors - distinct, editorial styling
-// Each type has a subtle but intentional color identity
+// Source type colors - each category visually distinct
 export const sourceTypeColors: Record<string, string> = {
-  official: 'text-[10px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-300',
-  'news-org': 'text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400',
-  osint: 'text-[10px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-300',
-  reporter: 'text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400',
-  analyst: 'text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400',
-  aggregator: 'text-[10px] uppercase tracking-wider font-medium text-slate-500 dark:text-slate-400',
-  ground: 'text-[10px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-300',
-  bot: 'text-[10px] uppercase tracking-wider font-medium italic text-slate-400 dark:text-slate-500',
+  official: 'text-[10px] uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-200 bg-slate-200 dark:bg-slate-700',
+  'news-org': 'text-[10px] uppercase tracking-wider font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950',
+  osint: 'text-[10px] uppercase tracking-wider font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950',
+  reporter: 'text-[10px] uppercase tracking-wider font-medium text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950',
+  analyst: 'text-[10px] uppercase tracking-wider font-medium text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950',
+  aggregator: 'text-[10px] uppercase tracking-wider font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950',
+  ground: 'text-[10px] uppercase tracking-wider font-semibold text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950',
+  bot: 'text-[10px] uppercase tracking-wider font-medium italic text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800',
 };
 
 // Platform display names
@@ -56,16 +55,16 @@ export function formatTimeAgo(date: Date): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// Region badge colors — neutral, CSS variable-based (used by NewsCard, BriefingCard)
+// Region badge colors — subtly tinted per region (used by NewsCard, BriefingCard)
 export const regionBadges: Record<WatchpointId, { label: string; color: string }> = {
-  'us': { label: 'US', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'latam': { label: 'AMERICAS', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'middle-east': { label: 'MIDEAST', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'europe-russia': { label: 'EUR', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'asia': { label: 'ASIA', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'africa': { label: 'AFRICA', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
-  'seismic': { label: 'SEISMIC', color: 'bg-[var(--color-elevated-muted)] text-[var(--color-elevated)]' },
-  'all': { label: 'GLOBAL', color: 'bg-[var(--background-secondary)] text-[var(--foreground-muted)] border border-[var(--border-light)]' },
+  'us': { label: 'US', color: 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300' },
+  'latam': { label: 'AMERICAS', color: 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' },
+  'middle-east': { label: 'MIDEAST', color: 'bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-300' },
+  'europe-russia': { label: 'EUR', color: 'bg-violet-50 dark:bg-violet-950 text-violet-700 dark:text-violet-300' },
+  'asia': { label: 'ASIA', color: 'bg-cyan-50 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300' },
+  'africa': { label: 'AFRICA', color: 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300' },
+  'seismic': { label: 'SEISMIC', color: 'bg-elevated-muted text-elevated' },
+  'all': { label: 'GLOBAL', color: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300' },
 };
 
 // Region accent colors — used for card accent lines, matching ActivityChart palette

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Source_Serif_4 } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
-import { Footer } from "@/components";
+import { Header, Footer } from "@/components";
 import { WebVitals } from "@/components/WebVitals";
 
 const geistSans = Geist({
@@ -30,37 +30,28 @@ export const metadata: Metadata = {
     default: "News Pulse",
     template: "%s | News Pulse",
   },
-  description: "News before it's news. Real-time monitoring of breaking news, seismic activity, and geopolitical events from 600+ verified sources worldwide.",
+  description: "News before it's news. Real-time monitoring of breaking news, seismic activity, and geopolitical events from 650+ verified sources worldwide.",
   keywords: ["news", "OSINT", "intelligence", "geopolitical", "monitoring", "real-time", "global news", "breaking news", "earthquake", "pulse alert"],
   authors: [{ name: "News Pulse" }],
   creator: "News Pulse",
   publisher: "News Pulse",
-  metadataBase: new URL("https://news-alert-eta.vercel.app"),
+  metadataBase: new URL("https://newspulse.us"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://news-alert-eta.vercel.app",
+    url: "https://newspulse.us",
     siteName: "News Pulse",
     title: "News Pulse - News before it's news",
-    description: "Monitor breaking news, seismic activity, and geopolitical events from 600+ verified sources worldwide.",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "News Pulse - News before it's news",
-      },
-    ],
+    description: "Monitor breaking news, seismic activity, and geopolitical events from 650+ verified sources worldwide.",
   },
   twitter: {
     card: "summary_large_image",
     title: "News Pulse - News before it's news",
-    description: "Monitor breaking news, seismic activity, and geopolitical events from 600+ verified sources worldwide.",
-    images: ["/og-image.png"],
-    creator: "@pulsealert",
+    description: "Monitor breaking news, seismic activity, and geopolitical events from 650+ verified sources worldwide.",
+    creator: "@opensecwatcher",
   },
   robots: {
     index: true,
@@ -122,6 +113,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${sourceSerif.variable} antialiased`}
       >
+        <Header />
         {children}
         <Footer />
         <Analytics />

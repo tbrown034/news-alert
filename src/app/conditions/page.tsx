@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import Link from 'next/link';
 import {
-  ArrowLeftIcon,
   ArrowPathIcon,
   ExclamationTriangleIcon,
   GlobeAltIcon,
@@ -215,44 +213,44 @@ const REGION_COLORS: Record<string, {
 const categoryConfig = {
   seismic: {
     icon: GlobeAltIcon,
-    color: 'text-[var(--foreground-muted)]',
-    bg: 'bg-[var(--background-secondary)]',
-    border: 'border-[var(--border-light)]',
+    color: 'text-foreground-muted',
+    bg: 'bg-background-secondary',
+    border: 'border-border-light',
     label: 'Seismic',
   },
   weather: {
     icon: CloudIcon,
-    color: 'text-[var(--foreground-muted)]',
-    bg: 'bg-[var(--background-secondary)]',
-    border: 'border-[var(--border-light)]',
+    color: 'text-foreground-muted',
+    bg: 'bg-background-secondary',
+    border: 'border-border-light',
     label: 'Weather',
   },
   fires: {
     icon: FireIcon,
-    color: 'text-[var(--foreground-muted)]',
-    bg: 'bg-[var(--background-secondary)]',
-    border: 'border-[var(--border-light)]',
+    color: 'text-foreground-muted',
+    bg: 'bg-background-secondary',
+    border: 'border-border-light',
     label: 'Fires',
   },
   travel: {
     icon: MapPinIcon,
-    color: 'text-[var(--foreground-muted)]',
-    bg: 'bg-[var(--background-secondary)]',
-    border: 'border-[var(--border-light)]',
+    color: 'text-foreground-muted',
+    bg: 'bg-background-secondary',
+    border: 'border-border-light',
     label: 'Travel Advisories',
   },
   outages: {
     icon: WifiIcon,
-    color: 'text-[var(--foreground-muted)]',
-    bg: 'bg-[var(--background-secondary)]',
-    border: 'border-[var(--border-light)]',
+    color: 'text-foreground-muted',
+    bg: 'bg-background-secondary',
+    border: 'border-border-light',
     label: 'Outages',
   },
   tfrs: {
     icon: NoSymbolIcon,
-    color: 'text-[var(--foreground-muted)]',
-    bg: 'bg-[var(--background-secondary)]',
-    border: 'border-[var(--border-light)]',
+    color: 'text-foreground-muted',
+    bg: 'bg-background-secondary',
+    border: 'border-border-light',
     label: 'Flight Restrictions',
   },
 };
@@ -262,10 +260,10 @@ type CategoryKey = keyof typeof categoryConfig;
 const severityOrder = { critical: 0, severe: 1, moderate: 2, minor: 3 };
 
 const severityConfig = {
-  critical: { dot: 'bg-red-400', text: 'text-red-400', bg: 'bg-red-500/15', border: 'border-red-500/30' },
-  severe: { dot: 'bg-amber-400', text: 'text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30' },
-  moderate: { dot: 'bg-yellow-400', text: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
-  minor: { dot: 'bg-slate-500', text: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' },
+  critical: { dot: 'bg-red-400', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-500/15', border: 'border-red-500/30' },
+  severe: { dot: 'bg-amber-400', text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/15', border: 'border-amber-500/30' },
+  moderate: { dot: 'bg-yellow-400', text: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
+  minor: { dot: 'bg-slate-500', text: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' },
 };
 
 // =============================================================================
@@ -353,38 +351,23 @@ export default function ConditionsPage() {
     : REGIONS;
 
   return (
-    <div className="min-h-screen bg-(--background) text-(--foreground)">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-(--background)/95 backdrop-blur-sm border-b border-(--border)">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-(--foreground-light) hover:text-(--foreground) transition-colors"
-            >
-              <ArrowLeftIcon className="w-4 h-4" />
-              <span className="text-label">Back</span>
-            </Link>
-            <div className="flex items-center gap-2.5">
-              <h1 className="headline text-lg text-(--foreground)">World Conditions</h1>
-            </div>
-            <button
-              onClick={fetchConditions}
-              disabled={isLoading}
-              className="p-2 text-(--foreground-light) hover:text-(--foreground) transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-            >
-              <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        {/* Refresh button */}
+        <div className="flex justify-end">
+          <button
+            onClick={fetchConditions}
+            disabled={isLoading}
+            className="p-2 text-foreground-light hover:text-foreground transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            title="Refresh conditions"
+          >
+            <ArrowPathIcon className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         {/* Loading */}
         {isLoading && !data && (
           <div className="flex items-center justify-center py-20">
             <div className="flex flex-col items-center gap-4">
-              <div className="w-8 h-8 border-2 border-(--foreground-light) border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-foreground-light border-t-transparent rounded-full animate-spin" />
               <span className="text-caption">Loading conditions...</span>
             </div>
           </div>
@@ -394,14 +377,14 @@ export default function ConditionsPage() {
         {error && (
           <div className="card p-4 border-red-500/30!">
             <div className="flex items-center gap-3">
-              <ExclamationTriangleIcon className="w-5 h-5 text-red-400 flex-shrink-0" />
+              <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-label text-red-400">Failed to load conditions</p>
-                <p className="text-caption text-red-400/70 mt-1">{error}</p>
+                <p className="text-label text-red-600 dark:text-red-400">Failed to load conditions</p>
+                <p className="text-caption text-red-600/70 dark:text-red-400/70 mt-1">{error}</p>
               </div>
               <button
                 onClick={fetchConditions}
-                className="px-3 py-1.5 text-micro font-medium bg-red-500/15 hover:bg-red-500/25 text-red-400 rounded-md transition-colors cursor-pointer"
+                className="px-3 py-1.5 text-micro font-medium bg-red-500/15 hover:bg-red-500/25 text-red-600 dark:text-red-400 rounded-md transition-colors cursor-pointer"
               >
                 Retry
               </button>
@@ -417,10 +400,10 @@ export default function ConditionsPage() {
                 {/* Headline stat + update time */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl sm:text-3xl font-semibold tabular-nums text-[var(--foreground)]">
+                    <span className="text-2xl sm:text-3xl font-semibold tabular-nums text-foreground">
                       {data.summary.totalThreats}
                     </span>
-                    <span className="text-label text-[var(--foreground-muted)]">active events</span>
+                    <span className="text-label text-foreground-muted">active events</span>
                   </div>
                   <span className="text-caption whitespace-nowrap">
                     Updated {formatTimeAgo(data.fetchedAt)}
@@ -430,7 +413,7 @@ export default function ConditionsPage() {
                 {/* Severity distribution bar */}
                 {data.summary.totalThreats > 0 && (
                   <div className="mb-4">
-                    <div className="flex h-2 rounded-full overflow-hidden bg-[var(--background-secondary)]">
+                    <div className="flex h-2 rounded-full overflow-hidden bg-background-secondary">
                       {data.summary.criticalCount > 0 && (
                         <div
                           className="bg-red-500 transition-all duration-500"
@@ -455,19 +438,19 @@ export default function ConditionsPage() {
                       {data.summary.criticalCount > 0 && (
                         <div className="flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-red-500" />
-                          <span className="text-micro text-red-400 font-medium tabular-nums">{data.summary.criticalCount} critical</span>
+                          <span className="text-micro text-red-600 dark:text-red-400 font-medium tabular-nums">{data.summary.criticalCount} critical</span>
                         </div>
                       )}
                       {data.summary.severeCount > 0 && (
                         <div className="flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-amber-500" />
-                          <span className="text-micro text-amber-400 font-medium tabular-nums">{data.summary.severeCount} severe</span>
+                          <span className="text-micro text-amber-600 dark:text-amber-400 font-medium tabular-nums">{data.summary.severeCount} severe</span>
                         </div>
                       )}
                       {(data.summary.totalThreats - data.summary.criticalCount - data.summary.severeCount) > 0 && (
                         <div className="flex items-center gap-1.5">
                           <span className="w-2 h-2 rounded-full bg-slate-600" />
-                          <span className="text-micro text-[var(--foreground-light)] tabular-nums">
+                          <span className="text-micro text-foreground-light tabular-nums">
                             {data.summary.totalThreats - data.summary.criticalCount - data.summary.severeCount} other
                           </span>
                         </div>
@@ -486,11 +469,11 @@ export default function ConditionsPage() {
                       return (
                         <div
                           key={type}
-                          className="flex flex-col items-center gap-1 py-2 rounded-lg bg-[var(--background-secondary)] border border-[var(--border-light)]"
+                          className="flex flex-col items-center gap-1 py-2 rounded-lg bg-background-secondary border border-border-light"
                         >
-                          <Icon className="w-4 h-4 text-[var(--foreground-muted)]" />
-                          <span className="text-sm font-semibold tabular-nums text-[var(--foreground)]">{count}</span>
-                          <span className="text-micro text-[var(--foreground-light)]">{config.label}</span>
+                          <Icon className="w-4 h-4 text-foreground-muted" />
+                          <span className="text-sm font-semibold tabular-nums text-foreground">{count}</span>
+                          <span className="text-micro text-foreground-light">{config.label}</span>
                         </div>
                       );
                     })}
@@ -543,8 +526,8 @@ export default function ConditionsPage() {
               <div className="card overflow-hidden">
                 <div className="px-4 py-3">
                   <div className="flex items-center gap-2 mb-3">
-                    <CurrencyDollarIcon className="w-4 h-4 text-[var(--foreground-muted)]" />
-                    <span className="text-label text-[var(--foreground-muted)]">Markets</span>
+                    <CurrencyDollarIcon className="w-4 h-4 text-foreground-muted" />
+                    <span className="text-label text-foreground-muted">Markets</span>
                     <span className="text-caption">30-day</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -586,8 +569,7 @@ export default function ConditionsPage() {
             </div>
           </>
         )}
-      </main>
-    </div>
+    </main>
   );
 }
 
@@ -630,16 +612,16 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
   }, [data]);
 
   const activityColor = activity?.level === 'critical'
-    ? 'text-red-400'
+    ? 'text-red-600 dark:text-red-400'
     : activity?.level === 'elevated'
-      ? 'text-orange-400'
-      : 'text-emerald-400';
+      ? 'text-orange-600 dark:text-orange-400'
+      : 'text-emerald-600 dark:text-emerald-400';
 
   const activityBadge = activity?.level === 'critical'
-    ? { bg: 'bg-red-500/15', border: 'border-red-500/30', text: 'text-red-400' }
+    ? { bg: 'bg-red-500/15', border: 'border-red-500/30', text: 'text-red-600 dark:text-red-400' }
     : activity?.level === 'elevated'
-      ? { bg: 'bg-orange-500/15', border: 'border-orange-500/30', text: 'text-orange-400' }
-      : { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', text: 'text-emerald-400' };
+      ? { bg: 'bg-orange-500/15', border: 'border-orange-500/30', text: 'text-orange-600 dark:text-orange-400' }
+      : { bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', text: 'text-emerald-600 dark:text-emerald-400' };
 
   const activityBadgeText = activity
     ? activity.percentChange > 0
@@ -682,7 +664,7 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
               </span>
             )}
             {data.criticalCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-micro font-semibold bg-red-500/15 text-red-400 rounded-md">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-micro font-semibold bg-red-500/15 text-red-600 dark:text-red-400 rounded-md">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
                 {data.criticalCount} critical
               </span>
@@ -697,7 +679,7 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
       {/* Severity distribution bar */}
       {data.totalCount > 0 && (
         <div className="px-4 sm:px-5 pb-3">
-          <div className="flex h-1.5 rounded-full overflow-hidden bg-[var(--background-secondary)]">
+          <div className="flex h-1.5 rounded-full overflow-hidden bg-background-secondary">
             {severityCounts.critical > 0 && (
               <div className="bg-red-500" style={{ width: `${(severityCounts.critical / data.totalCount) * 100}%` }} />
             )}
@@ -720,17 +702,17 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
           <p className="text-caption">No active conditions</p>
         </div>
       ) : (
-        <div className="border-t border-(--border-light)">
+        <div className="border-t border-border-light">
           {/* Signals row — polished layout */}
           {(activity || hasTrends || hasWiki) && (
-            <div className="px-4 sm:px-5 py-3 border-b border-[var(--border-light)]">
+            <div className="px-4 sm:px-5 py-3 border-b border-border-light">
               <div className="grid gap-2.5">
                 {/* Feed Activity — promoted to mini stat row */}
                 {activity && (
-                  <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-[var(--background-secondary)]">
+                  <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-background-secondary">
                     <div className="flex items-center gap-2">
                       <SignalIcon className={`w-3.5 h-3.5 ${activityColor}`} />
-                      <span className="text-micro font-medium text-[var(--foreground-muted)]">Feed Activity</span>
+                      <span className="text-micro font-medium text-foreground-muted">Feed Activity</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`inline-flex items-center px-1.5 py-0.5 text-micro font-semibold rounded border ${activityBadge.bg} ${activityBadge.border} ${activityBadge.text}`}>
@@ -745,10 +727,10 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
                 {(hasTrends || hasWiki) && (
                   <div className="grid sm:grid-cols-2 gap-2.5">
                     {hasTrends && (
-                      <div className="px-3 py-2 rounded-lg bg-[var(--background-secondary)]">
+                      <div className="px-3 py-2 rounded-lg bg-background-secondary">
                         <div className="flex items-center gap-1.5 mb-1.5">
-                          <ArrowTrendingUpIcon className="w-3.5 h-3.5 text-[var(--foreground-muted)]" />
-                          <span className="text-micro font-medium text-[var(--foreground-muted)]">Trending</span>
+                          <ArrowTrendingUpIcon className="w-3.5 h-3.5 text-foreground-muted" />
+                          <span className="text-micro font-medium text-foreground-muted">Trending</span>
                         </div>
                         <div className="flex flex-wrap gap-x-2 gap-y-1">
                           {trends!.slice(0, 5).map((t) => (
@@ -757,10 +739,10 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
                               href={t.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-micro text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                              className="text-micro text-foreground-muted hover:text-foreground transition-colors"
                             >
                               {t.term}
-                              {t.traffic && <span className="text-[var(--foreground-light)] ml-0.5">{t.traffic}</span>}
+                              {t.traffic && <span className="text-foreground-light ml-0.5">{t.traffic}</span>}
                             </a>
                           ))}
                         </div>
@@ -768,10 +750,10 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
                     )}
 
                     {hasWiki && (
-                      <div className="px-3 py-2 rounded-lg bg-[var(--background-secondary)]">
+                      <div className="px-3 py-2 rounded-lg bg-background-secondary">
                         <div className="flex items-center gap-1.5 mb-1.5">
-                          <BookOpenIcon className="w-3.5 h-3.5 text-[var(--foreground-muted)]" />
-                          <span className="text-micro font-medium text-[var(--foreground-muted)]">Wiki Spikes</span>
+                          <BookOpenIcon className="w-3.5 h-3.5 text-foreground-muted" />
+                          <span className="text-micro font-medium text-foreground-muted">Wiki Spikes</span>
                         </div>
                         <div className="flex flex-wrap gap-x-2 gap-y-1">
                           {wikiPages!.slice(0, 3).map((p) => (
@@ -780,10 +762,10 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
                               href={p.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-micro text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                              className="text-micro text-foreground-muted hover:text-foreground transition-colors"
                             >
                               {p.title}
-                              <span className="text-[var(--foreground-light)] ml-0.5">{p.views.toLocaleString()}</span>
+                              <span className="text-foreground-light ml-0.5">{p.views.toLocaleString()}</span>
                             </a>
                           ))}
                         </div>
@@ -796,7 +778,7 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
           )}
 
           {/* Threat categories */}
-          <div className="divide-y divide-(--border-light)">
+          <div className="divide-y divide-border-light">
             {categories.map((cat) => (
               <CategorySection
                 key={cat}
@@ -845,7 +827,7 @@ function CategorySection({ category, items, formatTimeAgo }: CategorySectionProp
           <Icon className={`w-3.5 h-3.5 ${config.color}`} />
         </div>
         <span className={`text-label ${config.color}`}>{config.label}</span>
-        <span className="text-micro text-(--foreground-light) tabular-nums">{items.length}</span>
+        <span className="text-micro text-foreground-light tabular-nums">{items.length}</span>
       </div>
 
       {/* Items */}
@@ -885,11 +867,11 @@ function ConditionItem({ item, category, formatTimeAgo }: ConditionItemProps) {
   }
 
   return (
-    <div className="flex items-center gap-2.5 min-w-0 group px-1.5 -mx-1.5 py-0.5 rounded hover:bg-[var(--background-secondary)] transition-colors">
+    <div className="flex items-center gap-2.5 min-w-0 group px-1.5 -mx-1.5 py-0.5 rounded hover:bg-background-secondary transition-colors">
       {/* Severity dot */}
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${sev.dot}`} />
       {/* Label */}
-      <span className="text-body text-sm truncate flex-1 group-hover:text-(--foreground) transition-colors">{label}</span>
+      <span className="text-body text-sm truncate flex-1 group-hover:text-foreground transition-colors">{label}</span>
       {/* Severity badge */}
       <span className={`hidden sm:inline-flex px-1.5 py-0.5 text-micro rounded shrink-0 ${sev.bg} ${sev.text}`}>
         {severity}
@@ -908,7 +890,7 @@ function ConditionItem({ item, category, formatTimeAgo }: ConditionItemProps) {
 
 function CommodityCard({ commodity: c }: { commodity: CommodityData }) {
   const isUp = c.changePercent > 0;
-  const changeColor = isUp ? 'text-emerald-400' : 'text-red-400';
+  const changeColor = isUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400';
   const strokeColor = isUp ? '#34d399' : '#f87171';
 
   const formattedPrice = c.price >= 1000
@@ -935,14 +917,14 @@ function CommodityCard({ commodity: c }: { commodity: CommodityData }) {
   }, [c.sparkline]);
 
   return (
-    <div className="bg-(--background-secondary) rounded-lg px-3 py-2.5 flex flex-col gap-1 border border-(--border-light)">
+    <div className="bg-background-secondary rounded-lg px-3 py-2.5 flex flex-col gap-1 border border-border-light">
       <div className="flex items-center justify-between">
-        <span className="text-micro font-medium text-(--foreground-muted) truncate">{c.name}</span>
+        <span className="text-micro font-medium text-foreground-muted truncate">{c.name}</span>
         <span className={`text-micro font-semibold tabular-nums ${changeColor}`}>
           {isUp ? '+' : ''}{c.changePercent.toFixed(2)}%
         </span>
       </div>
-      <div className="text-sm font-semibold text-(--foreground) tabular-nums">
+      <div className="text-sm font-semibold text-foreground tabular-nums">
         {c.unit === 'USD' || c.unit.startsWith('USD/') ? '$' : ''}{formattedPrice}
       </div>
       {sparklinePath && (

@@ -2,13 +2,13 @@ import Link from 'next/link';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="text-center max-w-md">
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-500/10 mb-6">
           <span className="text-3xl font-bold text-blue-500">P</span>
         </div>
-        <h1 className="text-6xl font-bold text-[var(--foreground)] mb-2">404</h1>
-        <p className="text-lg text-[var(--foreground-muted)] mb-8">
+        <h1 className="text-6xl font-bold text-foreground mb-2">404</h1>
+        <p className="text-lg text-foreground-muted mb-8">
           This page could not be found.
         </p>
         <Link

@@ -108,8 +108,8 @@ export default function ActivityChart() {
     const bucketLabel = `${String(hour).padStart(2, '0')}:00\u2013${String(endHour).padStart(2, '0')}:00 UTC`;
 
     return (
-      <div className="bg-[var(--background-card)] border border-[var(--border-card)] rounded-lg px-3 py-2 shadow-lg">
-        <p className="text-micro text-[var(--foreground-muted)] mb-1">
+      <div className="bg-background-card border border-border-card rounded-lg px-3 py-2 shadow-lg">
+        <p className="text-micro text-foreground-muted mb-1">
           {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} {bucketLabel}
         </p>
         {payload
@@ -117,10 +117,10 @@ export default function ActivityChart() {
           .map((entry: any) => (
           <div key={entry.name} className="flex items-center gap-2 text-sm">
             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
-            <span className="text-[var(--foreground-muted)]">
+            <span className="text-foreground-muted">
               {REGION_CONFIG[entry.name]?.label || entry.name}
             </span>
-            <span className="font-semibold text-[var(--foreground)] ml-auto tabular-nums">
+            <span className="font-semibold text-foreground ml-auto tabular-nums">
               {entry.value ?? 0}
             </span>
           </div>
@@ -131,23 +131,23 @@ export default function ActivityChart() {
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
   return (
-    <div className="bg-[var(--background-card)] border border-[var(--border-card)] rounded-xl overflow-hidden">
+    <div className="bg-background-card border border-border-card rounded-xl overflow-hidden">
       <div className="px-4 sm:px-5 py-3">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <SignalIcon className="w-4 h-4 text-[var(--foreground-muted)]" />
-            <span className="text-label text-[var(--foreground-muted)]">Feed Activity</span>
+            <SignalIcon className="w-4 h-4 text-foreground-muted" />
+            <span className="text-label text-foreground-muted">Feed Activity</span>
           </div>
-          <div className="flex items-center gap-1 bg-[var(--background)] rounded-md p-0.5">
+          <div className="flex items-center gap-1 bg-background rounded-md p-0.5">
             {TIME_RANGES.map(r => (
               <button
                 key={r.days}
                 onClick={() => setSelectedRange(r.days)}
                 className={`px-2 py-0.5 text-micro font-medium rounded transition-colors cursor-pointer ${
                   selectedRange === r.days
-                    ? 'bg-[var(--background-card)] text-[var(--foreground)]'
-                    : 'text-[var(--foreground-light)] hover:text-[var(--foreground-muted)]'
+                    ? 'bg-background-card text-foreground'
+                    : 'text-foreground-light hover:text-foreground-muted'
                 }`}
               >
                 {r.label}
@@ -165,7 +165,7 @@ export default function ActivityChart() {
               className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-micro rounded-md border transition-colors cursor-pointer ${
                 selectedRegions.has(id)
                   ? 'border-current opacity-100'
-                  : 'border-[var(--border-card)] opacity-40'
+                  : 'border-border-card opacity-40'
               }`}
               style={{ color: config.color }}
             >
@@ -178,7 +178,7 @@ export default function ActivityChart() {
         {/* Chart */}
         {isLoading && !data ? (
           <div className="flex items-center justify-center h-48">
-            <ArrowPathIcon className="w-5 h-5 text-[var(--foreground-light)] animate-spin" />
+            <ArrowPathIcon className="w-5 h-5 text-foreground-light animate-spin" />
           </div>
         ) : fetchError ? (
           <div className="flex items-center justify-center h-48">
@@ -186,7 +186,7 @@ export default function ActivityChart() {
           </div>
         ) : chartData.length === 0 ? (
           <div className="flex items-center justify-center h-48">
-            <span className="text-caption text-[var(--foreground-light)]">No activity data yet — check back after a few hours</span>
+            <span className="text-caption text-foreground-light">No activity data yet — check back after a few hours</span>
           </div>
         ) : (
           <div className="h-56 sm:h-64">

@@ -7021,7 +7021,7 @@ export const tier2Sources: TieredSource[] = [
     name: 'Elon Jet Tracking',
     handle: '@elonjet.net',
     platform: 'bluesky',
-    sourceType: 'osint',
+    sourceType: 'bot',
     fetchTier: 'T2',
     confidence: 80,
     region: 'all' as WatchpointId,

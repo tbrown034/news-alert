@@ -1,8 +1,7 @@
 'use client';
 
 import { useSession } from '@/lib/auth-client';
-import { ArrowLeftIcon, UserCircleIcon, EnvelopeIcon, CalendarIcon } from '@heroicons/react/24/outline';
-import Link from 'next/link';
+import { UserCircleIcon, EnvelopeIcon, CalendarIcon } from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -18,7 +17,7 @@ export default function ProfilePage() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -37,25 +36,9 @@ export default function ProfilePage() {
     : 'Unknown';
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-black border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center h-14 sm:h-16">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-            >
-              <ArrowLeftIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">Back</span>
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div className="min-h-screen bg-background text-[var(--foreground)]">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+        <div className="bg-[var(--background-card)] rounded-2xl border border-[var(--border-card)] overflow-hidden">
           {/* Profile Header */}
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 px-6 py-8">
             <div className="flex items-center gap-4">
@@ -83,42 +66,42 @@ export default function ProfilePage() {
 
           {/* Profile Details */}
           <div className="px-6 py-6 space-y-6">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+            <h2 className="text-lg font-semibold text-[var(--foreground)]">
               Account Details
             </h2>
 
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+              <div className="flex items-center gap-4 p-4 bg-background-secondary rounded-xl">
                 <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                   <UserCircleIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Name</p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                  <p className="text-xs text-foreground-muted uppercase tracking-wider">Name</p>
+                  <p className="text-sm font-medium text-[var(--foreground)]">
                     {session.user.name || 'Not set'}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+              <div className="flex items-center gap-4 p-4 bg-background-secondary rounded-xl">
                 <div className="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <EnvelopeIcon className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                  <p className="text-xs text-foreground-muted uppercase tracking-wider">Email</p>
+                  <p className="text-sm font-medium text-[var(--foreground)]">
                     {session.user.email}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+              <div className="flex items-center gap-4 p-4 bg-background-secondary rounded-xl">
                 <div className="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                   <CalendarIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Member Since</p>
-                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                  <p className="text-xs text-foreground-muted uppercase tracking-wider">Member Since</p>
+                  <p className="text-sm font-medium text-[var(--foreground)]">
                     {joinDate}
                   </p>
                 </div>

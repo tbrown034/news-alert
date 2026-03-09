@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSession } from '@/lib/auth-client';
 import { tier1Sources, tier2Sources, tier3Sources, TieredSource } from '@/lib/sources-clean';
-import { ArrowLeftIcon, MagnifyingGlassIcon, FunnelIcon, ChevronUpDownIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, FunnelIcon, ChevronUpDownIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { NEWS_PLATFORMS, platformBadgeClass, regionDisplayNames } from '../shared';
@@ -67,20 +67,14 @@ export default function NewsSourcesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
-      <header className="sticky top-0 z-50 bg-white dark:bg-black border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <Link href="/admin" className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-              <ArrowLeftIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">Admin</span>
-            </Link>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Link href="/admin" className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">← Admin</Link>
+            <span className="text-slate-300 dark:text-slate-600">/</span>
             <h1 className="text-lg font-semibold">News Sources</h1>
-            <div className="w-16" />
           </div>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Stat cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">

@@ -86,6 +86,9 @@ export async function GET(request: Request) {
         alert: f.properties.alert,
         significance: f.properties.sig,
         depth: f.geometry.coordinates[2],
+        mmi: f.properties.mmi ?? null,
+        cdi: f.properties.cdi ?? null,
+        status: f.properties.status === 'reviewed' ? 'reviewed' : f.properties.status === 'automatic' ? 'automatic' : null,
       }));
 
     // Sort by time (most recent first)

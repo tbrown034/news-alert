@@ -25,6 +25,9 @@ export interface Earthquake {
   alert: 'green' | 'yellow' | 'orange' | 'red' | null;
   significance: number; // USGS significance score 0-1000+
   depth: number; // km
+  mmi: number | null; // Modified Mercalli Intensity (instrumental, 1-10+)
+  cdi: number | null; // Community Decimal Intensity (felt reports, 1-10+)
+  status: 'automatic' | 'reviewed' | null; // Whether reviewed by seismologist
 }
 
 export interface Watchpoint {

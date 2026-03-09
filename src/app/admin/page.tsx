@@ -3,7 +3,7 @@
 import { useMemo, useEffect } from 'react';
 import { useSession } from '@/lib/auth-client';
 import { tier1Sources, tier2Sources, tier3Sources, TieredSource } from '@/lib/sources-clean';
-import { ArrowLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FEED_PLATFORMS, NEWS_PLATFORMS, regionDisplayNames, calculateRegionBaselines } from './shared';
@@ -62,21 +62,9 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
-      <header className="sticky top-0 z-50 bg-white dark:bg-black border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-              <ArrowLeftIcon className="w-4 h-4" />
-              <span className="text-sm">Back</span>
-            </Link>
-            <h1 className="text-sm font-semibold">Admin</h1>
-            <div className="w-14" />
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         <div className="mb-8">
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Admin</h1>
           <p className="text-2xl font-bold text-slate-900 dark:text-white">{allSources.length} sources</p>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             {feedSources.length} feed · {newsSources.length} news

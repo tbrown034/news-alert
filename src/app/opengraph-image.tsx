@@ -119,7 +119,7 @@ export default function Image() {
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <span style={{ color: '#3b82f6', fontSize: '28px', fontWeight: 700 }}>600+</span>
+            <span style={{ color: '#3b82f6', fontSize: '28px', fontWeight: 700 }}>650+</span>
             <span style={{ color: '#9ca3af', fontSize: '14px', marginTop: '4px' }}>Sources</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

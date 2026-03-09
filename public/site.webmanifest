@@ -1,7 +1,7 @@
 {
   "name": "Pulse",
   "short_name": "Pulse",
-  "description": "Real-time global intelligence dashboard. Monitor breaking news, seismic activity, and geopolitical events from 380+ verified sources worldwide.",
+  "description": "Real-time global intelligence dashboard. Monitor breaking news, seismic activity, and geopolitical events from 650+ verified sources worldwide.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

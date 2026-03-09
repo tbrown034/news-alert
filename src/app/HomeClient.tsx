@@ -640,12 +640,6 @@ export default function HomeClient({
               { id: "europe-russia", label: "Europe" },
             ] as const;
 
-            const maxScale = 6;
-            const baselinePct = (1 / maxScale) * 100;
-
-            const barBg = (level: string) =>
-              level === "critical" ? "bg-red-500/80" : level === "elevated" ? "bg-white/20" : "bg-white/10";
-
             const describeLevel = (mult: number) =>
               mult >= 5 ? "surging" : mult >= 2.5 ? "elevated" : "";
 
@@ -670,14 +664,14 @@ export default function HomeClient({
                             {r.label}{' '}
                             {level && (
                               <span className={`font-semibold ${
-                                data.multiplier >= 5 ? "text-red-400" : "text-amber-400"
+                                data.multiplier >= 5 ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"
                               }`}>
                                 {level}{' '}
                               </span>
                             )}
                             <span className={`tabular-nums ${
-                              data.multiplier >= 5 ? "text-red-400 font-semibold" :
-                              data.multiplier >= 2.5 ? "text-amber-400 font-semibold" :
+                              data.multiplier >= 5 ? "text-red-600 dark:text-red-400 font-semibold" :
+                              data.multiplier >= 2.5 ? "text-amber-600 dark:text-amber-400 font-semibold" :
                               ""
                             }`}>
                               {data.multiplier.toFixed(1)}×

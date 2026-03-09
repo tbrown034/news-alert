@@ -9,11 +9,11 @@ test.describe('News Feed - Core Functionality', () => {
 
   test('should load news feed with items', async ({ page }) => {
     // Check Live Wire header exists
-    await expect(page.locator('text=Live Wire')).toBeVisible();
+    await expect(page.locator('h2:has-text("Live Wire")')).toBeVisible();
 
     // Check stats line shows posts and sources
-    await expect(page.locator('text=/\\d+ posts/')).toBeVisible();
-    await expect(page.locator('text=/\\d+ sources/')).toBeVisible();
+    await expect(page.locator('text=/\\d+ posts/').first()).toBeVisible();
+    await expect(page.locator('text=/\\d+ sources/').first()).toBeVisible();
 
     // Check at least one news card exists
     const newsCards = page.locator('[class*="news-feed-list"] > div');
@@ -42,15 +42,15 @@ test.describe('News Feed - Core Functionality', () => {
     // Wait for filter to apply
     await page.waitForTimeout(500);
 
-    // Stats should show "Showing" (filtered) instead of "Fetched"
-    await expect(page.locator('text=/Showing \\d+ posts/')).toBeVisible();
+    // Stats should show "(filtered)" when a region is selected
+    await expect(page.locator('text=/\\(filtered\\)/')).toBeVisible();
 
     // Click back to All
     await allTab.click();
     await page.waitForTimeout(500);
 
-    // Should show "Fetched" again
-    await expect(page.locator('text=/Fetched \\d+ posts/')).toBeVisible();
+    // Should show post count with time window (no "filtered" label)
+    await expect(page.locator('text=/\\d+ posts/').first()).toBeVisible();
   });
 
   test('should expand More regions', async ({ page }) => {
@@ -158,8 +158,8 @@ test.describe('News Feed - Responsive Design', () => {
     await page.waitForSelector('.news-feed-list', { timeout: 15000 });
 
     // All core elements visible
-    await expect(page.locator('text=Live Wire')).toBeVisible();
-    await expect(page.locator('text=/\\d+ posts/')).toBeVisible();
+    await expect(page.locator('h2:has-text("Live Wire")')).toBeVisible();
+    await expect(page.locator('text=/\\d+ posts/').first()).toBeVisible();
     await expect(page.locator('text=/TRENDING/i')).toBeVisible();
   });
 
@@ -169,8 +169,8 @@ test.describe('News Feed - Responsive Design', () => {
     await page.waitForSelector('.news-feed-list', { timeout: 15000 });
 
     // All core elements visible with proper spacing
-    await expect(page.locator('text=Live Wire')).toBeVisible();
-    await expect(page.locator('text=/\\d+ posts/')).toBeVisible();
+    await expect(page.locator('h2:has-text("Live Wire")')).toBeVisible();
+    await expect(page.locator('text=/\\d+ posts/').first()).toBeVisible();
     await expect(page.locator('text=/TRENDING/i')).toBeVisible();
 
     // Region tab counts should be visible on desktop
@@ -183,6 +183,6 @@ test.describe('News Feed - Error Handling', () => {
     await page.goto('/');
 
     // Even if API fails, page should not crash
-    await expect(page.locator('text=News Pulse')).toBeVisible();
+    await expect(page.locator('text=News Pulse').first()).toBeVisible();
   });
 });

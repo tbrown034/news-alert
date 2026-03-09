@@ -76,6 +76,7 @@ interface WorldMapProps {
   initialFocus?: WatchpointId; // Focus map here on load (without filtering feed)
   showTimes?: boolean; // Show local time under region labels (default: true)
   showZoomControls?: boolean; // Show zoom +/- and globe buttons (default: true)
+  locked?: boolean; // Disable scroll-zoom and drag-pan (click still works)
   tfrs?: TFRMarker[]; // Active TFRs for map markers
   fires?: FireMarker[]; // Active wildfire detections
   regionCounts?: Record<string, number>; // Article counts per region
@@ -103,7 +104,7 @@ const regionMarkers: Record<string, { coordinates: [number, number]; label: stri
 const DEFAULT_CENTER: [number, number] = [20, 30];
 const DEFAULT_ZOOM = 1.6;
 
-function WorldMapComponent({ watchpoints, selected, onSelect, activity = {}, significantQuakes = [], hoursWindow = 6, hotspotsOnly = false, useUTC = false, initialFocus, showTimes = true, showZoomControls = true, tfrs = [], fires = [], regionCounts }: WorldMapProps) {
+function WorldMapComponent({ watchpoints, selected, onSelect, activity = {}, significantQuakes = [], hoursWindow = 6, hotspotsOnly = false, useUTC = false, initialFocus, showTimes = true, showZoomControls = true, locked = false, tfrs = [], fires = [], regionCounts }: WorldMapProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [hasAppliedInitialFocus, setHasAppliedInitialFocus] = useState(false);
@@ -234,9 +235,10 @@ function WorldMapComponent({ watchpoints, selected, onSelect, activity = {}, sig
           <ZoomableGroup
             zoom={position.zoom}
             center={position.coordinates}
-            onMoveEnd={handleMoveEnd}
-            minZoom={0.5}
-            maxZoom={4}
+            onMoveEnd={locked ? undefined : handleMoveEnd}
+            minZoom={locked ? position.zoom : 0.5}
+            maxZoom={locked ? position.zoom : 4}
+            filterZoomEvent={locked ? () => false : undefined}
           >
           {/* Ocean click catcher - clicking empty water resets to all regions */}
           <rect
@@ -624,30 +626,30 @@ function WorldMapComponent({ watchpoints, selected, onSelect, activity = {}, sig
         </ComposableMap>
 
         {/* Zoom Controls */}
-        {showZoomControls && (
+        {showZoomControls && !locked && (
           <div className="absolute top-3 left-3 flex flex-col gap-1 z-10">
             <button
               onClick={handleShowAll}
               className={`p-2 rounded-lg transition-colors ${
                 selected === 'all'
                   ? 'bg-blue-600 text-white'
-                  : 'bg-black/60 hover:bg-black/80 text-gray-300 hover:text-white'
+                  : 'bg-white/90 dark:bg-black/60 hover:bg-white dark:hover:bg-black/80 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-transparent'
               }`}
               title="Show all regions"
             >
               <ArrowsPointingOutIcon className="w-4 h-4" />
             </button>
-            <div className="h-px bg-white/20 my-0.5" />
+            <div className="h-px bg-slate-300/50 dark:bg-white/20 my-0.5" />
             <button
               onClick={handleZoomIn}
-              className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+              className="p-2 bg-white/90 dark:bg-black/60 hover:bg-white dark:hover:bg-black/80 rounded-lg text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors border border-slate-200 dark:border-transparent"
               title="Zoom in"
             >
               <PlusIcon className="w-4 h-4" />
             </button>
             <button
               onClick={handleZoomOut}
-              className="p-2 bg-black/60 hover:bg-black/80 rounded-lg text-gray-300 hover:text-white transition-colors"
+              className="p-2 bg-white/90 dark:bg-black/60 hover:bg-white dark:hover:bg-black/80 rounded-lg text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors border border-slate-200 dark:border-transparent"
               title="Zoom out"
             >
               <MinusIcon className="w-4 h-4" />

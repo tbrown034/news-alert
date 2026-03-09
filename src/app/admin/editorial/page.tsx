@@ -5,7 +5,6 @@ import { useSession } from '@/lib/auth-client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
-  ArrowLeftIcon,
   PlusIcon,
   PencilIcon,
   ArchiveBoxIcon,
@@ -186,30 +185,21 @@ export default function EditorialAdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-black border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-            >
-              <ArrowLeftIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">Admin</span>
-            </Link>
-            <h1 className="text-lg font-semibold">Editorial Posts</h1>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-            >
-              <PlusIcon className="w-4 h-4" />
-              <span className="hidden sm:inline">New Post</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Link href="/admin" className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">← Admin</Link>
+            <span className="text-slate-300 dark:text-slate-600">/</span>
+            <h1 className="text-lg font-semibold">Editorial Posts</h1>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+          >
+            <PlusIcon className="w-4 h-4" />
+            <span className="hidden sm:inline">New Post</span>
+          </button>
+        </div>
         {/* Stats */}
         {stats && (
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">

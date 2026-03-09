@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from '@/lib/auth-client';
-import { ArrowLeftIcon, ArrowPathIcon, ChartBarIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -101,34 +101,23 @@ export default function ActivityPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-black border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-            >
-              <ArrowLeftIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">Admin</span>
-            </Link>
-            <div className="flex items-center gap-3">
-              <ChartBarIcon className="w-5 h-5 text-blue-500" />
-              <h1 className="text-lg font-semibold">Post Log</h1>
-            </div>
-            <button
-              onClick={fetchData}
-              disabled={loading}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-            >
-              <ArrowPathIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-          </div>
-        </div>
-      </header>
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Link href="/admin" className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">← Admin</Link>
+            <span className="text-slate-300 dark:text-slate-600">/</span>
+            <ChartBarIcon className="w-5 h-5 text-blue-500" />
+            <h1 className="text-lg font-semibold">Post Log</h1>
+          </div>
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+          >
+            <ArrowPathIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
         {error && (
           <div className="mb-6 p-4 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-700 dark:text-red-400">
             {error}

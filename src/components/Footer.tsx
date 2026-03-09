@@ -5,7 +5,7 @@ import { signIn } from '@/lib/auth-client';
 
 export function Footer() {
   return (
-    <footer className="border-t border-[var(--border)] bg-[var(--background)]">
+    <footer className="border-t border-border bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           {/* Left: branding */}
@@ -17,8 +17,8 @@ export function Footer() {
               </svg>
             </div>
             <div>
-              <p className="text-sm font-semibold text-[var(--foreground)]">News Pulse</p>
-              <p className="text-xs text-[var(--foreground-muted)]">News before it&apos;s news</p>
+              <p className="text-sm font-semibold text-foreground">News Pulse</p>
+              <p className="text-xs text-foreground-muted">News before it&apos;s news</p>
             </div>
           </div>
 
@@ -30,18 +30,19 @@ export function Footer() {
               { href: '/conditions', label: 'Conditions' },
               { href: '/sources', label: 'Sources' },
               { href: '/about', label: 'About' },
+              { href: '/admin', label: 'Admin' },
             ].map(({ href, label }) => (
               <Link
                 key={href}
                 href={href}
-                className="text-xs text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+                className="text-xs text-foreground-muted hover:text-foreground transition-colors"
               >
                 {label}
               </Link>
             ))}
             <button
               onClick={() => signIn.social({ provider: 'google', callbackURL: '/admin' })}
-              className="text-xs text-[var(--foreground-light)] hover:text-[var(--foreground)] transition-colors"
+              className="text-xs text-foreground-light hover:text-foreground transition-colors"
             >
               Sign in
             </button>
@@ -49,18 +50,18 @@ export function Footer() {
 
           {/* Right: credit */}
           <div className="text-right">
-            <p className="text-xs text-[var(--foreground-muted)]">
+            <p className="text-xs text-foreground-muted">
               Built by{' '}
               <a
                 href="https://trevorthewebdeveloper.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[var(--foreground)] hover:underline transition-colors"
+                className="text-foreground hover:underline transition-colors"
               >
                 Trevor Brown
               </a>
             </p>
-            <p className="text-xs text-[var(--foreground-light)] mt-0.5">
+            <p className="text-xs text-foreground-light mt-0.5">
               &copy; {new Date().getFullYear()} News Pulse
             </p>
           </div>

@@ -7,7 +7,6 @@ import { formatTimeAgo, regionBadges } from '@/lib/formatUtils';
 import {
   SparklesIcon,
   MapPinIcon,
-  ArrowTopRightOnSquareIcon,
   ShareIcon,
   ChevronDownIcon,
 } from '@heroicons/react/24/outline';
@@ -166,7 +165,7 @@ function highlightLocations(text: string): React.ReactNode {
       }
 
       return (
-        <span key={i} className="font-semibold text-[var(--foreground)]">
+        <span key={i} className="font-semibold text-foreground">
           {part}
         </span>
       );
@@ -224,7 +223,7 @@ function getLoadingMessage(elapsedSec: number, tier: ModelTier): string {
 // Pulse Logo Avatar component - matches header brand
 function PulseAvatar() {
   return (
-    <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-sm border border-slate-700 flex-shrink-0">
+    <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-sm border border-border-card flex-shrink-0">
       <svg viewBox="0 0 32 32" className="w-5 h-5">
         <text x="8" y="20" fontFamily="system-ui, -apple-system, sans-serif" fontSize="16" fontWeight="700" fill="#ffffff">P</text>
         <path d="M4 24 L10 24 L12 21 L14 27 L16 22 L18 24 L28 24" fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -413,19 +412,19 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
   // Loading state card
   if (loading) {
     return (
-      <article className="relative px-3 py-3 sm:px-4 sm:py-4 bg-[var(--background-card)] rounded-xl border-2 border-slate-400 dark:border-slate-500">
+      <article className="relative px-3 py-3 sm:px-4 sm:py-4 bg-background-card rounded-xl border-2 border-slate-400 dark:border-slate-500">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <PulseAvatar />
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-label font-medium text-[var(--foreground)]">Pulse AI</span>
+                <span className="text-label font-medium text-foreground">Pulse AI</span>
                 <SparklesIcon className="w-4 h-4 text-cyan-500 flex-shrink-0" />
-                <span className="text-caption text-[var(--foreground-light)] flex-shrink-0">
+                <span className="text-caption text-foreground-light flex-shrink-0">
                   · {getLoadingMessage(loadingElapsed, currentTier)}
                 </span>
                 {loadingElapsed > 0 && (
-                  <span className="text-caption text-[var(--foreground-light)] tabular-nums">
+                  <span className="text-caption text-foreground-light tabular-nums">
                     {loadingElapsed}s
                   </span>
                 )}
@@ -437,7 +436,7 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
           </div>
           <div className="py-4 flex items-center gap-3">
             <div className="w-4 h-4 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-[var(--foreground-muted)]">Generating briefing with {tierInfo.model}...</span>
+            <span className="text-sm text-foreground-muted">Generating briefing with {tierInfo.model}...</span>
           </div>
         </div>
       </article>
@@ -447,13 +446,13 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
   // Error state card
   if (error) {
     return (
-      <article className="relative px-3 py-3 sm:px-4 sm:py-4 bg-[var(--background-card)] rounded-xl border-2 border-slate-400 dark:border-slate-500">
+      <article className="relative px-3 py-3 sm:px-4 sm:py-4 bg-background-card rounded-xl border-2 border-slate-400 dark:border-slate-500">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <PulseAvatar />
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-label font-medium text-[var(--foreground)]">Pulse AI</span>
+                <span className="text-label font-medium text-foreground">Pulse AI</span>
                 <SparklesIcon className="w-4 h-4 text-cyan-500 flex-shrink-0" />
               </div>
             </div>
@@ -462,7 +461,7 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
             </span>
           </div>
           <div className="py-2">
-            <p className="text-sm text-[var(--foreground-muted)]">AI briefing temporarily unavailable</p>
+            <p className="text-sm text-foreground-muted">AI briefing temporarily unavailable</p>
           </div>
           <div className="flex items-center gap-3 pt-1">
             <button
@@ -484,13 +483,13 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
       const hasEnoughPosts = postCount >= MIN_POSTS_FOR_BRIEFING;
 
       return (
-        <article className="relative px-3 py-3 sm:px-4 sm:py-4 bg-[var(--background-card)] rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
+        <article className="relative px-3 py-3 sm:px-4 sm:py-4 bg-background-card rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2.5 min-w-0">
                 <PulseAvatar />
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-label font-medium text-[var(--foreground)]">Pulse AI</span>
+                  <span className="text-label font-medium text-foreground">Pulse AI</span>
                   <SparklesIcon className="w-4 h-4 text-cyan-500/50 flex-shrink-0" />
                 </div>
               </div>
@@ -503,7 +502,7 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
             <div className="py-2">
               {hasEnoughPosts ? (
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                  <span className="text-sm text-[var(--foreground-muted)]">
+                  <span className="text-sm text-foreground-muted">
                     {postCount} posts in this view
                   </span>
                   <button
@@ -518,7 +517,7 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
                   </button>
                 </div>
               ) : (
-                <span className="text-sm text-[var(--foreground-light)]">
+                <span className="text-sm text-foreground-light">
                   {postCount} posts — need {MIN_POSTS_FOR_BRIEFING}+ for AI briefing
                 </span>
               )}
@@ -530,15 +529,15 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
 
     // Auto-generate mode - show preparing state
     return (
-      <article className="relative px-3 py-3 sm:px-4 sm:py-4 bg-[var(--background-card)] rounded-xl border-2 border-slate-400 dark:border-slate-500">
+      <article className="relative px-3 py-3 sm:px-4 sm:py-4 bg-background-card rounded-xl border-2 border-slate-400 dark:border-slate-500">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
               <PulseAvatar />
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-label font-medium text-[var(--foreground)]">Pulse AI</span>
+                <span className="text-label font-medium text-foreground">Pulse AI</span>
                 <SparklesIcon className="w-4 h-4 text-cyan-500 flex-shrink-0" />
-                <span className="text-caption text-[var(--foreground-light)]">· Preparing...</span>
+                <span className="text-caption text-foreground-light">· Preparing...</span>
               </div>
             </div>
             <span className={`px-1.5 py-0.5 text-2xs font-semibold rounded-md flex-shrink-0 ${regionBadge.color}`}>
@@ -547,7 +546,7 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
           </div>
           <div className="py-3 flex items-center gap-3">
             <div className="w-4 h-4 border-2 border-cyan-500/50 border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-[var(--foreground-muted)]">Preparing summary...</span>
+            <span className="text-sm text-foreground-muted">Preparing summary...</span>
           </div>
         </div>
       </article>
@@ -556,16 +555,16 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
 
   // Main briefing card
   return (
-    <article className="relative px-3 py-2.5 sm:px-4 sm:py-3 bg-[var(--background-card)] rounded-xl border-2 border-slate-400 dark:border-slate-500 hover:border-slate-500 dark:hover:border-slate-400 transition-all duration-200">
+    <article className="relative px-3 py-2.5 sm:px-4 sm:py-3 bg-background-card rounded-xl border-2 border-slate-400 dark:border-slate-500 hover:border-slate-500 dark:hover:border-slate-400 transition-all duration-200">
       <div className="flex flex-col gap-1.5">
         {/* Row 1: Avatar + Name + Meta | Region */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
             <PulseAvatar />
             <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
-              <span className="text-label font-medium text-[var(--foreground)]">Pulse AI</span>
+              <span className="text-label font-medium text-foreground">Pulse AI</span>
               <SparklesIcon className="w-4 h-4 text-cyan-500 flex-shrink-0" />
-              <span className="text-caption text-[var(--foreground-light)] flex-shrink-0" suppressHydrationWarning>
+              <span className="text-caption text-foreground-light flex-shrink-0" suppressHydrationWarning>
                 · {briefing.sourcesAnalyzed} sources
                 {generatedAt && ` · ${formatTimeAgo(generatedAt)}`}
               </span>
@@ -578,7 +577,7 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
 
         {/* Summary + key developments as a unified block */}
         <div className="text-body">
-          <p className="text-[var(--foreground)] leading-relaxed">
+          <p className="text-foreground leading-relaxed">
             {highlightLocations(briefing.summary)}
           </p>
 
@@ -586,7 +585,7 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
           {briefing.keyDevelopments && briefing.keyDevelopments.length > 0 && (
             <ul className="mt-1.5 space-y-0.5">
               {briefing.keyDevelopments.slice(0, 2).map((dev, i) => (
-                <li key={i} className="flex items-start gap-2 text-[var(--foreground)]">
+                <li key={i} className="flex items-start gap-2 text-foreground">
                   <span className="text-cyan-500 mt-1">▸</span>
                   <span className="leading-relaxed">{highlightLocations(dev.headline)}</span>
                 </li>
@@ -596,9 +595,9 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
         </div>
 
         {/* Row 3: Metadata + Actions */}
-        <div className="flex items-center justify-between pt-1.5 border-t border-[var(--border-light)]">
+        <div className="flex items-center justify-between pt-1.5 border-t border-border-light">
           {/* Left: AI tag + Claude attribution with model selector */}
-          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-[var(--foreground-light)]">
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-foreground-light">
             <span className="px-2 py-0.5 text-[10px] tracking-wide uppercase font-semibold rounded-sm bg-cyan-600 dark:bg-cyan-500 text-white dark:text-cyan-950">
               AI
             </span>
@@ -614,42 +613,42 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
                 {!isOpenAiFallback && <ChevronDownIcon className={`w-3 h-3 transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />}
               </button>
               {modelDropdownOpen && (
-                <div className="absolute left-0 top-full mt-1 w-48 bg-[var(--background)] border border-[var(--border)] rounded-lg shadow-lg z-50 overflow-hidden">
+                <div className="absolute left-0 top-full mt-1 w-48 bg-background border border-border rounded-lg shadow-lg z-50 overflow-hidden">
                   <button
                     onClick={() => {
                       fetchBriefing('quick', true);
                       setModelDropdownOpen(false);
                     }}
-                    className={`w-full px-3 py-2 text-left hover:bg-[var(--background-secondary)] transition-colors ${
-                      briefing.tier === 'quick' ? 'bg-[var(--background-secondary)]' : ''
+                    className={`w-full px-3 py-2 text-left hover:bg-background-secondary transition-colors ${
+                      briefing.tier === 'quick' ? 'bg-background-secondary' : ''
                     }`}
                   >
-                    <div className="font-medium text-[var(--foreground)]">Claude Haiku</div>
-                    <div className="text-[10px] text-[var(--foreground-light)]">Faster · economical</div>
+                    <div className="font-medium text-foreground">Claude Haiku</div>
+                    <div className="text-[10px] text-foreground-light">Faster · economical</div>
                   </button>
                   <button
                     onClick={() => {
                       fetchBriefing('advanced', true);
                       setModelDropdownOpen(false);
                     }}
-                    className={`w-full px-3 py-2 text-left hover:bg-[var(--background-secondary)] transition-colors border-t border-[var(--border-light)] ${
-                      briefing.tier === 'advanced' ? 'bg-[var(--background-secondary)]' : ''
+                    className={`w-full px-3 py-2 text-left hover:bg-background-secondary transition-colors border-t border-border-light ${
+                      briefing.tier === 'advanced' ? 'bg-background-secondary' : ''
                     }`}
                   >
-                    <div className="font-medium text-[var(--foreground)]">Claude Sonnet</div>
-                    <div className="text-[10px] text-[var(--foreground-light)]">Balanced · recommended</div>
+                    <div className="font-medium text-foreground">Claude Sonnet</div>
+                    <div className="text-[10px] text-foreground-light">Balanced · recommended</div>
                   </button>
                   <button
                     onClick={() => {
                       fetchBriefing('pro', true);
                       setModelDropdownOpen(false);
                     }}
-                    className={`w-full px-3 py-2 text-left hover:bg-[var(--background-secondary)] transition-colors border-t border-[var(--border-light)] ${
-                      briefing.tier === 'pro' ? 'bg-[var(--background-secondary)]' : ''
+                    className={`w-full px-3 py-2 text-left hover:bg-background-secondary transition-colors border-t border-border-light ${
+                      briefing.tier === 'pro' ? 'bg-background-secondary' : ''
                     }`}
                   >
-                    <div className="font-medium text-[var(--foreground)]">Claude Opus</div>
-                    <div className="text-[10px] text-[var(--foreground-light)]">Smarter · deeper analysis</div>
+                    <div className="font-medium text-foreground">Claude Opus</div>
+                    <div className="text-[10px] text-foreground-light">Smarter · deeper analysis</div>
                   </button>
                 </div>
               )}
@@ -663,7 +662,7 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
               className={`flex items-center gap-1.5 transition-colors ${
                 isPinned
                   ? 'text-cyan-600 dark:text-cyan-400'
-                  : 'text-[var(--foreground-light)] hover:text-[var(--foreground-muted)]'
+                  : 'text-foreground-light hover:text-foreground-muted'
               }`}
               aria-label={isPinned ? 'Unpin briefing' : 'Pin briefing to top'}
               title={isPinned ? 'Pinned to top' : 'Pin to top'}
@@ -679,7 +678,7 @@ export function BriefingCard({ region, autoGenerate = true, postCount = 0, filte
             </button>
             <button
               onClick={handleShare}
-              className="flex items-center gap-1.5 text-[var(--foreground-light)] hover:text-[var(--foreground-muted)] transition-colors"
+              className="flex items-center gap-1.5 text-foreground-light hover:text-foreground-muted transition-colors"
               aria-label="Share briefing"
             >
               <ShareIcon className="w-4 h-4" />

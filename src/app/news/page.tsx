@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import Link from 'next/link';
 import {
-  ArrowLeftIcon,
   ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
   ExclamationTriangleIcon,
@@ -264,42 +262,22 @@ export default function NewsPage() {
   let lastBucket = heroArticle ? getTimeBucket(heroArticle.timestamp) : '';
 
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--foreground)]">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-[var(--background)]/90 backdrop-blur-md border-b border-[var(--border-light)]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-[var(--foreground-light)] hover:text-[var(--foreground)] transition-colors"
-            >
-              <ArrowLeftIcon className="w-4 h-4" />
-              <span className="text-sm font-medium hidden sm:inline">Pulse</span>
-            </Link>
-            <div className="flex items-center gap-2.5">
-              <div className="relative">
-                <NewspaperIcon className="w-5 h-5 text-[var(--foreground-muted)]" />
-                {!isLoading && articles.length > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full animate-[pulse-soft_3s_ease-in-out_infinite]" />
-                )}
-              </div>
-              <h1 className="text-base font-serif font-semibold text-[var(--foreground)] tracking-tight">News Wire</h1>
-            </div>
-            <button
-              onClick={() => fetchNews()}
-              disabled={isLoading}
-              className="p-2 text-[var(--foreground-light)] hover:text-[var(--foreground)] transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-              title="Refresh headlines"
-            >
-              <ArrowPathIcon className={`w-4.5 h-4.5 ${isLoading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </div>
-      </header>
+    <>
+      {/* Refresh button */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 flex justify-end">
+        <button
+          onClick={() => fetchNews()}
+          disabled={isLoading}
+          className="p-2 text-foreground-light hover:text-foreground transition-colors disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          title="Refresh headlines"
+        >
+          <ArrowPathIcon className={`w-4.5 h-4.5 ${isLoading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
 
       {/* Map strip */}
       {!isLoading && articles.length > 0 && (
-        <div className="border-b border-[var(--border-light)]">
+        <div className="border-b border-border-light">
           <div className="max-w-5xl mx-auto overflow-hidden h-[160px] sm:h-[180px]">
             <WorldMap
               watchpoints={WATCHPOINTS}
@@ -319,28 +297,28 @@ export default function NewsPage() {
           <div className="flex items-center gap-2 text-[13px]">
             {selectedRegion !== 'all' ? (
               <>
-                <span className="text-[var(--foreground-muted)] font-medium">
+                <span className="text-foreground-muted font-medium">
                   {REGIONS.find(r => r.id === selectedRegion)?.label}
                 </span>
                 <button
                   onClick={() => handleRegionSelect('all')}
-                  className="text-[var(--foreground-light)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
+                  className="text-foreground-light hover:text-foreground transition-colors cursor-pointer"
                 >
                   &times; Clear
                 </button>
               </>
             ) : (
-              <span className="text-[var(--foreground-light)]">All regions</span>
+              <span className="text-foreground-light">All regions</span>
             )}
           </div>
 
           {fetchedAt && !isLoading && (
-            <div className="flex items-center gap-3 text-[12px] text-[var(--foreground-light)] shrink-0">
+            <div className="flex items-center gap-3 text-[12px] text-foreground-light shrink-0">
               <span className="flex items-center gap-1.5">
-                <span className="text-[var(--foreground-muted)] tabular-nums">{filtered.length}</span> articles
+                <span className="text-foreground-muted tabular-nums">{filtered.length}</span> articles
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="text-[var(--foreground-muted)] tabular-nums">{totalSources}</span> sources
+                <span className="text-foreground-muted tabular-nums">{totalSources}</span> sources
               </span>
             </div>
           )}
@@ -350,10 +328,10 @@ export default function NewsPage() {
         {pendingArticles.length > 0 && (
           <button
             onClick={showPending}
-            className="w-full mb-4 py-2.5 text-sm font-medium text-emerald-400 bg-emerald-500/8 border border-emerald-500/15 rounded-xl hover:bg-emerald-500/12 transition-all duration-200 cursor-pointer group"
+            className="w-full mb-4 py-2.5 text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/8 border border-emerald-500/15 rounded-xl hover:bg-emerald-200 dark:hover:bg-emerald-500/12 transition-all duration-200 cursor-pointer group"
           >
             <span className="inline-flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 group-hover:animate-ping" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 group-hover:animate-ping" />
               {pendingArticles.length} new {pendingArticles.length === 1 ? 'article' : 'articles'} available
             </span>
           </button>
@@ -365,19 +343,19 @@ export default function NewsPage() {
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="flex gap-4 bg-[var(--background-card)] border border-[var(--border-card)] rounded-xl p-4 sm:px-5"
+                className="flex gap-4 bg-background-card border border-border-card rounded-xl p-4 sm:px-5"
                 style={{ opacity: 1 - i * 0.08, animationDelay: `${i * 60}ms` }}
               >
                 <div className="flex-1 min-w-0 space-y-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[var(--border)] animate-pulse" />
-                    <div className="h-3 w-24 rounded bg-[var(--border)] animate-pulse" />
-                    <div className="h-3 w-12 rounded bg-[var(--border-light)] animate-pulse" />
+                    <div className="w-3 h-3 rounded-full bg-border animate-pulse" />
+                    <div className="h-3 w-24 rounded bg-border animate-pulse" />
+                    <div className="h-3 w-12 rounded bg-border-light animate-pulse" />
                   </div>
-                  <div className="h-4 w-full rounded bg-[var(--border)] animate-pulse" />
-                  <div className="h-4 w-3/4 rounded bg-[var(--border-light)] animate-pulse" />
+                  <div className="h-4 w-full rounded bg-border animate-pulse" />
+                  <div className="h-4 w-3/4 rounded bg-border-light animate-pulse" />
                 </div>
-                <div className="hidden sm:block w-28 h-20 rounded-lg bg-[var(--border-light)] animate-pulse shrink-0" />
+                <div className="hidden sm:block w-28 h-20 rounded-lg bg-border-light animate-pulse shrink-0" />
               </div>
             ))}
           </div>
@@ -387,14 +365,14 @@ export default function NewsPage() {
         {error && (
           <div className="bg-red-500/5 border border-red-500/15 rounded-xl p-4 mb-4">
             <div className="flex items-center gap-3">
-              <ExclamationTriangleIcon className="w-5 h-5 text-red-400/70 flex-shrink-0" />
+              <ExclamationTriangleIcon className="w-5 h-5 text-red-600/70 dark:text-red-400/70 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-red-400 font-medium text-sm">Failed to load news</p>
-                <p className="text-red-400/50 text-xs mt-0.5 truncate">{error}</p>
+                <p className="text-red-600 dark:text-red-400 font-medium text-sm">Failed to load news</p>
+                <p className="text-red-600/50 dark:text-red-400/50 text-xs mt-0.5 truncate">{error}</p>
               </div>
               <button
                 onClick={() => fetchNews()}
-                className="px-3 py-1.5 text-xs font-medium bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors cursor-pointer"
+                className="px-3 py-1.5 text-xs font-medium bg-red-100 dark:bg-red-500/10 hover:bg-red-200 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-lg transition-colors cursor-pointer"
               >
                 Retry
               </button>
@@ -422,11 +400,11 @@ export default function NewsPage() {
                 <div key={article.id} className="contents">
                   {showDivider && index > 0 && (
                     <div className="col-span-full flex items-center gap-3 py-3 mt-1">
-                      <div className="h-px flex-1 bg-gradient-to-r from-[var(--border-light)] to-transparent" />
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--foreground-light)]">
+                      <div className="h-px flex-1 bg-gradient-to-r from-border-light to-transparent" />
+                      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-foreground-light">
                         {BUCKET_LABELS[bucket] || bucket}
                       </span>
-                      <div className="h-px flex-1 bg-gradient-to-l from-[var(--border-light)] to-transparent" />
+                      <div className="h-px flex-1 bg-gradient-to-l from-border-light to-transparent" />
                     </div>
                   )}
                   <ArticleCard article={article} index={index + 1} />
@@ -439,11 +417,11 @@ export default function NewsPage() {
         {/* Empty state */}
         {!isLoading && !error && filtered.length === 0 && (
           <div className="text-center py-24">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[var(--background-secondary)] mb-4">
-              <NewspaperIcon className="w-8 h-8 text-[var(--foreground-light)]" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-background-secondary mb-4">
+              <NewspaperIcon className="w-8 h-8 text-foreground-light" />
             </div>
-            <p className="text-[var(--foreground-muted)] text-sm font-medium">No articles found</p>
-            <p className="text-[var(--foreground-light)] text-xs mt-1">Try selecting a different region</p>
+            <p className="text-foreground-muted text-sm font-medium">No articles found</p>
+            <p className="text-foreground-light text-xs mt-1">Try selecting a different region</p>
           </div>
         )}
 
@@ -451,13 +429,13 @@ export default function NewsPage() {
         {hasMore && (
           <button
             onClick={() => setDisplayLimit(prev => prev + PAGE_SIZE)}
-            className="w-full mt-4 py-3 text-sm font-medium text-[var(--foreground-light)] bg-[var(--background-secondary)]/50 border border-[var(--border-light)] rounded-xl hover:bg-[var(--background-secondary)] hover:text-[var(--foreground-muted)] hover:border-[var(--border)] transition-all duration-200 cursor-pointer"
+            className="w-full mt-4 py-3 text-sm font-medium text-foreground-light bg-background-secondary/50 border border-border-light rounded-xl hover:bg-background-secondary hover:text-foreground-muted hover:border-border transition-all duration-200 cursor-pointer"
           >
             Load more ({filtered.length - displayLimit} remaining)
           </button>
         )}
       </main>
-    </div>
+    </>
   );
 }
 
@@ -491,11 +469,11 @@ function HeroCard({ article }: { article: ArticleWithSource }) {
       href={article.url || '#'}
       target="_blank"
       rel="noopener noreferrer"
-      className={`block bg-[var(--background-card)] border border-[var(--border-card)] border-l-[3px] ${accent} rounded-xl hover:border-[var(--border)] hover:shadow-[0_4px_20px_-6px_rgba(0,0,0,0.3)] transition-all duration-200 group overflow-hidden nw-card-enter`}
+      className={`block bg-background-card border border-border-card border-l-[3px] ${accent} rounded-xl hover:border-border hover:shadow-[0_4px_20px_-6px_rgba(0,0,0,0.3)] transition-all duration-200 group overflow-hidden nw-card-enter`}
     >
       {/* Thumbnail banner */}
       {thumb && (
-        <div className="w-full h-36 sm:h-44 overflow-hidden bg-[var(--background-secondary)]">
+        <div className="w-full h-36 sm:h-44 overflow-hidden bg-background-secondary">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={thumb}
@@ -513,29 +491,29 @@ function HeroCard({ article }: { article: ArticleWithSource }) {
           <span className={`flex-shrink-0 ${platformColors[platform] || platformColors.rss}`}>
             <PlatformIcon platform={platform} className="w-3.5 h-3.5" />
           </span>
-          <span className="text-[13px] font-semibold text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] transition-colors">
+          <span className="text-[13px] font-semibold text-foreground-muted group-hover:text-foreground transition-colors">
             {article._sourceName}
           </span>
-          <span className="text-[12px] text-[var(--foreground-light)] tabular-nums">
+          <span className="text-[12px] text-foreground-light tabular-nums">
             {formatTimeAgo(article.timestamp)}
           </span>
           <RegionBadge region={article._sourceRegion} />
         </div>
 
         {/* Headline */}
-        <h2 className="text-lg sm:text-xl font-serif font-semibold text-[var(--foreground)] leading-snug group-hover:text-[var(--foreground)] transition-colors line-clamp-3">
+        <h2 className="text-lg sm:text-xl font-serif font-semibold text-foreground leading-snug group-hover:text-foreground transition-colors line-clamp-3">
           {title}
         </h2>
 
         {/* Snippet */}
         {snippet && (
-          <p className="mt-2 text-[13px] sm:text-sm text-[var(--foreground-light)] leading-relaxed line-clamp-3">
+          <p className="mt-2 text-[13px] sm:text-sm text-foreground-light leading-relaxed line-clamp-3">
             {snippet}
           </p>
         )}
 
         {/* Read link */}
-        <div className="mt-3 flex items-center gap-1 text-[12px] text-[var(--foreground-light)] opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="mt-3 flex items-center gap-1 text-[12px] text-foreground-light opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
           <span>Read full article</span>
         </div>
@@ -566,7 +544,7 @@ function ArticleCard({ article, index }: { article: ArticleWithSource; index: nu
       href={article.url || '#'}
       target="_blank"
       rel="noopener noreferrer"
-      className={`flex gap-4 h-full bg-[var(--background-card)] border border-[var(--border-card)] border-l-[3px] ${accent} rounded-xl hover:border-[var(--border)] hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.2)] transition-all duration-200 group p-4 sm:px-5 nw-card-enter`}
+      className={`flex gap-4 h-full bg-background-card border border-border-card border-l-[3px] ${accent} rounded-xl hover:border-border hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.2)] transition-all duration-200 group p-4 sm:px-5 nw-card-enter`}
       style={{ animationDelay: `${Math.min(index, 15) * 30}ms` }}
     >
       {/* Left accent for very recent articles */}
@@ -581,23 +559,23 @@ function ArticleCard({ article, index }: { article: ArticleWithSource; index: nu
           <span className={`flex-shrink-0 ${platformColors[platform] || platformColors.rss}`}>
             <PlatformIcon platform={platform} className="w-3 h-3" />
           </span>
-          <span className="text-[12px] font-semibold text-[var(--foreground-muted)] group-hover:text-[var(--foreground)] transition-colors truncate">
+          <span className="text-[12px] font-semibold text-foreground-muted group-hover:text-foreground transition-colors truncate">
             {article._sourceName}
           </span>
-          <span className="text-[11px] text-[var(--foreground-light)] shrink-0 tabular-nums">
+          <span className="text-[11px] text-foreground-light shrink-0 tabular-nums">
             {formatTimeAgo(article.timestamp)}
           </span>
           <RegionBadge region={article._sourceRegion} />
         </div>
 
         {/* Headline */}
-        <h2 className="text-[15px] sm:text-base font-serif font-medium text-[var(--foreground)] leading-snug group-hover:text-[var(--foreground)] transition-colors line-clamp-2">
+        <h2 className="text-[15px] sm:text-base font-serif font-medium text-foreground leading-snug group-hover:text-foreground transition-colors line-clamp-2">
           {title}
         </h2>
 
         {/* Snippet - single line in grid */}
         {snippet && (
-          <p className="mt-1 text-[13px] text-[var(--foreground-light)] leading-relaxed line-clamp-1">
+          <p className="mt-1 text-[13px] text-foreground-light leading-relaxed line-clamp-1">
             {snippet}
           </p>
         )}
@@ -605,7 +583,7 @@ function ArticleCard({ article, index }: { article: ArticleWithSource; index: nu
 
       {/* Thumbnail */}
       {thumb && (
-        <div className="hidden sm:block w-28 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-[var(--background-secondary)] self-center">
+        <div className="hidden sm:block w-28 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-background-secondary self-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={thumb}
@@ -625,12 +603,12 @@ function ArticleCard({ article, index }: { article: ArticleWithSource; index: nu
 // =============================================================================
 
 const regionBadgeStyles: Record<string, string> = {
-  'us': 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20',
-  'latam': 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
-  'middle-east': 'text-amber-400 bg-amber-500/10 border-amber-500/20',
-  'europe-russia': 'text-sky-400 bg-sky-500/10 border-sky-500/20',
-  'asia': 'text-rose-400 bg-rose-500/10 border-rose-500/20',
-  'africa': 'text-orange-400 bg-orange-500/10 border-orange-500/20',
+  'us': 'text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/40 border-indigo-500/20',
+  'latam': 'text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 border-emerald-500/20',
+  'middle-east': 'text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 border-amber-500/20',
+  'europe-russia': 'text-sky-600 dark:text-sky-400 bg-sky-100 dark:bg-sky-900/40 border-sky-500/20',
+  'asia': 'text-rose-600 dark:text-rose-400 bg-rose-100 dark:bg-rose-900/40 border-rose-500/20',
+  'africa': 'text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/40 border-orange-500/20',
 };
 
 const regionLabels: Record<string, string> = {
@@ -645,7 +623,7 @@ const regionLabels: Record<string, string> = {
 function RegionBadge({ region }: { region: WatchpointId }) {
   if (region === 'all' || region === 'seismic') return null;
   return (
-    <span className={`ml-auto text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border ${regionBadgeStyles[region] || 'text-[var(--foreground-light)] bg-[var(--foreground)]/5 border-[var(--border-light)]'}`}>
+    <span className={`ml-auto text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border ${regionBadgeStyles[region] || 'text-foreground-light bg-foreground/5 border-border-light'}`}>
       {regionLabels[region] || region}
     </span>
   );
@@ -673,7 +651,7 @@ function DigestCard({ digest }: { digest: NewsDigest }) {
   const sortedStories = [...highStories, ...mediumStories];
 
   return (
-    <div className="mb-5 bg-[var(--background-card)] border border-[var(--border-card)] rounded-xl overflow-hidden">
+    <div className="mb-5 bg-background-card border border-border-card rounded-xl overflow-hidden">
       {/* Top accent bar */}
       <div className="h-[2px] bg-gradient-to-r from-amber-500/80 via-amber-500/40 to-transparent" />
 
@@ -684,13 +662,13 @@ function DigestCard({ digest }: { digest: NewsDigest }) {
             <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-500/70">
               AI Digest
             </span>
-            <span className="text-[10px] text-[var(--foreground-light)] font-[family-name:var(--font-geist-mono)]">
+            <span className="text-[10px] text-foreground-light font-[family-name:var(--font-geist-mono)]">
               {formatTimeAgo(digest.createdAt)}
             </span>
           </div>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="flex items-center gap-1 text-[11px] text-[var(--foreground-light)] hover:text-[var(--foreground-muted)] transition-colors cursor-pointer"
+            className="flex items-center gap-1 text-[11px] text-foreground-light hover:text-foreground-muted transition-colors cursor-pointer"
           >
             {collapsed ? (
               <>
@@ -704,7 +682,7 @@ function DigestCard({ digest }: { digest: NewsDigest }) {
         </div>
 
         {/* Headline */}
-        <h2 className="text-xl sm:text-2xl font-serif font-bold text-[var(--foreground)] leading-tight tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-serif font-bold text-foreground leading-tight tracking-tight">
           {digest.headline}
         </h2>
 
@@ -712,12 +690,12 @@ function DigestCard({ digest }: { digest: NewsDigest }) {
         {!collapsed && (
           <>
             {/* Summary */}
-            <p className="mt-3 text-[14px] sm:text-[15px] text-[var(--foreground-muted)] leading-relaxed">
+            <p className="mt-3 text-[14px] sm:text-[15px] text-foreground-muted leading-relaxed">
               {digest.summary}
             </p>
 
             {/* Divider */}
-            <div className="mt-5 mb-4 h-px bg-[var(--border-light)]" />
+            <div className="mt-5 mb-4 h-px bg-border-light" />
 
             {/* Stories */}
             <div className="space-y-3">
@@ -733,11 +711,11 @@ function DigestCard({ digest }: { digest: NewsDigest }) {
             </div>
 
             {/* Footer */}
-            <div className="mt-5 pt-3 border-t border-[var(--border-light)] flex items-center gap-2 text-[11px] text-[var(--foreground-light)] font-[family-name:var(--font-geist-mono)]">
+            <div className="mt-5 pt-3 border-t border-border-light flex items-center gap-2 text-[11px] text-foreground-light font-[family-name:var(--font-geist-mono)]">
               <span>AI Digest</span>
-              <span className="text-[var(--border)]">/</span>
+              <span className="text-border">/</span>
               <span>{formatTimeAgo(digest.createdAt)}</span>
-              <span className="text-[var(--border)]">/</span>
+              <span className="text-border">/</span>
               <span>{digest.articlesAnalyzed} articles analyzed</span>
             </div>
           </>
@@ -772,7 +750,7 @@ function DigestStoryItem({
       className={`rounded-lg px-3.5 py-3 transition-colors ${
         isHigh
           ? 'bg-amber-500/[0.04] border border-amber-500/10'
-          : 'bg-[var(--background-secondary)]/40'
+          : 'bg-background-secondary/40'
       }`}
     >
       {/* Story title row */}
@@ -784,7 +762,7 @@ function DigestStoryItem({
           onClick={onToggle}
           className="flex-1 text-left cursor-pointer group"
         >
-          <h3 className="text-[14px] sm:text-[15px] font-semibold text-[var(--foreground)] leading-snug group-hover:text-[var(--foreground)] transition-colors">
+          <h3 className="text-[14px] sm:text-[15px] font-semibold text-foreground leading-snug group-hover:text-foreground transition-colors">
             {story.title}
           </h3>
         </button>
@@ -792,12 +770,12 @@ function DigestStoryItem({
 
       {/* Summary */}
       <div className={`mt-1.5 ${isHigh ? 'ml-3.5' : ''}`}>
-        <p className="text-[13px] text-[var(--foreground-light)] leading-relaxed">
+        <p className="text-[13px] text-foreground-light leading-relaxed">
           {expanded ? story.summary : firstSentence}
           {!expanded && hasMore && (
             <button
               onClick={onToggle}
-              className="ml-1 text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors cursor-pointer"
+              className="ml-1 text-foreground-muted hover:text-foreground transition-colors cursor-pointer"
             >
               ...more
             </button>
@@ -810,7 +788,7 @@ function DigestStoryItem({
         {story.sources.map((source, j) => (
           <span
             key={j}
-            className="text-[10px] font-medium text-[var(--foreground-light)] bg-[var(--foreground)]/[0.05] px-1.5 py-0.5 rounded"
+            className="text-[10px] font-medium text-foreground-light bg-foreground/[0.05] px-1.5 py-0.5 rounded"
           >
             {source}
           </span>
