@@ -24,8 +24,8 @@ export default function AdminPage() {
 
   if (isPending) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-black flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-foreground-muted border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -61,50 +61,50 @@ export default function AdminPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black text-slate-900 dark:text-slate-100">
+    <div className="min-h-screen bg-background text-foreground">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         <div className="mb-8">
-          <h1 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">Admin</h1>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{allSources.length} sources</p>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <h1 className="text-lg font-semibold text-foreground mb-1">Admin</h1>
+          <p className="text-2xl font-bold text-foreground">{allSources.length} sources</p>
+          <p className="text-sm text-foreground-muted mt-1">
             {feedSources.length} feed · {newsSources.length} news
           </p>
         </div>
 
         {/* Navigation */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-200 dark:divide-slate-800 mb-8">
+        <div className="bg-background-card rounded-xl border border-border-card divide-y divide-border-card mb-8">
           {sections.map(s => (
-            <Link key={s.href} href={s.href} className="flex items-center justify-between px-4 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors first:rounded-t-xl last:rounded-b-xl">
+            <Link key={s.href} href={s.href} className="flex items-center justify-between px-4 py-4 hover:bg-background-secondary transition-colors first:rounded-t-xl last:rounded-b-xl">
               <div>
-                <p className="text-sm font-medium text-slate-900 dark:text-white">{s.label}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.detail}</p>
-                {s.sub && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{s.sub}</p>}
+                <p className="text-sm font-medium text-foreground">{s.label}</p>
+                <p className="text-xs text-foreground-muted mt-0.5">{s.detail}</p>
+                {s.sub && <p className="text-xs text-foreground-muted mt-0.5">{s.sub}</p>}
               </div>
-              <ChevronRightIcon className="w-4 h-4 text-slate-500 dark:text-slate-400 flex-shrink-0" />
+              <ChevronRightIcon className="w-4 h-4 text-foreground-muted flex-shrink-0" />
             </Link>
           ))}
         </div>
 
         {/* Regional Baselines */}
         <div>
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Regional Baselines</p>
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+          <p className="text-xs font-medium text-foreground-muted uppercase tracking-wider mb-3">Regional Baselines</p>
+          <div className="bg-background-card rounded-xl border border-border-card">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                <tr className="text-xs text-foreground-muted border-b border-border-card">
                   <th className="text-left py-2.5 px-4 font-medium">Region</th>
                   <th className="text-right py-2.5 px-4 font-medium">Sources</th>
                   <th className="text-right py-2.5 px-4 font-medium">PPD</th>
                   <th className="text-right py-2.5 px-4 font-medium">6h Baseline</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              <tbody className="divide-y divide-border-card">
                 {regionBaselines.map(rb => (
                   <tr key={rb.region}>
-                    <td className="py-2.5 px-4 text-slate-900 dark:text-white">{regionDisplayNames[rb.region] || rb.region}</td>
-                    <td className="py-2.5 px-4 text-right font-mono text-slate-600 dark:text-slate-300">{rb.feedSources}</td>
-                    <td className="py-2.5 px-4 text-right font-mono text-slate-600 dark:text-slate-300">{rb.trustedPpd}</td>
-                    <td className="py-2.5 px-4 text-right font-mono text-slate-900 dark:text-white">{rb.baseline6h}</td>
+                    <td className="py-2.5 px-4 text-foreground">{regionDisplayNames[rb.region] || rb.region}</td>
+                    <td className="py-2.5 px-4 text-right font-mono text-foreground-muted">{rb.feedSources}</td>
+                    <td className="py-2.5 px-4 text-right font-mono text-foreground-muted">{rb.trustedPpd}</td>
+                    <td className="py-2.5 px-4 text-right font-mono text-foreground">{rb.baseline6h}</td>
                   </tr>
                 ))}
               </tbody>

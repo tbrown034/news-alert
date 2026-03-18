@@ -16,7 +16,7 @@
   /* Foreground hierarchy — two grays, that's it */
   --foreground: #1a1a1a;
   --foreground-muted: #6b7280;
-  --foreground-light: #9ca3af;
+  --foreground-light: #748391;
 
   /* Borders — subtle, shadow does the lifting */
   --border: #e0e3e8;
@@ -87,7 +87,7 @@
   /* Foreground hierarchy — two grays, that's it */
   --foreground: #f0f0f0;
   --foreground-muted: #888888;
-  --foreground-light: #555555;
+  --foreground-light: #737373;
 
   /* Borders — hairline, minimal */
   --border: #222222;

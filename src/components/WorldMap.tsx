@@ -218,10 +218,11 @@ function WorldMapComponent({ watchpoints, selected, onSelect, activity = {}, sig
   }
 
   return (
-    <div className={`relative w-full ${theme.water} overflow-hidden`}>
+    <div className={`relative w-full ${theme.water} overflow-hidden`} role="img" aria-label="World map showing regional activity levels">
       {/* Map Container */}
       <div className={`relative ${mapDimensions.height}`}>
         <ComposableMap
+          aria-hidden="true"
           projection="geoEqualEarth"
           projectionConfig={{
             scale: 280,

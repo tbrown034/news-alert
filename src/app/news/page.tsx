@@ -443,14 +443,8 @@ export default function NewsPage() {
 // HERO CARD (first article gets prominent treatment)
 // =============================================================================
 
-const regionAccentColors: Record<string, string> = {
-  'us': 'border-l-indigo-500',
-  'latam': 'border-l-emerald-500',
-  'middle-east': 'border-l-amber-500',
-  'europe-russia': 'border-l-sky-500',
-  'asia': 'border-l-rose-500',
-  'africa': 'border-l-orange-500',
-};
+// Region accent colors removed — the solid left border was an AI giveaway pattern.
+// Region is already shown via RegionBadge in the card metadata.
 
 function HeroCard({ article }: { article: ArticleWithSource }) {
   const title = stripHtml(article.title || article.content?.slice(0, 120) || 'Untitled');
@@ -462,14 +456,13 @@ function HeroCard({ article }: { article: ArticleWithSource }) {
     : null;
   const thumb = getThumbnail(article);
   const platform = article._sourcePlatform || 'rss';
-  const accent = regionAccentColors[article._sourceRegion] || 'border-l-slate-500';
 
   return (
     <a
       href={article.url || '#'}
       target="_blank"
       rel="noopener noreferrer"
-      className={`block bg-background-card border border-border-card border-l-[3px] ${accent} rounded-xl hover:border-border hover:shadow-[0_4px_20px_-6px_rgba(0,0,0,0.3)] transition-all duration-200 group overflow-hidden nw-card-enter`}
+      className="block bg-background-card border border-border-card rounded-xl hover:border-border hover:shadow-md transition-all duration-200 group overflow-hidden nw-card-enter"
     >
       {/* Thumbnail banner */}
       {thumb && (
@@ -536,21 +529,17 @@ function ArticleCard({ article, index }: { article: ArticleWithSource; index: nu
     : null;
   const thumb = getThumbnail(article);
   const platform = article._sourcePlatform || 'rss';
-  const isRecent = Date.now() - new Date(article.timestamp).getTime() < 5 * 60 * 1000;
-  const accent = regionAccentColors[article._sourceRegion] || 'border-l-slate-500';
+
 
   return (
     <a
       href={article.url || '#'}
       target="_blank"
       rel="noopener noreferrer"
-      className={`flex gap-4 h-full bg-background-card border border-border-card border-l-[3px] ${accent} rounded-xl hover:border-border hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.2)] transition-all duration-200 group p-4 sm:px-5 nw-card-enter`}
+      className="flex gap-4 h-full bg-background-card border border-border-card rounded-xl hover:border-border hover:shadow-md transition-all duration-200 group p-4 sm:px-5 nw-card-enter"
       style={{ animationDelay: `${Math.min(index, 15) * 30}ms` }}
     >
-      {/* Left accent for very recent articles */}
-      {isRecent && (
-        <div className="absolute left-0 top-3 bottom-3 w-0.5 rounded-full bg-emerald-500/60" />
-      )}
+      {/* Recent indicator removed — left accent line is an AI giveaway pattern */}
 
       {/* Text content */}
       <div className="flex-1 min-w-0">

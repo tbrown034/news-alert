@@ -18,14 +18,17 @@ import { useClock } from "@/hooks/useClock";
 import {
   GlobeAltIcon,
   ChevronDownIcon,
+  ChevronUpIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   ArrowTopRightOnSquareIcon,
+  ChartBarSquareIcon,
 } from "@heroicons/react/24/outline";
 import { useSession } from "@/lib/auth-client";
 import { MapPinIcon } from "@heroicons/react/24/solid";
 import { RegionActivity } from "@/lib/activityDetection";
 import { formatTimeAgo } from "@/lib/formatUtils";
+import Link from "next/link";
 
 interface ApiResponse {
   items: NewsItem[];
@@ -112,9 +115,10 @@ export default function HomeClient({
   const [seismicLastFetched, setSeismicLastFetched] = useState<Date | null>(
     null,
   );
-  const [showPanel, setShowPanel] = useState<"activity" | null>(
-    "activity",
-  );
+  const [showPanel, setShowPanel] = useState<"activity" | null>(null);
+  const [activityHistory, setActivityHistory] = useState<
+    { timestamp: string; total: number; regions: Record<string, number> }[] | null
+  >(null);
   const [useUTC] = useState(false);
   const currentTime = useClock();
 
@@ -406,6 +410,16 @@ export default function HomeClient({
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch activity history for sparklines (24h trend)
+  useEffect(() => {
+    fetch("/api/analytics/activity?view=history&days=1")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.dataPoints) setActivityHistory(data.dataPoints);
+      })
+      .catch(() => {}); // Sparklines are optional — fail silently
+  }, []);
+
   const fetchEarthquakes = useCallback(async () => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -482,6 +496,7 @@ export default function HomeClient({
 
   return (
     <>
+      <h1 className="sr-only">News Pulse — Global Intelligence Dashboard</h1>
       {/* Hero Map Section */}
       <section
         id="map"
@@ -519,7 +534,7 @@ export default function HomeClient({
                     key={tab.id}
                     onClick={() => handleHeroViewChange(tab.id)}
                     className={`
-                        flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors
+                        flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-colors
                         ${
                           heroView === tab.id
                             ? "bg-blue-600 text-white"
@@ -636,7 +651,7 @@ export default function HomeClient({
             const globalData = activityData["all" as WatchpointId];
             const regions = [
               { id: "us", label: "US" },
-              { id: "middle-east", label: "Mid East" },
+              { id: "middle-east", label: "Mideast" },
               { id: "europe-russia", label: "Europe" },
             ] as const;
 
@@ -651,16 +666,17 @@ export default function HomeClient({
                       Global source activity is{' '}
                       <span className="font-bold tabular-nums">{globalData.multiplier.toFixed(1)}×</span>
                       {' '}the typical pace across{' '}
-                      <span className="font-bold tabular-nums">{globalData.count}</span>
+                      <span className="font-bold tabular-nums">{globalData.count.toLocaleString()}</span>
                       {' '}posts in the last <span className="font-bold">6</span> hours.
                     </p>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-foreground-muted mt-1">
-                      {regions.map((r) => {
+                    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-foreground-muted mt-1">
+                      {regions.map((r, i) => {
                         const data = activityData[r.id as WatchpointId];
                         if (!data) return null;
                         const level = describeLevel(data.multiplier);
                         return (
                           <span key={r.id} className="whitespace-nowrap">
+                            {i > 0 && <span className="text-foreground-muted/30 mr-0.5">·</span>}
                             {r.label}{' '}
                             {level && (
                               <span className={`font-semibold ${
@@ -679,9 +695,172 @@ export default function HomeClient({
                           </span>
                         );
                       })}
+                      <button
+                        onClick={() => setShowPanel(showPanel === "activity" ? null : "activity")}
+                        className="inline-flex items-center gap-1 ml-auto whitespace-nowrap text-foreground-muted hover:text-foreground transition-colors"
+                        aria-expanded={showPanel === "activity"}
+                        aria-label="Toggle activity details"
+                      >
+                        <ChartBarSquareIcon className="w-3.5 h-3.5" />
+                        <span>Details</span>
+                        {showPanel === "activity" ? (
+                          <ChevronUpIcon className="w-3 h-3" />
+                        ) : (
+                          <ChevronDownIcon className="w-3 h-3" />
+                        )}
+                      </button>
                     </div>
                   </>
                 )}
+
+                {/* Collapsible activity bar chart panel */}
+                {showPanel === "activity" && activityData && (() => {
+                  const scoredRegions = [
+                    { id: "all", label: "All" },
+                    { id: "us", label: "US" },
+                    { id: "middle-east", label: "MidEast" },
+                    { id: "europe-russia", label: "Europe" },
+                  ] as const;
+
+                  const MAX_SCALE = 6;
+                  const BASELINE_PCT = (1 / MAX_SCALE) * 100;
+                  const ELEVATED_PCT = (2.5 / MAX_SCALE) * 100;
+                  const CRITICAL_PCT = (5 / MAX_SCALE) * 100;
+
+                  const getSparklinePath = (regionId: string): string | null => {
+                    if (!activityHistory || activityHistory.length < 3) return null;
+                    const points = activityHistory.map((dp) =>
+                      regionId === "all" ? dp.total : (dp.regions[regionId] ?? 0)
+                    );
+                    const max = Math.max(...points, 1);
+                    const w = 52, h = 18, pad = 2;
+                    const stepX = (w - pad * 2) / (points.length - 1);
+                    return points
+                      .map((v, i) => `${pad + i * stepX},${pad + (h - pad * 2) * (1 - v / max)}`)
+                      .join(" ");
+                  };
+
+                  const getSparklineStroke = (level: string, multiplier: number): string => {
+                    if (level === "critical") return "#ef4444";
+                    if (level === "elevated") return "#f59e0b";
+                    if (multiplier < 0.5) return "#60a5fa";
+                    return "#10b981";
+                  };
+
+                  const renderBar = (regionId: string, label: string) => {
+                    const data = activityData[regionId as WatchpointId];
+                    if (!data) return null;
+
+                    const { count, multiplier, level } = data;
+                    const fillPct = Math.min((multiplier / MAX_SCALE) * 100, 100);
+                    const isOverflow = multiplier > MAX_SCALE;
+
+                    const barColor =
+                      level === "critical"
+                        ? "bg-red-500"
+                        : level === "elevated"
+                          ? "bg-amber-500"
+                          : multiplier < 0.5
+                            ? "bg-blue-400 dark:bg-blue-500"
+                            : "bg-emerald-500";
+
+                    const countColor =
+                      level === "critical"
+                        ? "text-red-500"
+                        : level === "elevated"
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-foreground-muted";
+
+                    const sparkline = getSparklinePath(regionId);
+                    const strokeColor = getSparklineStroke(level, multiplier);
+
+                    return (
+                      <div key={regionId} className="flex items-center gap-2" role="group" aria-label={`${label}: ${count} posts, ${multiplier.toFixed(1)} times typical, ${level} activity`}>
+                        <div className="w-14 text-right text-2xs font-medium text-foreground-muted shrink-0">
+                          {label}
+                        </div>
+
+                        <div className="flex-1 relative h-3">
+                          <div className="absolute inset-0 bg-background-secondary rounded-full overflow-hidden">
+                            <div
+                              className={`absolute inset-y-0 left-0 rounded-full ${barColor} transition-all duration-700 ease-out`}
+                              style={{ width: `${fillPct}%` }}
+                            />
+                            {isOverflow && (
+                              <div
+                                className="absolute inset-y-0 right-0 w-4 z-10 animate-pulse"
+                                style={{
+                                  background: `linear-gradient(to right, transparent, ${level === "critical" ? "rgba(239,68,68,0.5)" : "rgba(245,158,11,0.5)"})`,
+                                }}
+                              />
+                            )}
+                          </div>
+                          <div
+                            className="absolute w-[1.5px] bg-foreground/30 z-20 pointer-events-none rounded-full"
+                            style={{ left: `${BASELINE_PCT}%`, top: "-3px", bottom: "-3px" }}
+                          />
+                          <div
+                            className="absolute top-0 bottom-0 border-l border-dashed border-foreground/10 z-10 pointer-events-none"
+                            style={{ left: `${ELEVATED_PCT}%` }}
+                          />
+                          <div
+                            className="absolute top-0 bottom-0 border-l border-dashed border-foreground/10 z-10 pointer-events-none"
+                            style={{ left: `${CRITICAL_PCT}%` }}
+                          />
+                        </div>
+
+                        {sparkline ? (
+                          <svg width={52} height={18} className="shrink-0 hidden sm:block" viewBox="0 0 52 18" fill="none" role="img" aria-label={`${label} 24-hour trend`}>
+                            <polyline
+                              points={sparkline}
+                              stroke={strokeColor}
+                              strokeWidth={1.5}
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              fill="none"
+                              opacity={0.8}
+                            />
+                          </svg>
+                        ) : (
+                          <div className="w-13 shrink-0 hidden sm:block" />
+                        )}
+
+                        <div className="w-28 sm:w-32 shrink-0 text-right">
+                          <div className={`text-sm font-semibold tabular-nums leading-tight ${countColor}`}>
+                            {count} <span className="text-2xs font-normal text-foreground-muted">posts</span>
+                          </div>
+                          <div className={`text-2xs tabular-nums leading-tight ${isOverflow ? countColor + " font-medium" : "text-foreground-muted"}`}>
+                            {multiplier.toFixed(1)}× baseline
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  };
+
+                  return (
+                    <div className="mt-3 pt-3 border-t border-border-light space-y-2">
+                      {scoredRegions.map((r) => renderBar(r.id, r.label))}
+                      <div className="flex items-center gap-2 -mt-0.5">
+                        <div className="w-14 shrink-0" />
+                        <div className="flex-1 relative flex text-[10px] text-foreground-muted leading-none">
+                          <span style={{ paddingLeft: `calc(${BASELINE_PCT}% - 6px)` }}>1×</span>
+                          <span className="hidden sm:inline" style={{ position: "absolute", left: `calc(${ELEVATED_PCT}% - 9px)` }}>2.5×</span>
+                          <span style={{ position: "absolute", left: `calc(${CRITICAL_PCT}% - 7px)` }}>5×</span>
+                        </div>
+                        <div className="w-13 shrink-0 hidden sm:block" />
+                        <div className="w-28 sm:w-32 shrink-0 flex items-center justify-end gap-2 text-[10px] text-foreground-muted">
+                          <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Normal</span>
+                          <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Elevated</span>
+                          <span className="flex items-center gap-0.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500" />Critical</span>
+                        </div>
+                      </div>
+                      <p className="text-2xs text-foreground-muted mt-1">
+                        Bars show post volume in the last 6 hours compared to a 14-day rolling baseline. Spikes often signal breaking events.{' '}
+                        <Link href="/about" className="underline hover:text-foreground transition-colors">Learn more</Link>
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })()}

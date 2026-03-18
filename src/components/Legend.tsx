@@ -14,7 +14,7 @@ export function Legend() {
       {/* Legend toggle button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-4 z-50 p-3 bg-white dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 border border-border-card rounded-full shadow-lg transition-colors"
+        className="fixed bottom-24 right-4 z-50 p-3 bg-background-card hover:bg-background-secondary border border-border-card rounded-full shadow-lg transition-colors"
         title="View legend"
         aria-label="View legend"
       >
@@ -37,7 +37,7 @@ export function Legend() {
               <h2 className="text-lg font-bold text-foreground font-serif">Understanding Your Feed</h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
+                className="p-2 hover:bg-background-secondary rounded-full transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center"
                 aria-label="Close legend"
               >
                 <XMarkIcon className="w-5 h-5 text-foreground-muted" />

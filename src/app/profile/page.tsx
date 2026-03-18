@@ -38,7 +38,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-background text-[var(--foreground)]">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
-        <div className="bg-[var(--background-card)] rounded-2xl border border-[var(--border-card)] overflow-hidden">
+        <div className="bg-background-card rounded-xl border border-border-card overflow-hidden">
           {/* Profile Header */}
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 px-6 py-8">
             <div className="flex items-center gap-4">

@@ -84,7 +84,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry?: () => voi
         {onRetry && (
           <button
             onClick={onRetry}
-            className="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-red-100 dark:bg-red-900/50 hover:bg-red-200 dark:hover:bg-red-800/50 text-red-700 dark:text-red-300 rounded-lg transition-colors"
+            className="flex-shrink-0 px-3 py-1.5 text-xs font-medium bg-critical-muted text-critical hover:opacity-80 rounded-lg transition-colors"
           >
             Retry
           </button>
@@ -367,7 +367,7 @@ export const NewsFeed = memo(function NewsFeed({
                   onClick={onRefresh}
                   disabled={isLoading}
                   aria-label={isLoading ? 'Refreshing feed' : 'Refresh feed'}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-foreground-muted hover:text-foreground bg-background-secondary hover:bg-background-secondary/80 border border-border-light transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-foreground-muted bg-background-secondary hover:bg-background-secondary/80 border border-border-light transition-colors disabled:opacity-50"
                 >
                   <ArrowPathIcon className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                   <span>{isLoading ? 'Refreshing...' : 'Refresh Feed'}</span>
@@ -461,7 +461,7 @@ export const NewsFeed = memo(function NewsFeed({
                       : <> · {hoursWindow}h</>
                     }
                   </span>
-                  <Link href="/sources" className="hidden sm:inline text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:no-underline">Sources</Link>
+                  <Link href="/sources" className="hidden sm:inline text-foreground-muted underline underline-offset-2 hover:text-foreground hover:no-underline">Sources</Link>
                 </div>
                 {/* Trending keywords - only for All view */}
                 {trendingKeywords.length > 0 && (
@@ -487,10 +487,10 @@ export const NewsFeed = memo(function NewsFeed({
             )}
           </div>
 
-          {/* Region Selector - horizontally scrollable on mobile */}
-          <div className="pb-2 overflow-x-auto scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
+          {/* Region Selector */}
+          <div className="pb-2">
             <div className={`
-              inline-flex items-center gap-0.5 p-1 rounded-lg min-w-max
+              flex flex-wrap items-center gap-0.5 p-1 rounded-lg
               bg-background-secondary
               ${isPending ? 'opacity-70' : ''}
               transition-all duration-200
@@ -505,7 +505,7 @@ export const NewsFeed = memo(function NewsFeed({
                     <button
                       onClick={() => handleTabSelect(tab.id)}
                       className={`
-                        group relative px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap
+                        group relative px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap
                         transition-all duration-200 ease-out
                         ${isSelected
                           ? 'bg-background-card text-foreground shadow-sm'
@@ -513,13 +513,13 @@ export const NewsFeed = memo(function NewsFeed({
                         }
                       `}
                     >
-                      <span className="relative z-10 flex items-center gap-2">
+                      <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
                         {tab.id === 'all' && (
-                          <ListBulletIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-foreground' : 'text-foreground-muted'}`} />
+                          <ListBulletIcon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${isSelected ? 'text-foreground' : 'text-foreground-muted'}`} />
                         )}
                         <span>{tab.label}</span>
                         <span className={`
-                          inline-flex text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
+                          inline-flex text-2xs font-semibold px-1 sm:px-1.5 py-0.5 rounded-md transition-all duration-200
                           ${isSelected
                             ? 'bg-background-secondary text-foreground'
                             : 'text-foreground-muted'
@@ -530,7 +530,7 @@ export const NewsFeed = memo(function NewsFeed({
                       </span>
                     </button>
                     {!isLast && (
-                      <div className="w-px h-5 bg-border mx-0.5" />
+                      <div className="w-px h-4 sm:h-5 bg-border mx-0.5 hidden sm:block" />
                     )}
                   </div>
                 );
@@ -543,12 +543,12 @@ export const NewsFeed = memo(function NewsFeed({
                 return (
                   <div key={tab.id} className="flex items-center">
                     {index === 0 && (
-                      <div className="w-px h-5 bg-border mx-0.5" />
+                      <div className="w-px h-4 sm:h-5 bg-border mx-0.5 hidden sm:block" />
                     )}
                     <button
                       onClick={() => handleTabSelect(tab.id)}
                       className={`
-                        group relative px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap
+                        group relative px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap
                         transition-all duration-200 ease-out
                         ${isSelected
                           ? 'bg-background-card text-foreground shadow-sm'
@@ -556,10 +556,10 @@ export const NewsFeed = memo(function NewsFeed({
                         }
                       `}
                     >
-                      <span className="relative z-10 flex items-center gap-2">
+                      <span className="relative z-10 flex items-center gap-1.5 sm:gap-2">
                         <span>{tab.label}</span>
                         <span className={`
-                          inline-flex text-2xs font-semibold px-1.5 py-0.5 rounded-md transition-all duration-200
+                          inline-flex text-2xs font-semibold px-1 sm:px-1.5 py-0.5 rounded-md transition-all duration-200
                           ${isSelected
                             ? 'bg-background-secondary text-foreground'
                             : 'text-foreground-muted'
@@ -570,22 +570,22 @@ export const NewsFeed = memo(function NewsFeed({
                       </span>
                     </button>
                     {index < secondaryTabs.length - 1 && (
-                      <div className="w-px h-5 bg-border mx-0.5" />
+                      <div className="w-px h-4 sm:h-5 bg-border mx-0.5 hidden sm:block" />
                     )}
                   </div>
                 );
               })}
 
               {/* Divider before More/Less */}
-              <div className="w-px h-6 bg-border mx-1" />
+              <div className="w-px h-5 sm:h-6 bg-border mx-0.5 sm:mx-1 hidden sm:block" />
 
               {/* More/Less toggle */}
               <button
                 onClick={() => setRegionalExpanded(!regionalExpanded)}
-                className="px-3 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap text-foreground-muted hover:text-foreground transition-all duration-200 ease-out flex items-center gap-1.5"
+                className="px-2 sm:px-3 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium whitespace-nowrap text-foreground-muted hover:text-foreground transition-colors flex items-center gap-1"
               >
                 <span>{regionalExpanded ? 'Less' : 'More'}</span>
-                <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${regionalExpanded ? 'rotate-180' : ''}`} />
+                <ChevronDownIcon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-transform duration-200 ${regionalExpanded ? 'rotate-180' : ''}`} />
               </button>
             </div>
 
@@ -627,7 +627,7 @@ export const NewsFeed = memo(function NewsFeed({
             {onRefresh && (
               <button
                 onClick={onRefresh}
-                className="mt-4 px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                className="mt-4 px-4 py-2 text-sm font-medium text-foreground-muted hover:text-foreground bg-background-secondary rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 <ArrowPathIcon className="w-4 h-4 inline mr-1.5" />
                 Refresh feed

@@ -479,7 +479,7 @@ export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
           <div className="flex items-center gap-3">
             <button
               onClick={handleShare}
-              className="flex items-center gap-1.5 text-foreground-light hover:text-foreground-muted transition-colors"
+              className="flex items-center gap-1.5 min-h-[44px] min-w-[44px] justify-center text-foreground-light hover:text-foreground-muted transition-colors"
               aria-label="Share this post"
             >
               <ShareIcon className="w-4 h-4" />
@@ -488,7 +488,7 @@ export const NewsCard = memo(function NewsCard({ item }: NewsCardProps) {
             {item.url && (
               <button
                 onClick={handleOpenSource}
-                className="flex items-center gap-1.5 text-foreground-light hover:text-foreground transition-colors"
+                className="flex items-center gap-1.5 min-h-[44px] min-w-[44px] justify-center text-foreground-light hover:text-foreground transition-colors"
                 aria-label="Open source"
               >
                 <ArrowTopRightOnSquareIcon className="w-4 h-4" />
