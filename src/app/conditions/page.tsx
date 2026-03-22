@@ -20,8 +20,7 @@ import {
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import ActivityChart from '@/components/ActivityChart';
-import { WorldMap } from '@/components/WorldMap';
-import type { Watchpoint, WatchpointId } from '@/types';
+import type { WatchpointId } from '@/types';
 
 // =============================================================================
 // TYPES
@@ -284,9 +283,9 @@ export default function ConditionsPage() {
     setError(null);
 
     try {
-      const [conditionsRes, newsRes, trendsRes, commoditiesRes, wikiRes] = await Promise.all([
+      // Fetch conditions + fast endpoints first (don't block on slow news API)
+      const [conditionsRes, trendsRes, commoditiesRes, wikiRes] = await Promise.all([
         fetch('/api/conditions'),
-        fetch('/api/news?limit=1').catch(() => null),
         fetch('/api/google-trends').catch(() => null),
         fetch('/api/commodities').catch(() => null),
         fetch('/api/wikipedia-views').catch(() => null),
@@ -295,10 +294,6 @@ export default function ConditionsPage() {
       const result = await conditionsRes.json();
       setData(result);
 
-      if (newsRes?.ok) {
-        const newsData = await newsRes.json();
-        if (newsData.activity) setActivityData(newsData.activity);
-      }
       if (trendsRes?.ok) {
         const td = await trendsRes.json();
         if (td.trends) setTrendsData(td.trends);
@@ -316,6 +311,20 @@ export default function ConditionsPage() {
     } finally {
       setIsLoading(false);
     }
+
+    // Fetch activity data separately — news API is slow (fetches all sources)
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000);
+      const newsRes = await fetch('/api/news?limit=1', { signal: controller.signal });
+      clearTimeout(timeout);
+      if (newsRes.ok) {
+        const newsData = await newsRes.json();
+        if (newsData.activity) setActivityData(newsData.activity);
+      }
+    } catch {
+      // Activity data is supplementary — don't block on failure
+    }
   }, []);
 
   useEffect(() => {
@@ -331,6 +340,7 @@ export default function ConditionsPage() {
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
+    if (diffMs < 0) return 'just now';
     const diffMins = Math.floor(diffMs / 60000);
     if (diffMins < 60) return `${diffMins}m ago`;
     const diffHours = Math.floor(diffMins / 60);
@@ -394,122 +404,6 @@ export default function ConditionsPage() {
 
         {data && (
           <>
-            {/* Summary Card */}
-            <div className="card overflow-hidden">
-              <div className="px-4 sm:px-5 py-4">
-                {/* Headline stat + update time */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl sm:text-3xl font-semibold tabular-nums text-foreground">
-                      {data.summary.totalThreats}
-                    </span>
-                    <span className="text-label text-foreground-muted">active events</span>
-                  </div>
-                  <span className="text-caption whitespace-nowrap">
-                    Updated {formatTimeAgo(data.fetchedAt)}
-                  </span>
-                </div>
-
-                {/* Severity distribution bar */}
-                {data.summary.totalThreats > 0 && (
-                  <div className="mb-4">
-                    <div className="flex h-2 rounded-full overflow-hidden bg-background-secondary">
-                      {data.summary.criticalCount > 0 && (
-                        <div
-                          className="bg-red-500 transition-all duration-500"
-                          style={{ width: `${(data.summary.criticalCount / data.summary.totalThreats) * 100}%` }}
-                        />
-                      )}
-                      {data.summary.severeCount > 0 && (
-                        <div
-                          className="bg-amber-500 transition-all duration-500"
-                          style={{ width: `${(data.summary.severeCount / data.summary.totalThreats) * 100}%` }}
-                        />
-                      )}
-                      <div
-                        className="bg-slate-600 transition-all duration-500"
-                        style={{
-                          width: `${((data.summary.totalThreats - data.summary.criticalCount - data.summary.severeCount) / data.summary.totalThreats) * 100}%`,
-                        }}
-                      />
-                    </div>
-                    {/* Severity legend */}
-                    <div className="flex gap-4 mt-2">
-                      {data.summary.criticalCount > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-red-500" />
-                          <span className="text-micro text-red-600 dark:text-red-400 font-medium tabular-nums">{data.summary.criticalCount} critical</span>
-                        </div>
-                      )}
-                      {data.summary.severeCount > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-amber-500" />
-                          <span className="text-micro text-amber-600 dark:text-amber-400 font-medium tabular-nums">{data.summary.severeCount} severe</span>
-                        </div>
-                      )}
-                      {(data.summary.totalThreats - data.summary.criticalCount - data.summary.severeCount) > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-slate-600" />
-                          <span className="text-micro text-foreground-light tabular-nums">
-                            {data.summary.totalThreats - data.summary.criticalCount - data.summary.severeCount} other
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Type breakdown grid */}
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                  {(Object.entries(data.summary.byType) as [CategoryKey, number][])
-                    .filter(([, count]) => count > 0)
-                    .map(([type, count]) => {
-                      const config = categoryConfig[type];
-                      const Icon = config.icon;
-                      return (
-                        <div
-                          key={type}
-                          className="flex flex-col items-center gap-1 py-2 rounded-lg bg-background-secondary border border-border-light"
-                        >
-                          <Icon className="w-4 h-4 text-foreground-muted" />
-                          <span className="text-sm font-semibold tabular-nums text-foreground">{count}</span>
-                          <span className="text-micro text-foreground-light">{config.label}</span>
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
-            </div>
-
-            {/* Map with event counts */}
-            <div className="card overflow-hidden">
-              <div className="h-[200px] sm:h-[240px]">
-                <WorldMap
-                  watchpoints={REGIONS.map((r, i) => {
-                    const rd = data.byRegion[r.id];
-                    const hasCritical = rd && rd.criticalCount > 0;
-                    const hasEvents = rd && rd.totalCount > 0;
-                    return {
-                      id: r.id as WatchpointId,
-                      name: r.name,
-                      shortName: r.name,
-                      priority: i,
-                      activityLevel: (hasCritical ? 'critical' : hasEvents ? 'elevated' : 'normal') as Watchpoint['activityLevel'],
-                      color: hasCritical ? '#ef4444' : hasEvents ? '#f97316' : '#22c55e',
-                    };
-                  })}
-                  selected="all"
-                  onSelect={() => {}}
-                  activity={activityData || undefined}
-                  showTimes={false}
-                  showZoomControls={false}
-                  regionCounts={Object.fromEntries(
-                    REGIONS.map(r => [r.id, data.byRegion[r.id]?.totalCount ?? 0])
-                  )}
-                />
-              </div>
-            </div>
-
             {/* Section: Activity */}
             <div className="section-header">
               <span className="section-label">Activity</span>
@@ -633,15 +527,11 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
 
   return (
     <div className="card overflow-hidden">
-      {/* Accent top line — region color, red when critical */}
+      {/* Accent top line — region color */}
       <div
-        className={`${data.criticalCount > 0 ? 'h-[2px]' : 'h-px'}`}
+        className="h-px"
         style={{
-          backgroundColor: data.criticalCount > 0
-            ? '#ef4444'
-            : data.totalCount > 0
-              ? regionColor.color
-              : 'var(--border)',
+          backgroundColor: data.totalCount > 0 ? regionColor.color : 'var(--border)',
         }}
       />
 
@@ -663,13 +553,7 @@ function RegionCard({ regionId, name, data, activity, trends, wikiPages, formatT
                 {activity.count} posts
               </span>
             )}
-            {data.criticalCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-micro font-semibold bg-red-500/15 text-red-600 dark:text-red-400 rounded-md">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                {data.criticalCount} critical
-              </span>
-            )}
-            {data.totalCount > 0 && data.criticalCount === 0 && (
+            {data.totalCount > 0 && (
               <span className="text-caption">{data.totalCount} events</span>
             )}
           </div>

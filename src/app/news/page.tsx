@@ -380,8 +380,10 @@ export default function NewsPage() {
           </div>
         )}
 
-        {/* AI Digest */}
-        {digest && <DigestCard digest={digest} />}
+        {/* AI Digest — hide if older than 24 hours */}
+        {digest && (Date.now() - new Date(digest.createdAt).getTime() < 24 * 60 * 60 * 1000) && (
+          <DigestCard digest={digest} />
+        )}
 
         {/* Hero article */}
         {heroArticle && (

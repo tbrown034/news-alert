@@ -181,6 +181,20 @@ export interface RegionBaselineAverage {
  * that reflect the ACTUAL post distribution after region reclassification.
  * Uses 14-day rolling average.
  */
+/**
+ * Delete activity logs older than retentionDays
+ */
+export async function cleanupOldActivityLogs(retentionDays: number = 90): Promise<number> {
+  const result = await query<{ count: string }>(
+    `WITH deleted AS (
+       DELETE FROM post_activity_logs WHERE bucket_timestamp < NOW() - INTERVAL '1 day' * $1
+       RETURNING *
+     ) SELECT COUNT(*) as count FROM deleted`,
+    [retentionDays]
+  );
+  return parseInt(result[0]?.count || '0', 10);
+}
+
 export async function getRegionBaselineAverages(): Promise<RegionBaselineAverage[]> {
   return query<RegionBaselineAverage>(
     `SELECT

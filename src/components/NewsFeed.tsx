@@ -154,6 +154,7 @@ export const NewsFeed = memo(function NewsFeed({
   const [regionalExpanded, setRegionalExpanded] = useState(false);
   const [showFeedStats, setShowFeedStats] = useState(false);
   const [selectedTab, setSelectedTab] = useState<SelectedTab>('all'); // Local tab state, defaults to All
+  const [searchFilter, setSearchFilter] = useState('');
   const isInitialLoadRef = useRef(true);
 
   // useTransition for smooth region switching - keeps UI responsive during filtering
@@ -183,12 +184,21 @@ export const NewsFeed = memo(function NewsFeed({
 
 
   const filteredItems = useMemo(() => {
-    // Apply region filter only
+    let result = items;
+    // Apply region filter
     if (selectedTab !== 'all') {
-      return items.filter((item) => item.region === selectedTab);
+      result = result.filter((item) => item.region === selectedTab);
     }
-    return items;
-  }, [items, selectedTab]);
+    // Apply search filter
+    if (searchFilter) {
+      const q = searchFilter.toLowerCase();
+      result = result.filter((item) => {
+        const text = `${item.title || ''} ${item.content || ''} ${item.source?.name || ''}`.toLowerCase();
+        return text.includes(q);
+      });
+    }
+    return result;
+  }, [items, selectedTab, searchFilter]);
 
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort(
@@ -472,13 +482,18 @@ export const NewsFeed = memo(function NewsFeed({
                         <span>Trending</span>
                       </div>
                       {trendingKeywords.map((kw) => (
-                        <span
+                        <button
                           key={kw.keyword}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-background-secondary text-foreground border border-border-light"
+                          onClick={() => setSearchFilter(searchFilter === kw.keyword ? '' : kw.keyword)}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border cursor-pointer transition-colors ${
+                            searchFilter === kw.keyword
+                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                              : 'bg-background-secondary text-foreground border-border-light hover:border-border hover:bg-background-secondary/80'
+                          }`}
                         >
                           {kw.keyword}
-                          <span className="text-foreground-light">{kw.count}</span>
-                        </span>
+                          <span className={searchFilter === kw.keyword ? 'text-amber-600/60 dark:text-amber-400/60' : 'text-foreground-light'}>{kw.count}</span>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -601,6 +616,25 @@ export const NewsFeed = memo(function NewsFeed({
 
       <div id="feed-panel" role="tabpanel" aria-label={`News for ${selectedTab === 'all' ? 'all regions' : selectedTab}`}>
 
+        {/* Active search filter bar */}
+        {searchFilter && (
+          <div className="mx-3 sm:mx-4 mt-3 flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <FireIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+              Showing posts matching &ldquo;{searchFilter}&rdquo;
+            </span>
+            <span className="text-xs text-amber-600/60 dark:text-amber-400/60 tabular-nums">
+              {sortedItems.length} {sortedItems.length === 1 ? 'result' : 'results'}
+            </span>
+            <button
+              onClick={() => setSearchFilter('')}
+              className="ml-auto text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 cursor-pointer"
+            >
+              &times; Clear
+            </button>
+          </div>
+        )}
+
         {error && (
           <ErrorState message={error} onRetry={onRetry} />
         )}
@@ -620,10 +654,20 @@ export const NewsFeed = memo(function NewsFeed({
             </div>
             <span className="text-foreground text-base sm:text-lg font-medium mb-1">No updates yet</span>
             <span className="text-foreground-muted text-sm text-center max-w-xs">
-              {selectedTab === 'all'
-                ? 'News will appear here as it breaks'
-                : `No news for ${regionDisplayNames[selectedTab] || 'this region'} yet`}
+              {searchFilter
+                ? `No posts matching "${searchFilter}"`
+                : selectedTab === 'all'
+                  ? 'News will appear here as it breaks'
+                  : `No news for ${regionDisplayNames[selectedTab] || 'this region'} yet`}
             </span>
+            {searchFilter && (
+              <button
+                onClick={() => setSearchFilter('')}
+                className="mt-3 px-3 py-1.5 text-sm font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 rounded-lg hover:bg-amber-500/20 transition-colors cursor-pointer"
+              >
+                Clear filter
+              </button>
+            )}
             {onRefresh && (
               <button
                 onClick={onRefresh}
