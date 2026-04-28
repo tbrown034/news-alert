@@ -35,14 +35,14 @@ export const metadata: Metadata = {
   authors: [{ name: "News Pulse" }],
   creator: "News Pulse",
   publisher: "News Pulse",
-  metadataBase: new URL("https://newspulse.us"),
+  metadataBase: new URL("https://news-pulse.org"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://newspulse.us",
+    url: "https://news-pulse.org",
     siteName: "News Pulse",
     title: "News Pulse - News before it's news",
     description: "Monitor breaking news, seismic activity, and geopolitical events from 650+ verified sources worldwide.",
@@ -109,6 +109,26 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              name: "News Pulse",
+              url: "https://news-pulse.org",
+              description:
+                "Real-time global intelligence dashboard monitoring breaking news from 650+ verified OSINT sources across 6 platforms.",
+              applicationCategory: "NewsApplication",
+              operatingSystem: "Web",
+              author: {
+                "@type": "Person",
+                name: "Trevor Brown",
+                url: "https://news-pulse.org/about",
+              },
+            }),
+          }}
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${sourceSerif.variable} antialiased`}
