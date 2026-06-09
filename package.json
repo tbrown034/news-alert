@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "check:sitemap": "tsx scripts/check-sitemap.ts",
+    "check": "npm run check:sitemap && npm run build",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",

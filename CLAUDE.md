@@ -27,7 +27,7 @@ src/
 │   └── page.tsx
 ├── components/                  # 15 React components (maps, feeds, cards)
 ├── lib/
-│   ├── sources-clean.ts        # MAIN SOURCE FILE (475 sources)
+│   ├── sources-clean.ts        # MAIN SOURCE FILE (668 sources)
 │   ├── rss.ts                  # Multi-platform fetcher (1300+ lines)
 │   ├── regionDetection.ts      # Keyword-based geo classification
 │   ├── activityDetection.ts    # Regional activity levels
@@ -54,7 +54,7 @@ Next.js 15 | TypeScript | Tailwind CSS | react-simple-maps | Claude API | Heroic
 ## Source System
 
 ### Source Count
-- **475 total sources** (229 Bluesky, 214 RSS, 11 Telegram, 8 Reddit, 7 YouTube, 6 Mastodon)
+- **668 total sources** (379 Bluesky, 209 RSS, 47 Telegram, 15 Reddit, 11 Mastodon, 7 YouTube)
 
 ### Source Types (for categorization, not ranking)
 - `official` - Government, military, institutional

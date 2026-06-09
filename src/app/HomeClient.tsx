@@ -651,7 +651,7 @@ export default function HomeClient({
             const globalData = activityData["all" as WatchpointId];
             const regions = [
               { id: "us", label: "US" },
-              { id: "middle-east", label: "Mideast" },
+              { id: "middle-east", label: "Middle East" },
               { id: "europe-russia", label: "Europe" },
             ] as const;
 

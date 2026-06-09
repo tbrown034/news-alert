@@ -102,6 +102,8 @@ export function AuthButton({ variant = 'default', onNavigate }: AuthButtonProps)
               <img
                 src={session.user.image}
                 alt={session.user.name || 'User'}
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-600 shadow-sm"
               />
             ) : (
@@ -168,6 +170,8 @@ export function AuthButton({ variant = 'default', onNavigate }: AuthButtonProps)
             <img
               src={session.user.image}
               alt={session.user.name || 'User'}
+              width={32}
+              height={32}
               className="w-8 h-8 rounded-full border-2 border-slate-200 dark:border-slate-700"
             />
           ) : (
